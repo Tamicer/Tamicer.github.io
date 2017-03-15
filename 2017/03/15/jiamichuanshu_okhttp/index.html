@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2017/03/15/jiamichuanshu_okhttp/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#加密" title="加密">加密</a>
+                        
+                    </div>
+                    <h1>Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</h1>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2017-03-15
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <p>通过对Retrofit2.0的&lt;<a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0 超能实践，完美支持Https传输</a>&gt;基础入门和案例实践，掌握了怎么样使用Retrofit访问网络，加入自定义header，包括加入SSL证书，基本的调试基础，但是正常的开发中会涉及cookie同步问题，可以实现一些自动或免登录登陆问题，接下来进入cookie同步姿势</p>
+<h1 id="Cookie"><a href="#Cookie" class="headerlink" title="Cookie"></a>Cookie</h1><p>   Cookies是一种能够让网站服务器把少量数据储存到客户端的硬盘或内存，或是从客户端的硬盘读取数据的一种技术。Cookies是当你浏览某网站时，由Web服务器置于你硬盘上的一个非常小的文本文件，它可以记录你的用户ID、密码、浏览过的网页、停留的时间等信息。当你再次来到该网站时，网站通过读取Cookies，得知你的相关信息，就可以做出相应的动作，如在页面显示欢迎你的标语，或者让你不用输入ID、密码就直接登录等等。 </p>
+<p>从本质上讲，它可以看作是你的身份证。但Cookies不能作为代码执行，也不会传送病毒，且为你所专有，并只能由提供它的服务器来读取。保存的信息片断以“名/值”对(name-value pairs)的形式储存，一个“名/值”对仅仅是一条命名的数据。一个网站只能取得它放在你的电脑中的信息，它无法从其它的Cookies文件中取得信息，也无法得到你的电脑上的其它任何东西。 </p>
+<p>Cookies中的内容大多数经过了加密处理，因此一般用户看来只是一些毫无意义的字母数字组合，只有服务器的CGI处理程序才知道它们真正的含义。 </p>
+<p>Cookie也是http的会话跟踪技术，也包含web端的session。cookie的作用就是为了解决HTTP协议无状态的缺陷所作的努力.</p>
+<p>#方式一：</p>
+<h1 id="自定义cookie"><a href="#自定义cookie" class="headerlink" title="自定义cookie"></a>自定义cookie</h1><p> HttpClient中大家都知道加入cookie的方式</p>
+<pre><code>AsyncHttpClient client = new AsyncHttpClient();
+PersistentCookieStore myCookieStore = new PersistentCookieStore(MainActivity.this);
+client.setCookieStore(myCookieStore);
+</code></pre><p> 因此Retrofit中需自我实现一个PersistentCookieStore 用来储存OkHttpCookies。</p>
+<h2 id="PersistentCookieStore"><a href="#PersistentCookieStore" class="headerlink" title="-PersistentCookieStore"></a>-PersistentCookieStore</h2><pre><code>/**
+  * Created by LIUYONGKUI on 2016-06-09.
+  */
+public class PersistentCookieStore {
+private static final String LOG_TAG = &quot;PersistentCookieStore&quot;;
+private static final String COOKIE_PREFS = &quot;Cookies_Prefs&quot;;
+
+private final Map&lt;String, ConcurrentHashMap&lt;String, Cookie&gt;&gt; cookies;
+private final SharedPreferences cookiePrefs;
+
+
+public PersistentCookieStore(Context context) {
+    cookiePrefs = context.getSharedPreferences(COOKIE_PREFS, 0);
+    cookies = new HashMap&lt;&gt;();
+
+    //将持久化的cookies缓存到内存中 即map cookies
+    Map&lt;String, ?&gt; prefsMap = cookiePrefs.getAll();
+    for (Map.Entry&lt;String, ?&gt; entry : prefsMap.entrySet()) {
+        String[] cookieNames = TextUtils.split((String) entry.getValue(), &quot;,&quot;);
+        for (String name : cookieNames) {
+            String encodedCookie = cookiePrefs.getString(name, null);
+            if (encodedCookie != null) {
+                Cookie decodedCookie = decodeCookie(encodedCookie);
+                if (decodedCookie != null) {
+                    if (!cookies.containsKey(entry.getKey())) {
+                        cookies.put(entry.getKey(), new ConcurrentHashMap&lt;String, Cookie&gt;());
+                    }
+                    cookies.get(entry.getKey()).put(name, decodedCookie);
+                }
+            }
+        }
+    }
+}
+
+protected String getCookieToken(Cookie cookie) {
+    return cookie.name() + &quot;@&quot; + cookie.domain();
+}
+
+public void add(HttpUrl url, Cookie cookie) {
+    String name = getCookieToken(cookie);
+
+    //将cookies缓存到内存中 如果缓存过期 就重置此cookie
+    if (!cookie.persistent()) {
+        if (!cookies.containsKey(url.host())) {
+            cookies.put(url.host(), new ConcurrentHashMap&lt;String, Cookie&gt;());
+        }
+        cookies.get(url.host()).put(name, cookie);
+    } else {
+        if (cookies.containsKey(url.host())) {
+            cookies.get(url.host()).remove(name);
+        }
+    }
+
+    //讲cookies持久化到本地
+    SharedPreferences.Editor prefsWriter = cookiePrefs.edit();
+    prefsWriter.putString(url.host(), TextUtils.join(&quot;,&quot;, cookies.get(url.host()).keySet()));
+    prefsWriter.putString(name, encodeCookie(new OkHttpCookies(cookie)));
+    prefsWriter.apply();
+}
+
+public List&lt;Cookie&gt; get(HttpUrl url) {
+    ArrayList&lt;Cookie&gt; ret = new ArrayList&lt;&gt;();
+    if (cookies.containsKey(url.host()))
+        ret.addAll(cookies.get(url.host()).values());
+    return ret;
+}
+
+public boolean removeAll() {
+    SharedPreferences.Editor prefsWriter = cookiePrefs.edit();
+    prefsWriter.clear();
+    prefsWriter.apply();
+    cookies.clear();
+    return true;
+}
+
+public boolean remove(HttpUrl url, Cookie cookie) {
+    String name = getCookieToken(cookie);
+
+    if (cookies.containsKey(url.host()) &amp;&amp; cookies.get(url.host()).containsKey(name)) {
+        cookies.get(url.host()).remove(name);
+
+        SharedPreferences.Editor prefsWriter = cookiePrefs.edit();
+        if (cookiePrefs.contains(name)) {
+            prefsWriter.remove(name);
+        }
+        prefsWriter.putString(url.host(), TextUtils.join(&quot;,&quot;, cookies.get(url.host()).keySet()));
+        prefsWriter.apply();
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
+public List&lt;Cookie&gt; getCookies() {
+    ArrayList&lt;Cookie&gt; ret = new ArrayList&lt;&gt;();
+    for (String key : cookies.keySet())
+        ret.addAll(cookies.get(key).values());
+
+    return ret;
+}
+
+/**
+ * cookies 序列化成 string
+ *
+ * @param cookie 要序列化的cookie
+ * @return 序列化之后的string
+ */
+protected String encodeCookie(OkHttpCookies cookie) {
+    if (cookie == null)
+        return null;
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    try {
+        ObjectOutputStream outputStream = new ObjectOutputStream(os);
+        outputStream.writeObject(cookie);
+    } catch (IOException e) {
+        Log.d(LOG_TAG, &quot;IOException in encodeCookie&quot;, e);
+        return null;
+    }
+
+    return byteArrayToHexString(os.toByteArray());
+}
+
+/**
+ * 将字符串反序列化成cookies
+ *
+ * @param cookieString cookies string
+ * @return cookie object
+ */
+protected Cookie decodeCookie(String cookieString) {
+    byte[] bytes = hexStringToByteArray(cookieString);
+    ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+    Cookie cookie = null;
+    try {
+        ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+        cookie = ((OkHttpCookies) objectInputStream.readObject()).getCookies();
+    } catch (IOException e) {
+        Log.d(LOG_TAG, &quot;IOException in decodeCookie&quot;, e);
+    } catch (ClassNotFoundException e) {
+        Log.d(LOG_TAG, &quot;ClassNotFoundException in decodeCookie&quot;, e);
+    }
+
+    return cookie;
+}
+
+/**
+ * 二进制数组转十六进制字符串
+ *
+ * @param bytes byte array to be converted
+ * @return string containing hex values
+ */
+protected String byteArrayToHexString(byte[] bytes) {
+    StringBuilder sb = new StringBuilder(bytes.length * 2);
+    for (byte element : bytes) {
+        int v = element &amp; 0xff;
+        if (v &lt; 16) {
+            sb.append(&apos;0&apos;);
+        }
+        sb.append(Integer.toHexString(v));
+    }
+    return sb.toString().toUpperCase(Locale.US);
+}
+
+/**
+ * 十六进制字符串转二进制数组
+ *
+ * @param hexString string of hex-encoded values
+ * @return decoded byte array
+ */
+protected byte[] hexStringToByteArray(String hexString) {
+    int len = hexString.length();
+    byte[] data = new byte[len / 2];
+    for (int i = 0; i &lt; len; i += 2) {
+        data[i / 2] = (byte) ((Character.digit(hexString.charAt(i), 16) &lt;&lt; 4) + Character.digit(hexString.charAt(i + 1), 16));
+    }
+    return data;
+}
+</code></pre><h2 id="OkHttpCookies"><a href="#OkHttpCookies" class="headerlink" title=" - OkHttpCookies"></a> - OkHttpCookies</h2><p>  需要实现序列化的 OkHttpCookies 用来持久OkHttpCookies</p>
+<pre><code>   /**
+ * Created by LIUYONGKUI on 2016-05-20.
+  */
+public class OkHttpCookies implements Serializable {
+
+private transient final Cookie cookies;
+private transient Cookie clientCookies;
+
+public OkHttpCookies(Cookie cookies) {
+    this.cookies = cookies;
+}
+
+public Cookie getCookies() {
+    Cookie bestCookies = cookies;
+    if (clientCookies != null) {
+        bestCookies = clientCookies;
+    }
+    return bestCookies;
+}
+
+private void writeObject(ObjectOutputStream out) throws IOException {
+    out.writeObject(cookies.name());
+    out.writeObject(cookies.value());
+    out.writeLong(cookies.expiresAt());
+    out.writeObject(cookies.domain());
+    out.writeObject(cookies.path());
+    out.writeBoolean(cookies.secure());
+    out.writeBoolean(cookies.httpOnly());
+    out.writeBoolean(cookies.hostOnly());
+    out.writeBoolean(cookies.persistent());
+}
+
+private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+    String name = (String) in.readObject();
+    String value = (String) in.readObject();
+    long expiresAt = in.readLong();
+    String domain = (String) in.readObject();
+    String path = (String) in.readObject();
+    boolean secure = in.readBoolean();
+    boolean httpOnly = in.readBoolean();
+    boolean hostOnly = in.readBoolean();
+    boolean persistent = in.readBoolean();
+    Cookie.Builder builder = new Cookie.Builder();
+    builder = builder.name(name);
+    builder = builder.value(value);
+    builder = builder.expiresAt(expiresAt);
+    builder = hostOnly ? builder.hostOnlyDomain(domain) : builder.domain(domain);
+    builder = builder.path(path);
+    builder = secure ? builder.secure() : builder;
+    builder = httpOnly ? builder.httpOnly() : builder;
+    clientCookies =builder.build();
+}
+</code></pre><p>}</p>
+<h2 id="自定义CookieManger"><a href="#自定义CookieManger" class="headerlink" title="-自定义CookieManger"></a>-自定义CookieManger</h2><p>   实现有一个自定义的CookieManger来管理cookies,实现以K-V结构获取set,getCookier</p>
+<pre><code>    public class CookieManger implements CookieJar {
+
+
+public static String APP_PLATFORM = &quot;app-platform&quot;;
+
+
+private static Context mContext;
+
+private static PersistentCookieStore cookieStore;
+
+public CookieManger(Context context) {
+    mContext = context;
+    if (cookieStore == null ) {
+        cookieStore = new PersistentCookieStore(mContext);
+    }
+
+}
+
+
+
+
+
+@Override
+public void saveFromResponse(HttpUrl url, List&lt;Cookie&gt; cookies) {
+    if (cookies != null &amp;&amp; cookies.size() &gt; 0) {
+        for (Cookie item : cookies) {
+            cookieStore.add(url, item);
+        }
+    }
+}
+
+@Override
+public List&lt;Cookie&gt; loadForRequest(HttpUrl url) {
+    List&lt;Cookie&gt; cookies =cookieStore.get(url);
+    return cookies;
+}
+
+static class Customer {
+
+    private String userID;
+    private String token;
+
+    public Customer(String userID, String token) {
+        this.userID = userID;
+        this.token = token;
+    }
+
+    public String getUserID() {
+        return userID;
+    }
+
+    public void setUserID(String userID) {
+        this.userID = userID;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+}
+</code></pre><h2 id="Retrofit加入cookie"><a href="#Retrofit加入cookie" class="headerlink" title="- Retrofit加入cookie"></a>- Retrofit加入cookie</h2><pre><code>OkHttpClient okHttpClient = new OkHttpClient.Builder()
+            .addNetworkInterceptor(
+                    new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS))
+            .cookieJar(new CookieManger(context))
+            .addInterceptor(loginInterceptor)
+            .connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
+            .build();
+
+
+    Retrofit retrofit = new Retrofit.Builder()
+            .client(okHttpClient)
+            .build();
+</code></pre><h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>实现加入cookies持久，实现免登陆基本步骤</p>
+<blockquote>
+<p>1 实现可序列化的OkHttpcookies</p>
+<p>2 实现储存OkHttpcookies的PersistentCookieStore</p>
+<p>3 实现cookies管理工具CookieManger</p>
+<p>4 构建OKHttpClient</p>
+<p>5 Retrofit加入自定义的okHttpClient</p>
+<p>6直接调用RetrofitClient</p>
+</blockquote>
+<p>#方式二：</p>
+<p> 方法一可能对某些网站不兼容，可以借助retfoit的拦截器实现</p>
+<p>用来加入cookie</p>
+<pre><code>public class ReadCookiesInterceptor implements   Interceptor {
+
+ @Override
+  public Response intercept(Chain chain) throws IOException {
+    Request.Builder builder = chain.request().newBuilder();
+      HashSet&lt;String&gt; preferences = (HashSet) Preferences.getDefaultPreferences().getStringSet(Preferences.PREF_COOKIES, new HashSet&lt;&gt;());
+     for (String cookie : preferences) {
+        builder.addHeader(&quot;Cookie&quot;, cookie);
+        Log.v(&quot;OkHttp&quot;, &quot;Adding Header: &quot; + cookie); // This is done so I know which headers are being added; this interceptor is used after the normal logging of OkHttp
+     }
+
+    return chain.proceed(builder.build());
+ }
+</code></pre><p>   }</p>
+<p>用来保存Cookies</p>
+<pre><code>public class SaveCookiesInterceptor implements Interceptor {
+   @Override
+   public Response intercept(Chain chain) throws IOException {
+      Response originalResponse = chain.proceed(chain.request());
+
+      if (!originalResponse.headers(&quot;Set-Cookie&quot;).isEmpty()) {
+         HashSet&lt;String&gt; cookies = new HashSet&lt;&gt;();
+
+         for (String header : originalResponse.headers(&quot;Set-Cookie&quot;)) {
+          cookies.add(header);
+         }
+
+         Preferences.getDefaultPreferences().edit()
+                .putStringSet(Preferences.PREF_COOKIES, cookies)
+                .apply();
+    }
+
+      return originalResponse;
+}
+</code></pre><p>}</p>
+<h2 id="okhttp"><a href="#okhttp" class="headerlink" title="okhttp"></a>okhttp</h2><pre><code>OkHttpClient okHttpClient = new OkHttpClient();
+okHttpClient.interceptors().add(new ReadCookiesInterceptor());
+okHttpClient.interceptors().add(new SaveCookiesInterceptor());
+</code></pre><h2 id="Retrofit"><a href="#Retrofit" class="headerlink" title="Retrofit"></a>Retrofit</h2><p> ##</p>
+<pre><code>Retrofit retrofit = new Retrofit.Builder()
+           .client(okHttpClient)
+           .build();
+</code></pre><p>so iz 或许下一步你将会Retrofit遇到文件和图片上传问题，别急会  干货即将来临！</p>
+<p><strong>Retrofit 2.0系列请阅读</strong></p>
+<ul>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0 超能实践，完美支持Https传输</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） Okhttp完美同步Cookie实现免登录</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 和Rxjava封装的超好用的RetrofitClient工具类</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
+</li>
+</ul>
+<ul>
+<li><a href="http://blog.csdn.net/sk719887916/article/details/52195428" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></li>
+</ul>
+
+
+                <hr>
+
+                
+
+                <ul class="pager">
+                    
+                    
+                        <li class="next">
+                            <a href="/2017/03/14/12/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（一），完美支持加密Https传输">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#加密" title="加密">加密</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2017/03/15/jiamichuanshu_okhttp/";
+    var disqus_url = "http://tamicer.com/2017/03/15/jiamichuanshu_okhttp/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+<script>
+    // dynamic User by Hux
+    var _baId = '4cc1f2d8f3067386cc5cdb626a202900';
+
+    // Originial
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//hm.baidu.com/hm.js?" + _baId;
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+</script>
+
+
+<!-- Side Catalog -->
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
