@@ -13,7 +13,7 @@
 
     <title>
         
-          Retrofit 2.0 超能实践（一），完美支持加密Https传输 - Tamicer Blog | &quot;博客&quot;
+          Retrofit 2.0 超能实践（一），完美支持加密Https传输 - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
@@ -90,13 +90,6 @@
 
                         
                         <li>
-                            <a href="/about/">About</a>
-                        </li>
-                        
-                    
-
-                        
-                        <li>
                             <a href="/archives/">Archives</a>
                         </li>
                         
@@ -105,6 +98,13 @@
                         
                         <li>
                             <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
@@ -165,9 +165,15 @@
                 <div class="post-heading">
                     <div class="tags">
                         
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
                     </div>
                     <h1>Retrofit 2.0 超能实践（一），完美支持加密Https传输</h1>
-                    <h2 class="subheading"></h2>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
                     <span class="meta">
                         Posted by Tamic on
                         2017-03-14
@@ -190,7 +196,7 @@
                 post-container">
 
                 <p>前阵子看到圈子里Retrofit 2.0，RxJava(Android),  OkHttp3.3 ,加之支持Android和 iOS 的React Native 热更新技术,  火的不要不要的,  2015年新技术一大波来袭 ，看着自己项目还在用httpClient, asyncTask的原生开发 感觉自己已成火星人，实在顶不住内心强烈的自卑感，加之对新技术的追求，入手移动开发新三剑客，运用在目前的项目中，虽然目前关于他们的介绍资料网上一大把，但是自己亲自实践后，发现坑不少，为了能方便其他人安全顺利入坑，今天就先从Retrofit说起，前方高能，准备躲避。</p>
-<h1 id="Retrofit-2-0"><a href="#Retrofit-2-0" class="headerlink" title="Retrofit 2.0"></a>Retrofit 2.0</h1><p>   Retrofit是SQUARE美国一家移动支付公司最近新发布的在Android平台上http访问的开源项目</p>
+<h1 id="Retrofit-2-0"><a href="#Retrofit-2-0" class="headerlink" title="Retrofit 2.0"></a>Retrofit 2.0</h1><p>  Retrofit是SQUARE美国一家移动支付公司最近新发布的在Android平台上http访问的开源项目</p>
 <hr>
 <h1 id="一-什么Retrofit"><a href="#一-什么Retrofit" class="headerlink" title="一 什么Retrofit"></a>一 什么Retrofit</h1><p>   官方标语；A type-safe HTTP client for Android and Java<br>    语意很明显一款android安全类型的http客户端， 那么怎么样才算安全？支持https？支持本地线程安全？<br>    发现Rertofit其内部都是支持lambda语法（国内称只链式语法），内部支持okhttp, 并且支持响应式RxJAava，当然jdk1.8 和android studio工具也支持lambda。带着这些疑问 我开始探究一下。</p>
 <p>   在此之前准备入手资料：</p>
@@ -576,10 +582,10 @@ Call&lt;DataResponse&gt; getOrder(@Url String url,
 
                 <ul class="pager">
                     
-                        <li class="previous">
-                            <a href="/2017/03/14/This-is-Me/" data-toggle="tooltip" data-placement="top" title="This is Me">&larr; Previous Post</a>
-                        </li>
                     
+                        <li class="next">
+                            <a href="/2017/03/14/This-is-Me/" data-toggle="tooltip" data-placement="top" title="This is Me">Next Post &rarr;</a>
+                        </li>
                     
                 </ul>
 
@@ -611,6 +617,12 @@ Call&lt;DataResponse&gt; getOrder(@Url String url,
                     <h5><a href="/tags/">FEATURED TAGS</a></h5>
                     <div class="tags">
                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
                     </div>
                 </section>
                 
@@ -862,7 +874,7 @@ Call&lt;DataResponse&gt; getOrder(@Url String url,
 <script>
     // dynamic User by Hux
     var _gaId = 'UA-49627206-1';
-    var _gaDomain = 'huangxuan.me';
+    var _gaDomain = 'tamicer.com';
 
     // Originial
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
