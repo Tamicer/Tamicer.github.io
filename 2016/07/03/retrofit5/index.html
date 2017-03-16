@@ -13,11 +13,11 @@
 
     <title>
         
-          博客终于开通啦！ - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
-    <link rel="canonical" href="http://tamicer.com/2016/03/14/This-is-Me/">
+    <link rel="canonical" href="http://tamicer.com/2016/07/03/retrofit5/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -155,7 +155,7 @@
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
-        background-image: url('my.jpg')
+        background-image: url('/img/home-bg.jpg')
     }
 </style>
 <header class="intro-header" >
@@ -165,16 +165,20 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                          <a class="tag" href="/tags/#个人介绍" title="个人介绍">个人介绍</a>
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Tamic" title="Tamic">Tamic</a>
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
-                    <h1>博客终于开通啦！</h1>
-                    <h2 class="subheading">个人的一些介绍</h2>
+                    <h1>Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter</h1>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
                     <span class="meta">
                         Posted by Tamic on
-                        2016-03-14
+                        2016-07-03
                     </span>
                 </div>
             </div>
@@ -193,8 +197,40 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-                <h2 id="我在这里安家啦"><a href="#我在这里安家啦" class="headerlink" title="我在这里安家啦"></a>我在这里安家啦</h2><p>个人博客开通啦！以后这里你将会看到技术文章，一些行业经验，其他一些Tamic的鸡汤。</p>
-<p>第一时间获资讯请关注微信公众号！</p>
+                <blockquote>
+<p>文/Tamic<br>地址：<a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">http://www.jianshu.com/p/b1979c25634f</a></p>
+</blockquote>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-71bdab0afae24005.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<h1 id="Header"><a href="#Header" class="headerlink" title="Header"></a>Header</h1><p><strong>How to Add header to Every Request</strong></p>
+<p><strong>添加统一通用header， 不会覆盖前面的header</strong></p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">okHttpClient.interceptors().add(<span class="keyword">new</span> Interceptor() &#123;  </div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">public</span> <span class="function">Response <span class="title">intercept</span><span class="params">(Interceptor.Chain chain)</span> <span class="keyword">throws</span> IOException </span>&#123;</div><div class="line">        Request original = chain.request();</div><div class="line"></div><div class="line">        <span class="comment">// Request customization: add request headers</span></div><div class="line">        Request.Builder requestBuilder = original.newBuilder()</div><div class="line">                    .addHeader(<span class="string">"header-key"</span>, <span class="string">"value1"</span>)</div><div class="line">                    .addHeader(<span class="string">"header-key"</span>, <span class="string">"value2"</span>);</div><div class="line"></div><div class="line">        Request request = requestBuilder.build();</div><div class="line">        <span class="function"><span class="keyword">return</span> chain.<span class="title">proceed</span><span class="params">(request)</span></span>;</div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p><strong>添加统一通用header， 会覆盖前面的header</strong></p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">okHttpClient.interceptors().add(<span class="keyword">new</span> Interceptor() &#123;  </div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">public</span> <span class="function">Response <span class="title">intercept</span><span class="params">(Interceptor.Chain chain)</span> <span class="keyword">throws</span> IOException </span>&#123;</div><div class="line">        Request original = chain.request();</div><div class="line"></div><div class="line">        <span class="comment">// Request customization: add request headers</span></div><div class="line">        Request.Builder requestBuilder = original.newBuilder()</div><div class="line">                .header(<span class="string">"headerkey"</span>, <span class="string">"header-value"</span>); <span class="comment">// &lt;-- this is the important line</span></div><div class="line"></div><div class="line">        Request request = requestBuilder.build();</div><div class="line">        <span class="function"><span class="keyword">return</span> chain.<span class="title">proceed</span><span class="params">(request)</span></span>;</div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<h1 id="Parameters"><a href="#Parameters" class="headerlink" title="Parameters"></a>Parameters</h1><p><strong>How to Add Query Parameters to Every Request</strong></p>
+<p> 拦截器添加参数用 <code>addQueryParameter（）</code>函式来实现。</p>
+<figure class="highlight pony"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">    <span class="type">OkHttpClient</span>.<span class="type">Builder</span> httpClient =  </div><div class="line">    <span class="function"><span class="keyword">new</span> <span class="title">OkHttpClient</span>.<span class="title">Builder</span>();</span></div><div class="line"><span class="title">httpClient</span>.<span class="title">addInterceptor</span>(new <span class="type">Interceptor</span>() &#123;  </div><div class="line">    @<span class="title">Override</span></div><div class="line">    <span class="title">public</span> <span class="title">Response</span> <span class="title">intercept</span>(<span class="type">Chain</span> chain) <span class="title">throws</span> <span class="title">IOException</span> &#123;</div><div class="line">        <span class="title">Request</span> <span class="title">original</span> = <span class="title">chain</span>.<span class="title">request</span>();</div><div class="line">        <span class="title">HttpUrl</span> <span class="title">originalHttpUrl</span> = <span class="title">original</span>.<span class="title">url</span>();</div><div class="line"></div><div class="line">        <span class="title">HttpUrl</span> <span class="title">url</span> = <span class="title">originalHttpUrl</span>.<span class="title">newBuilder</span>()</div><div class="line">                .<span class="title">addQueryParameter</span>("apikey", "you value")</div><div class="line">                .<span class="title">build</span>();</div><div class="line"></div><div class="line">        <span class="comment">// Request customization: add request headers</span></div><div class="line">        <span class="title">Request</span>.<span class="title">Builder</span> <span class="title">requestBuilder</span> = <span class="title">original</span>.<span class="title">newBuilder</span>()</div><div class="line">                .<span class="title">url</span>(url);</div><div class="line"></div><div class="line">        <span class="title">Request</span> <span class="title">request</span> = <span class="title">requestBuilder</span>.<span class="title">build</span>();</div><div class="line">        <span class="title">return</span> <span class="title">chain</span>.<span class="title">proceed</span>(request);</div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<hr>
+<blockquote>
+<p>Retrofit+RxJava结合系列请阅读：</p>
+</blockquote>
+<ul>
+<li><a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0<br> 超能实践，完美支持Https传输</a></li>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51700659" target="_blank" rel="external">Retrofit2.0<br>完美同步Cookie实现免登录</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51755427" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
+</li>
+<li><p>-<a href="http://blog.csdn.net/sk719887916/article/details/51988507" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51958010" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51957819" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
+</li>
+<li><a href="http://blog.csdn.net/sk719887916/article/details/52132106" target="_blank" rel="external">Rxjava +Retrofit 你需要掌握的几个技巧，Retrofit缓存，统一对有无网络处理, 返回结果问题</a></li>
+</ul>
+<hr>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br><br></p>
+
+
 <p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
 
 
@@ -205,11 +241,12 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="2016/03/14/This-is-Me/"
-                    data-title="博客终于开通啦！"
-                    data-url="http://tamicer.com/2016/03/14/This-is-Me/"
-                    data-images="http://tamicer.com/2016/03/14/This-is-Me/my.jpg"
-                    data-content="我在这里安家啦个人博客开通啦！以后这里你将会看到技术文章，一些行业经验，其他一些Tamic的鸡... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    data-thread-key="2016/07/03/retrofit5/"
+                    data-title="Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter"
+                    data-url="http://tamicer.com/2016/07/03/retrofit5/"
+                    data-images=""
+                    data-content="
+文/Tamic地址：http://www.jianshu.com/p/b1979c25634... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -228,9 +265,13 @@
                 <ul class="pager">
                     
                         <li class="previous">
-                            <a href="/2016/06/07/12/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（一），完美支持加密Https传输">&larr; Previous Post</a>
+                            <a href="/2016/07/08/retrofti006/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类">&larr; Previous Post</a>
                         </li>
                     
+                    
+                        <li class="next">
+                            <a href="/2016/06/17/retrofit_004/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（四），实现大文件多线程断点下载">Next Post &rarr;</a>
+                        </li>
                     
                 </ul>
 
@@ -238,9 +279,9 @@
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="2016/03/14/This-is-Me/"
-                        data-title="博客终于开通啦！"
-                        data-url="http://tamicer.com/2016/03/14/This-is-Me/" >
+                        data-thread-key="2016/07/03/retrofit5/"
+                        data-title="Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter"
+                        data-url="http://tamicer.com/2016/07/03/retrofit5/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -286,9 +327,13 @@
                     <h5><a href="/tags/">FEATURED TAGS</a></h5>
                     <div class="tags">
                        
-                          <a class="tag" href="/tags/#个人介绍" title="个人介绍">个人介绍</a>
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Tamic" title="Tamic">Tamic</a>
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
                 </section>
@@ -346,8 +391,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "hexo-theme-huxblog";
-    var disqus_identifier = "http://tamicer.com/2016/03/14/This-is-Me/";
-    var disqus_url = "http://tamicer.com/2016/03/14/This-is-Me/";
+    var disqus_identifier = "http://tamicer.com/2016/07/03/retrofit5/";
+    var disqus_url = "http://tamicer.com/2016/07/03/retrofit5/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

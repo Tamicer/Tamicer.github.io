@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Retrofit 2.0 超能实践（七），Rxjava +Retrofit 你需要掌握的几个经典技巧 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2016/07/12/retrofti007/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                    </div>
+                    <h1>Retrofit 2.0 超能实践（七），Rxjava +Retrofit 你需要掌握的几个经典技巧</h1>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2016-07-12
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <blockquote>
+<p>本文出处 :Tamic<br>文/ <a href="http://www.tamicer.com" target="_blank" rel="external">http://www.tamicer.com</a></p>
+</blockquote>
+<p>Rxjava +Rterofit 需要掌握的几个技巧</p>
+<p> <img src="http://upload-images.jianshu.io/upload_images/2022038-bb8de232f0619b60?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="这里写图片描述"></p>
+<p>RxJava入门和详解请移步 比较有名的《RxJAVA详解》，这里继续前篇一系列的介绍一些容易忽略的技巧.</p>
+<p>Retrofit+RxJava结合系列请阅读：</p>
+<ul>
+<li><a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0<br> 超能实践，完美支持Https传输</a></li>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51700659" target="_blank" rel="external">Retrofit2.0<br>完美同步Cookie实现免登录</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51755427" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
+</li>
+<li><p>-<a href="http://blog.csdn.net/sk719887916/article/details/51988507" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51958010" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
+</li>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51957819" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
+</li>
+</ul>
+<hr>
+<p>#取消订阅<br>  一般我们在视图消亡后，无需RxJava再执行，可以直接取消订阅</p>
+<pre><code>subscription.unsubscribe()
+
+ observable.unsubscribeOn(Schedulers.io());
+</code></pre><p>   可用在activity的 <code>onDestroy(),</code> Fragment的 <code>onDestroyView()</code>中调用</p>
+<p>   还有种场景是借助rxJava请求网络数据，需要网络返回后保存数据并更新UI，这种情况视图已经消亡了必定会导致rxJava出错，导致App闪退，这种我们可以判断前的activity/view是否为空，并是否已showing，如果<br>   两者都不存在，即可无须更新UI。只处理保存数据即可。</p>
+<p>#订阅问题</p>
+<p>   需要UI绘制后再进行订阅的场景，防止阻塞UI，我们需要延迟订阅执行。</p>
+<p>   <strong>立即订阅;</strong></p>
+<pre><code>observable
+      .subscribeOn(Schedulers.io())
+      .observeOn(AndroidSchedulers.mainThread())
+      .subscribe(action);
+</code></pre><p> <strong>延迟订阅</strong></p>
+<pre><code>observable.delay(2, TimeUnit.SECONDS)
+               .subscribeOn(Schedulers.io())
+               .observeOn(AndroidSchedulers.mainThread())
+               .subscribe(action);
+</code></pre><h1 id="基础ApiService"><a href="#基础ApiService" class="headerlink" title="基础ApiService"></a>基础ApiService</h1><p>通常我们写接口会有以下定义，增加一个api就必须写一个方法</p>
+<pre><code>public interface MyApi {
+
+@GET(&quot;app.php&quot;)
+Observable&lt;SouguBean&gt; getSougu(@Query(&quot;name&quot;) String name);
+
+@GET(&quot;/getWeather&quot;)
+Observable&lt;ResponseBody&gt; getWeather(@QueryMap Map&lt;String, String&gt; maps);
+}
+</code></pre><p>很多时候每新增一个接口就要写一个api，是不是有很好的方法代替这种情况。</p>
+<pre><code>@GET()
+&lt;T&gt; Observable&lt;ResponseBody&gt; get(
+        @Url String url,
+        @QueryMap Map&lt;String, T&gt; maps);
+</code></pre><p> 我们可以定义一个通用的getApi，将url动态传入，返回Modle定义为ResponseBody， 并将实际参数定义为泛型，不管是更改url，还是服务端返回类型，包括参数个数都可以完美适配，这种方式技术不到位的千万别用，因为Retrofit明确说明接口必须要给定明确类型，悠着点哈！</p>
+<p>   上层进行通用组装时就可以这样子:</p>
+<pre><code>   public &lt;T&gt; T get(String url, Map&lt;String, T&gt; maps, BaseSubscriber&lt;ResponseBody&gt; subscriber) {
+return (T) apiManager.get(url, maps)
+.compose(schedulersTransformer)
+.compose(handleErrTransformer())
+.subscribe(subscriber);
+}
+</code></pre><p>   看不懂？看不懂不算奇怪，源码可以去文章末尾下载研究，这里只是列举了一下。这种方式很适合从HttpClent迁移到Retrofit带来接口适配问题，一用一个准啊…</p>
+<p>#基础Subscriber</p>
+<p>   很多时候我们需要借用RxJava开启多个observable去读取网络，这是我们对不同Subscriber处理起来比较麻烦，因此统一对Subscriber对网络返回进行处理和， 有无网络做判断，甚至可以根据需求显示加载进度等<br> 构建抽象的BaseSubscribe类，只处理<code>start()</code>和<code>onCompleted（）</code> ，上层处理时只处理<code>onError（）</code>和<code>onNext（）</code></p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line">   * BaseSubscriber</div><div class="line">   * Created by Tamic on 2016-7-15.</div><div class="line">   */</div><div class="line">  public <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseSubscriber&lt;T&gt;</span> <span class="keyword">extends</span> <span class="title">Subscriber&lt;T&gt;</span> </span>&#123;</div><div class="line"></div><div class="line">      <span class="keyword">private</span> <span class="type">BaseActivity</span> context;</div><div class="line"></div><div class="line">      public <span class="type">BaseSubscriber</span>(<span class="type">BaseActivity</span> context) &#123;</div><div class="line">          <span class="keyword">this</span>.context = context;</div><div class="line">      &#125;</div><div class="line"></div><div class="line">      <span class="meta">@Override</span></div><div class="line">      public void onStart() &#123;</div><div class="line">          <span class="keyword">super</span>.onStart();</div><div class="line"></div><div class="line">          <span class="keyword">if</span> (!<span class="type">NetworkUtil</span>.isNetworkAvailable(context)) &#123;</div><div class="line"></div><div class="line">              <span class="type">Toast</span>.makeText(context, <span class="string">"当前网络不可用，请检查网络情况"</span>, <span class="type">Toast</span>.<span class="type">LENGTH_SHORT</span>).show();</div><div class="line">             <span class="comment">// **一定要主动调用下面这一句**</span></div><div class="line">              onCompleted();</div><div class="line"></div><div class="line">              <span class="keyword">return</span>;</div><div class="line">          &#125;</div><div class="line">          <span class="comment">// 显示进度条</span></div><div class="line">          showLoadingProgress();</div><div class="line">      &#125;</div><div class="line"></div><div class="line">      <span class="meta">@Override</span></div><div class="line">      public void onCompleted() &#123;</div><div class="line">         <span class="comment">//关闭等待进度条</span></div><div class="line">         closeLoadingProgress();</div><div class="line"></div><div class="line">      &#125;</div><div class="line"></div><div class="line"></div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<p>这样我们上层调用时只关心成功和失败即可，无需再关心网络情况</p>
+<pre><code><figure class="highlight axapta"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div><div class="line">191</div><div class="line">192</div><div class="line">193</div><div class="line">194</div><div class="line">195</div><div class="line">196</div><div class="line">197</div><div class="line">198</div><div class="line">199</div><div class="line">200</div><div class="line">201</div><div class="line">202</div><div class="line">203</div><div class="line">204</div><div class="line">205</div><div class="line">206</div><div class="line">207</div><div class="line">208</div><div class="line">209</div><div class="line">210</div><div class="line">211</div><div class="line">212</div><div class="line">213</div><div class="line">214</div><div class="line">215</div><div class="line">216</div><div class="line">217</div><div class="line">218</div><div class="line">219</div><div class="line">220</div><div class="line">221</div><div class="line">222</div><div class="line">223</div><div class="line">224</div><div class="line">225</div><div class="line">226</div><div class="line">227</div><div class="line">228</div><div class="line">229</div><div class="line">230</div><div class="line">231</div><div class="line">232</div><div class="line">233</div><div class="line">234</div><div class="line">235</div><div class="line">236</div><div class="line">237</div><div class="line">238</div><div class="line">239</div><div class="line">240</div><div class="line">241</div><div class="line">242</div><div class="line">243</div><div class="line">244</div><div class="line">245</div><div class="line">246</div><div class="line">247</div><div class="line">248</div><div class="line">249</div><div class="line">250</div><div class="line">251</div><div class="line">252</div><div class="line">253</div><div class="line">254</div><div class="line">255</div><div class="line">256</div><div class="line">257</div><div class="line">258</div><div class="line">259</div><div class="line">260</div><div class="line">261</div><div class="line">262</div><div class="line">263</div><div class="line">264</div><div class="line">265</div><div class="line">266</div><div class="line">267</div><div class="line">268</div><div class="line">269</div><div class="line">270</div><div class="line">271</div><div class="line">272</div><div class="line">273</div><div class="line">274</div><div class="line">275</div><div class="line">276</div><div class="line">277</div><div class="line">278</div><div class="line">279</div><div class="line">280</div><div class="line">281</div><div class="line">282</div><div class="line">283</div><div class="line">284</div><div class="line">285</div><div class="line">286</div><div class="line">287</div><div class="line">288</div><div class="line">289</div><div class="line">290</div><div class="line">291</div><div class="line">292</div><div class="line">293</div><div class="line">294</div><div class="line">295</div><div class="line">296</div></pre></td><td class="code"><pre><div class="line">    observable..subscribeOn(Schedulers.io())</div><div class="line">                   .observeOn(AndroidSchedulers.mainThread())</div><div class="line">                   .subscribe(<span class="keyword">new</span> BaseSubscriber&lt;ResponseBody&gt;(MainActivity.<span class="keyword">this</span>) &#123;</div><div class="line"></div><div class="line">                    @Override</div><div class="line">                    <span class="keyword">public</span> <span class="keyword">void</span> onError(Throwable e) &#123;</div><div class="line">                       Toast.makeText(MainActivity.<span class="keyword">this</span>, e.getMessage(), Toast.LENGTH_LONG).show();</div><div class="line">                    &#125;</div><div class="line"></div><div class="line">                    @Override</div><div class="line">                    <span class="keyword">public</span> <span class="keyword">void</span> onNext(ResponseBody responseBody) &#123;</div><div class="line">                        Toast.makeText(MainActivity.<span class="keyword">this</span>, responseBody.toString(), Toast.LENGTH_LONG).show();</div><div class="line">                    &#125;</div><div class="line">                &#125;);</div><div class="line">      );</div><div class="line"></div><div class="line">如果想对Error错误统一处理，也可以在BaseSubscriber处理onError(),  然后回调搭到callback上层，具体看自己项目情况而定，可以接着往下看</div><div class="line"></div><div class="line">如果对成功结果进行处理，则可以将ResonseBody加入泛型&lt;Response&lt;T&gt;&gt; , Response一般是包含Code，MSg， Data的，在这里你可以根据判断code来进行业务分发，代码很简单，具体看文章结尾源码即可</div><div class="line"></div><div class="line">如果你觉得目前的返回判断麻烦，也可以定义Response基类</div><div class="line"></div><div class="line">     <span class="comment">/**</span></div><div class="line">    * 网络返回基类 支持泛型</div><div class="line">    * Created by Tamic on 2016-06-06.</div><div class="line">    */</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseResponse</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line"></div><div class="line">      <span class="keyword">private</span> <span class="keyword">int</span> code;</div><div class="line">      <span class="keyword">private</span> String msg;</div><div class="line">      <span class="keyword">private</span> T data;</div><div class="line"></div><div class="line">     <span class="keyword">public</span> <span class="keyword">int</span> getCode() &#123;</div><div class="line">         <span class="keyword">return</span> code;</div><div class="line">     &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">void</span> setCode(<span class="keyword">int</span> code) &#123;</div><div class="line">        <span class="keyword">this</span>.code = code;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> String getMsg() &#123;</div><div class="line">        <span class="keyword">return</span> msg;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">void</span> setMsg(String msg) &#123;</div><div class="line">        <span class="keyword">this</span>.msg = msg;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> T getData() &#123;</div><div class="line">        <span class="keyword">return</span> data;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">void</span> setData(T data) &#123;</div><div class="line">        <span class="keyword">this</span>.data = data;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">boolean</span> isOk() &#123;</div><div class="line">        <span class="keyword">return</span> code == <span class="number">0</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line"> &#125;</div><div class="line"></div><div class="line"></div><div class="line">这样我们在onNext() 只需统一判断状态码即可</div><div class="line"></div><div class="line">                           @Override</div><div class="line">                            <span class="keyword">public</span> <span class="keyword">void</span> onNext(BaseResponse&lt;IpResult&gt; responseBody) &#123;</div><div class="line"></div><div class="line">                                <span class="keyword">if</span> (responseBody.isOk()) &#123;</div><div class="line">                               <span class="comment">//这里这个ok不是http访问的ok，</span></div><div class="line"><span class="comment">//是和服务器约定好的成功码 有的人不喜欢可以不用加这个筛选， 也有的人喜欢将业务加到业务回调中，如果不是成功码 也//不走错误回调，也不走成功回调，直走业务回调</span></div><div class="line">                                 </div><div class="line">                                    IpResult ip = responseBody.getData();</div><div class="line">                                    Toast.makeText(MainActivity.<span class="keyword">this</span>, ip.toString(), Toast.LENGTH_LONG).show();</div><div class="line">                                &#125;</div><div class="line"></div><div class="line">                            &#125;</div><div class="line"></div><div class="line"></div><div class="line"><span class="meta"># 错误结果问题    </span></div><div class="line"></div><div class="line">通过RXJva的 Func1来进行对原始的`Throwable`  进行包装转换</div><div class="line"></div><div class="line">我们将原来Throwable  强转成自定义的 ResponeThrowable；</div><div class="line"></div><div class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">HttpResponseFunc</span>《<span class="title">T</span>》 <span class="keyword">implements</span> <span class="title">Func1</span>《<span class="title">Throwable</span>, <span class="title">Observable</span>《<span class="title">T</span>》》 </span>&#123;</div><div class="line">        @Override <span class="keyword">public</span> Observable&lt;T&gt; call(Throwable t) &#123;</div><div class="line">            <span class="keyword">return</span> Observable.error(ExceptionHandle.handleException(t));</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">                      </div><div class="line"> **ResponeThrowable**     </div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ResponeThrowable</span> <span class="keyword">extends</span> <span class="title">Exception</span> </span>&#123;</div><div class="line">        <span class="keyword">public</span> <span class="keyword">int</span> code;</div><div class="line">        <span class="keyword">public</span> String message;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> ResponeThrowable(Throwable throwable, <span class="keyword">int</span> code) &#123;</div><div class="line">            <span class="keyword">super</span>(throwable);</div><div class="line">            <span class="keyword">this</span>.code = code;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">我们已经处理好强转工作后 继续把 `Func1`加到`Observable` 中：</div><div class="line"></div><div class="line">因此这样用observable提供的onErrorResumeNext 则可以将你自定义的`Func1` 关联到错误处理类中：</div><div class="line"></div><div class="line">      ((Observable) observable).onErrorResumeNext(<span class="keyword">new</span> HttpResponseFunc&lt;T&gt;());</div><div class="line"></div><div class="line">很可能你感觉有点不理解，这前提你需要了解RxJava的转义符和操 `Observable.Transformer` </div><div class="line">还有`Func1`</div><div class="line"></div><div class="line">这样我们对服务器返回的错误状态进行了自我的处理，再稍加翻译下便可以达到用户看懂的语言</div><div class="line"></div><div class="line">这个类我参考**一叶扁舟**同学的案列，我再次做了改进：</div><div class="line"></div><div class="line"> **ExceptionHandle 错误处理驱动**</div><div class="line">  </div><div class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ExceptionHandle</span> </span>&#123;</div><div class="line"></div><div class="line">     <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> UNAUTHORIZED = <span class="number">401</span>;</div><div class="line">     <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> FORBIDDEN = <span class="number">403</span>;</div><div class="line">     <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> NOT_FOUND = <span class="number">404</span>;</div><div class="line">     <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> REQUEST_TIMEOUT = <span class="number">408</span>;</div><div class="line">     <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> INTERNAL_SERVER_ERROR = <span class="number">500</span>;</div><div class="line">     <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> BAD_GATEWAY = <span class="number">502</span>;</div><div class="line">     <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> SERVICE_UNAVAILABLE = <span class="number">503</span>;</div><div class="line">     <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> GATEWAY_TIMEOUT = <span class="number">504</span>;</div><div class="line"></div><div class="line">     <span class="keyword">public</span> <span class="keyword">static</span> ResponeThrowable handleException(Throwable e) &#123;</div><div class="line">        ResponeThrowable ex;</div><div class="line">        <span class="keyword">if</span> (e instanceof HttpException) &#123;</div><div class="line">            HttpException httpException = (HttpException) e;</div><div class="line">            ex = <span class="keyword">new</span> ResponeThrowable(e, ERROR.HTTP_ERROR);</div><div class="line">            <span class="keyword">switch</span> (httpException.code()) &#123;</div><div class="line">                <span class="keyword">case</span> UNAUTHORIZED:</div><div class="line">                <span class="keyword">case</span> FORBIDDEN:</div><div class="line">                <span class="keyword">case</span> NOT_FOUND:</div><div class="line">                <span class="keyword">case</span> REQUEST_TIMEOUT:</div><div class="line">                <span class="keyword">case</span> GATEWAY_TIMEOUT:</div><div class="line">                <span class="keyword">case</span> INTERNAL_SERVER_ERROR:</div><div class="line">                <span class="keyword">case</span> BAD_GATEWAY:</div><div class="line">                <span class="keyword">case</span> SERVICE_UNAVAILABLE:</div><div class="line">                <span class="keyword">default</span>:</div><div class="line">                    ex.message = <span class="string">"网络错误"</span>;</div><div class="line">                    <span class="keyword">break</span>;</div><div class="line">            &#125;</div><div class="line">            <span class="keyword">return</span> ex;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (e instanceof ServerException) &#123;</div><div class="line">            ServerException resultException = (ServerException) e;</div><div class="line">            ex = <span class="keyword">new</span> ResponeThrowable(resultException, resultException.code);</div><div class="line">            ex.message = resultException.message;</div><div class="line">            <span class="keyword">return</span> ex;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (e instanceof JsonParseException</div><div class="line">                || e instanceof JSONException</div><div class="line">                || e instanceof ParseException) &#123;</div><div class="line">            ex = <span class="keyword">new</span> ResponeThrowable(e, ERROR.PARSE_ERROR);</div><div class="line">            ex.message = <span class="string">"解析错误"</span>;</div><div class="line">            <span class="keyword">return</span> ex;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (e instanceof ConnectException) &#123;</div><div class="line">            ex = <span class="keyword">new</span> ResponeThrowable(e, ERROR.NETWORD_ERROR);</div><div class="line">            ex.message = <span class="string">"连接失败"</span>;</div><div class="line">            <span class="keyword">return</span> ex;</div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (e instanceof javax.net.ssl.SSLHandshakeException) &#123;</div><div class="line">            ex = <span class="keyword">new</span> ResponeThrowable(e, ERROR.SSL_ERROR);</div><div class="line">            ex.message = <span class="string">"证书验证失败"</span>;</div><div class="line">            <span class="keyword">return</span> ex;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">else</span> &#123;</div><div class="line">            ex = <span class="keyword">new</span> ResponeThrowable(e, ERROR.UNKNOWN);</div><div class="line">            ex.message = <span class="string">"未知错误"</span>;</div><div class="line">            <span class="keyword">return</span> ex;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">/**</span></div><div class="line">     * 约定异常</div><div class="line">     */</div><div class="line">    <span class="class"><span class="keyword">class</span> <span class="title">ERROR</span> </span>&#123;</div><div class="line">        <span class="comment">/**</span></div><div class="line">         * 未知错误</div><div class="line">         */</div><div class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> UNKNOWN = <span class="number">1000</span>;</div><div class="line">        <span class="comment">/**</span></div><div class="line">         * 解析错误</div><div class="line">         */</div><div class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> PARSE_ERROR = <span class="number">1001</span>;</div><div class="line">        <span class="comment">/**</span></div><div class="line">         * 网络错误</div><div class="line">         */</div><div class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> NETWORD_ERROR = <span class="number">1002</span>;</div><div class="line">        <span class="comment">/**</span></div><div class="line">         * 协议出错</div><div class="line">         */</div><div class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> HTTP_ERROR = <span class="number">1003</span>;</div><div class="line"></div><div class="line">        <span class="comment">/**</span></div><div class="line">         * 证书出错</div><div class="line">         */</div><div class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> SSL_ERROR = <span class="number">1005</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ResponeThrowable</span> <span class="keyword">extends</span> <span class="title">Exception</span> </span>&#123;</div><div class="line">        <span class="keyword">public</span> <span class="keyword">int</span> code;</div><div class="line">        <span class="keyword">public</span> String message;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> ResponeThrowable(Throwable throwable, <span class="keyword">int</span> code) &#123;</div><div class="line">            <span class="keyword">super</span>(throwable);</div><div class="line">            <span class="keyword">this</span>.code = code;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">     &#125;</div><div class="line"></div><div class="line">     <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ServerException</span> <span class="keyword">extends</span> <span class="title">RuntimeException</span> </span>&#123;</div><div class="line">        <span class="keyword">public</span> <span class="keyword">int</span> code;</div><div class="line">        <span class="keyword">public</span> String message;</div><div class="line">     &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line"> 接着可以在 BaseSubscriber&lt;T&gt;中处理异常拉</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseSubscriber</span>&lt;<span class="title">T</span>&gt; <span class="keyword">extends</span> <span class="title">Subscriber</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> Context context;</div><div class="line">   </div><div class="line"></div><div class="line">    <span class="keyword">public</span> BaseSubscriber(Context context) &#123;</div><div class="line">        <span class="keyword">this</span>.context = context;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    @Override</div><div class="line">    <span class="keyword">public</span> <span class="keyword">void</span> onError(Throwable e) &#123;</div><div class="line">        Log.e(<span class="string">"Tamic"</span>, e.getMessage());</div><div class="line">        <span class="comment">// todo error somthing</span></div><div class="line"></div><div class="line">        <span class="keyword">if</span>(e instanceof ExceptionHandle.ResponeThrowable)&#123;</div><div class="line">            onError((ExceptionHandle.ResponeThrowable)e);</div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            onError(<span class="keyword">new</span> ExceptionHandle.ResponeThrowable(e, ExceptionHandle.ERROR.UNKNOWN));</div><div class="line">        &#125;</div><div class="line">     &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">最后上层调用就是这样了：</div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line">     RetrofitClient.getInstance(MainActivity.<span class="keyword">this</span>).createBaseApi().getData(<span class="keyword">new</span>   BaseSubscriber&lt;IpResult&gt;(MainActivity.<span class="keyword">this</span>) &#123;</div><div class="line"></div><div class="line">                    @Override</div><div class="line">                    <span class="keyword">public</span> <span class="keyword">void</span> onError(ResponeThrowable e) &#123;</div><div class="line">                       <span class="comment">// 处理翻译后异常。</span></div><div class="line">                        Log.e(<span class="string">"Tamic"</span>, e.code + <span class="string">" "</span>+ e.message);</div><div class="line">                        Toast.makeText(MainActivity.<span class="keyword">this</span>, e.message, Toast.LENGTH_LONG).show();</div><div class="line"></div><div class="line">                    &#125;</div><div class="line"></div><div class="line">                    @Override</div><div class="line">                    <span class="keyword">public</span> <span class="keyword">void</span> onNext(IpResult responseBody) &#123;</div><div class="line">                        Toast.makeText(MainActivity.<span class="keyword">this</span>, responseBody.toString(), Toast.LENGTH_LONG).show();</div><div class="line">                    &#125;</div><div class="line">                &#125;, <span class="string">"21.22.11.33"</span>);</div><div class="line"></div><div class="line">值的注意的是上层使用BaseSubscriber 的实现类和子类即可，如果你想要重写BaseSubscriber 的onStat（）和onCompleted() 也是可以的， 一般BaseSubscriber只处理公用的处理，或者进行下业务对返回格式检查，具体成功</div><div class="line">解析有他的子类（实现类）去做。</div><div class="line"></div><div class="line">注意：如果你不想将业务分发加到错误回调中，也可以这样做:   好比有的人喜欢将业务处理加到业务回调中，如果后台返回的业务码并不成功码的情况下， 不想走错误回调，也不想走成功回调， 想走直走业务回调。</div><div class="line"></div><div class="line">可以这样处理：</div><div class="line"></div><div class="line"></div><div class="line">在onNext() 中回调一个自定义的抽象的onBusiness(code, masg)，将他的子类去实现</div><div class="line"></div><div class="line">                           @Override</div><div class="line">                            <span class="keyword">public</span> <span class="keyword">void</span> onNext(BaseResponse&lt;IpResult&gt; responseBody) &#123;</div><div class="line"></div><div class="line">                                <span class="keyword">if</span> (!responseBody.isOk()) &#123;</div><div class="line">                                      <span class="comment">//业务分发</span></div><div class="line">                                     onBusiness(responseBody.getCode, responseBody.getMsg)</div><div class="line">                                &#125; <span class="keyword">else</span> &#123;</div><div class="line">                                      <span class="comment">// 成功回调</span></div><div class="line">                                      onNext(responseBody.getData())</div><div class="line">                                &#125;</div><div class="line"></div><div class="line">                            &#125;</div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"><span class="meta">#缓存问题</span></div><div class="line"></div><div class="line"></div><div class="line">**公共缓存**：</div><div class="line">有时候需要在无网络时增加缓存功能，因此给Retrofit加入基础拦截器，来处理缓存问题</div></pre></td></tr></table></figure>
+</code></pre><p>/**</p>
+<pre><code>* BaseInterceptor
+* Created by Tamic on 2016-7-15.
+*/
+</code></pre><p>public class BaseInterceptor implements Interceptor{<br>    private Map<string, string=""> headers;<br>    private Context context;<br>    public BaseInterceptor(Map<string, string=""> headers, Context context) {<br>        this.headers = headers;<br>        this.context = context;<br>    }</string,></string,></p>
+<pre><code>@Override
+public Response intercept(Chain chain) throws IOException {
+
+    Request.Builder builder = chain.request()
+            .newBuilder();
+    builder.cacheControl(CacheControl.FORCE_CACHE).url(chain.request().url())
+    .build();
+
+    if (!NetworkUtil.isNetworkAvailable(context)) {
+
+        ((Activity)context).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(context, &quot;当前无网络!&quot;, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    if (headers != null &amp;&amp; headers.size() &gt; 0) {
+        Set&lt;String&gt; keys = headers.keySet();
+        for (String headerKey : keys) {
+            builder.addHeader(headerKey, headers.get(headerKey)).build();
+        }
+    }
+
+    if (NetworkUtil.isNetworkAvailable(context)) {
+        int maxAge = 60; // read from cache for 60 s
+        builder
+                .removeHeader(&quot;Pragma&quot;)
+                .addHeader(&quot;Cache-Control&quot;, &quot;public, max-age=&quot; + maxAge)
+                .build();
+    } else {
+        int maxStale = 60 * 60 * 24 * 14; // tolerate 2-weeks stale
+        builder
+                .removeHeader(&quot;Pragma&quot;)
+                .addHeader(&quot;Cache-Control&quot;, &quot;public, only-if-cached, max-stale=&quot; + maxStale)
+                .build();
+    }
+    return chain.proceed(builder.build());
+
+}
+</code></pre><p>}<br><figure class="highlight haxe"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">okHttpClient加入拦截器</div><div class="line"></div><div class="line">           okHttpClient = <span class="keyword">new</span> <span class="type">OkHttpClient</span>.Builder()</div><div class="line">                 .addInterceptor(<span class="keyword">new</span> <span class="type">BaseInterceptor</span>(headers))</div><div class="line">                .addInterceptor(<span class="keyword">new</span>   <span class="type">CaheInterceptor</span>(context))</div><div class="line">                .addNetworkInterceptor(<span class="keyword">new</span> <span class="type">CaheInterceptor</span>(context))</div><div class="line">                .build();</div><div class="line"></div><div class="line">Retrofit 加入okhttpClient</div></pre></td></tr></table></figure></p>
+<p>retrofit = new Retrofit.Builder()<br>                .client(okHttpClient)<br>                .baseUrl(url)<br>                .build();<br>```<br><strong>单独缓存</strong>：</p>
+<p>如果你不想加入公共缓存，想单独对某个api进行缓存，可用Headers来实现，那么可以这样：</p>
+<pre><code>@Headers(&quot;Cache-Control : public, max-age = 3600&quot;)
+@GET(&quot;service/getIpInfo.php&quot;)
+Observable&lt;BaseResponse&lt;IpResult&gt;&gt; getData(@Query(&quot;ip&quot;) String ip);
+</code></pre><p>值得注意的是 下面的两句话也必须加入：</p>
+<pre><code>.addInterceptor(new   CaheInterceptor(context))
+.addNetworkInterceptor(new CaheInterceptor(context))
+</code></pre><p><strong>缓存路径和默认大小</strong></p>
+<p>如果想更改okhttp的缓存路劲，可以设置cache的path路径 ，姿势如下</p>
+<pre><code>Cache cache = new Cache(httpCacheDirectory, 10 * 1024 * 1024);
+</code></pre><p> 第一个参数是路径，第二个最大缓存大小</p>
+<pre><code>okHttpClient = new OkHttpClient.Builder()
+    .cache(cache)
+     .build();
+</code></pre><p>这样就加入自定义的Cache策略</p>
+<p><strong>自定义缓存</strong></p>
+<p>如果你不想用okhttp自带的缓存策略，因为这需要服务端配合处理缓存请求头，不然会抛出： <strong>HTTP 504 Unsatisfiable Request (only-if-cached)</strong></p>
+<p>除了以上修改 Request.cacheControl的方式实现缓存，也可以自定义一个Cahe策略用来实现本地硬缓存。</p>
+<p>构建CaheManager，用Url对应Json实现，此类非常简单，你可以自己实现，时间策略可自我加入扩展<br>在BaseSubscriber进行网络判断，加载缓存数据返回妥妥的；</p>
+<pre><code> @Override
+ public void onStart() {
+    super.onStart();
+
+    Toast.makeText(context, &quot;http is start&quot;, Toast.LENGTH_SHORT).show();
+
+    // todo some common as show loadding  and check netWork is NetworkAvailable
+    // if  NetworkAvailable no !   must to call onCompleted
+    if (!NetworkUtil.isNetworkAvailable(context)) {
+        Toast.makeText(context, &quot;无网络&quot;, Toast.LENGTH_SHORT).show();
+
+        if (isNeedCahe) {
+            Toast.makeText(context, &quot;无网络，已智能读取缓存！&quot;, Toast.LENGTH_SHORT).show();
+            IpResult ipResult = new Gson().fromJson(CaheManager.getjson(url), IpResult.class);
+            onNext((T) ipResult);
+        }
+        onCompleted();
+    }
+
+}
+</code></pre><p>#总结</p>
+<p>通过这次的整理，再进行RxJava和Retrofit中 ，所有坑直接添就行，接着上次的介绍，笔者进行新框架开发novate已快接近尾声，估计本月就能和大家见面，敬请继续关注！</p>
+<p><strong>Retrofit 2.0系列请阅读</strong></p>
+<ul>
+<li><p><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
+</li>
+</ul>
+<ul>
+<li><a href="http://www.jianshu.com/p/d7734390895e" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></li>
+</ul>
+<hr>
+<h2 id="源-码：https-github-com-Tamicer-Novate"><a href="#源-码：https-github-com-Tamicer-Novate" class="headerlink" title="源 码：https://github.com/Tamicer/Novate"></a><strong>源 码</strong>：<a href="https://github.com/Tamicer/Novate" target="_blank" rel="external">https://github.com/Tamicer/Novate</a></h2>
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2016/07/12/retrofti007/"
+                    data-title="Retrofit 2.0 超能实践（七），Rxjava +Retrofit 你需要掌握的几个经典技巧"
+                    data-url="http://tamicer.com/2016/07/12/retrofti007/"
+                    data-images=""
+                    data-content="
+本文出处 :Tamic文/ http://www.tamicer.com
+
+Rxjava +... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                    
+                        <li class="next">
+                            <a href="/2016/07/08/retrofti006/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2016/07/12/retrofti007/"
+                        data-title="Retrofit 2.0 超能实践（七），Rxjava +Retrofit 你需要掌握的几个经典技巧"
+                        data-url="http://tamicer.com/2016/07/12/retrofti007/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2016/07/12/retrofti007/";
+    var disqus_url = "http://tamicer.com/2016/07/12/retrofti007/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

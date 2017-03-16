@@ -13,11 +13,11 @@
 
     <title>
         
-          博客终于开通啦！ - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类 - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
-    <link rel="canonical" href="http://tamicer.com/2016/03/14/This-is-Me/">
+    <link rel="canonical" href="http://tamicer.com/2016/07/08/retrofti006/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -155,7 +155,7 @@
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
-        background-image: url('my.jpg')
+        background-image: url('/img/home-bg.jpg')
     }
 </style>
 <header class="intro-header" >
@@ -165,16 +165,20 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                          <a class="tag" href="/tags/#个人介绍" title="个人介绍">个人介绍</a>
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Tamic" title="Tamic">Tamic</a>
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
-                    <h1>博客终于开通啦！</h1>
-                    <h2 class="subheading">个人的一些介绍</h2>
+                    <h1>Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</h1>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
                     <span class="meta">
                         Posted by Tamic on
-                        2016-03-14
+                        2016-07-08
                     </span>
                 </div>
             </div>
@@ -193,10 +197,326 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-                <h2 id="我在这里安家啦"><a href="#我在这里安家啦" class="headerlink" title="我在这里安家啦"></a>我在这里安家啦</h2><p>个人博客开通啦！以后这里你将会看到技术文章，一些行业经验，其他一些Tamic的鸡汤。</p>
-<p>第一时间获资讯请关注微信公众号！</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+                <blockquote>
+<p>Tamic<br>原文：<br><a href="http://www.tamicer.com" target="_blank" rel="external">http://www.tamicer.com</a></p>
+</blockquote>
+<hr>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-71bdab0afae24005.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="基于Retrofit2.0 封装的超好用的RetrofitClient"></p>
+<hr>
+<h1 id="RetrofitClient"><a href="#RetrofitClient" class="headerlink" title="RetrofitClient"></a>RetrofitClient</h1><p>基于Retrofit2.0封装的RetrofitClient.</p>
+<ul>
+<li>避免重复创建Retrofit实列.</li>
+<li>调用方便简洁.</li>
+<li>无需重复设置属性的步骤.</li>
+<li>可固定配置 Host 也可动态配置Url、请求头、参数等.</li>
+<li>支持文件下载和上传.</li>
+<li>支持json形式提交.</li>
+<li>支持扩展APIService</li>
+<li>统一处理无网络情况，和支持加载进度</li>
+<li>结合RxJava</li>
+<li>支持缓存机制</li>
+</ul>
+<p>使用原生的Retrofit请求网络，熟悉的朋友必定了解，在某个ApiServie方法多时 Retrofit设置就显得有点累赘，今天给大家带来对Retrofit的基本封装。这次对Retrofit进阶篇，本次封装已加入RxJava，请在阅读下文前请先了解RXJAVA和本人写的Retrofit系列文章，</p>
+<ul>
+<li><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0<br> 超能实践，完美支持Https传输</a></li>
+<li><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0<br>完美同步Cookie实现免登录</a></li>
+</ul>
+<ul>
+<li><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践，轻松实现多文件/图片上传</a></li>
+</ul>
+<p>基本步骤：</p>
+<blockquote>
+<p>构建Retrofit的接口service.</p>
+<p>构建基础拦截器 Interceptor.</p>
+<p>构建Cookie管理工具CookieManger.</p>
+<p>构建 单列RetrofitClient客户端.</p>
+<p>RetrofitClient的使用.</p>
+</blockquote>
+<h1 id="ApiService"><a href="#ApiService" class="headerlink" title="ApiService"></a>ApiService</h1><p>请求网络的API接口类，这里你可以增加你需要的请求接口，也可复用已经实现的几个方法。</p>
+<pre><code>   /**
+* Created by Ｔａｍｉｃ on 2016-07-08.
+*/
+ public interface ApiService {
 
+public static final String Base_URL = &quot;http://ip.taobao.com/&quot;;
+/**
+ *普通写法
+ */
+@GET(&quot;service/getIpInfo.php/&quot;)
+Observable&lt;ResponseBody&gt; getData(@Query(&quot;ip&quot;) String ip);
+
+
+@GET(&quot;{url}&quot;)
+Observable&lt;ResponseBody&gt; executeGet(
+        @Path(&quot;url&quot;) String url, 
+        @QueryMap Map&lt;String, String&gt; maps);
+
+
+@POST(&quot;{url}&quot;)
+Observable&lt;ResponseBody&gt; executePost(
+        @Path(&quot;url&quot;) String url,
+        @FieldMap Map&lt;String, String&gt; maps);
+
+@Multipart
+@POST(&quot;{url}&quot;)
+Observable&lt;ResponseBody&gt; upLoadFile(
+        @Path(&quot;url&quot;) String url,
+        @Part(&quot;image\\&quot;; filename=\\&quot;image.jpg&quot;) RequestBody avatar);
+
+@POST(&quot;{url}&quot;)
+Call&lt;ResponseBody&gt; uploadFiles(
+        @Url(&quot;url&quot;) String url,
+        @Part(&quot;filename&quot;) String description,
+        @PartMap()  Map&lt;String, RequestBody&gt; maps);
+
+}
+</code></pre><p>上面新增了几个常用的请求方法</p>
+<blockquote>
+<p>第一个只是普通写法的列子, url ,请求头，参数都是写死的。 不建议这么做</p>
+<p>第二，三个分别是Get 和POST请求，method Url, headers, body参数都可以动态外部传入。</p>
+<p>四 五是单文件/图片和多文件/图片上传</p>
+</blockquote>
+<h1 id="构建基础拦截器"><a href="#构建基础拦截器" class="headerlink" title="构建基础拦截器"></a>构建基础拦截器</h1><p>用来设置基础header，这里是通过MAP键值对来构建，将heder加入到Request中。</p>
+<pre><code>  /**
+ * BaseInterceptor，use set okhttp call header
+ * Created by Tamic on 2016-06-30.
+*/
+public class BaseInterceptor implements Interceptor{
+
+   private Map&lt;String, String&gt; headers;
+
+   public BaseInterceptor(Map&lt;String, String&gt; headers) {
+      this.headers = headers;
+    }
+
+   @Override
+   public Response intercept(Chain chain) throws    IOException {
+
+    Request.Builder builder = chain.request()
+            .newBuilder();
+    if (headers != null &amp;&amp; headers.size() &gt; 0) {
+        Set&lt;String&gt; keys = headers.keySet();
+        for (String headerKey : keys) {
+            builder.addHeader(headerKey,   headers.get(headerKey)).build();
+        }
+    }
+    return chain.proceed(builder.build());
+
+ }
+}
+</code></pre><h1 id="构建Cookie管理者"><a href="#构建Cookie管理者" class="headerlink" title="构建Cookie管理者"></a>构建Cookie管理者</h1><p>   用来管理cookie, 储存cookie的store这里不再重复说明，具体列子请见:</p>
+   <retrofit 2.0="" 超能实践，完美同步cookie实现免登录="">
+
+<pre><code>public class NovateCookieManger implements CookieJar {
+
+private static final String TAG = &quot;NovateCookieManger&quot;;
+private static Context mContext;
+private static PersistentCookieStore cookieStore;
+
+/**
+ * Mandatory constructor for the NovateCookieManger
+ */
+public NovateCookieManger(Context context) {
+    mContext = context;
+    if (cookieStore == null) {
+        cookieStore = new PersistentCookieStore(mContext);
+    }
+}
+
+@Override
+public void saveFromResponse(HttpUrl url, List&lt;Cookie&gt; cookies) {
+    if (cookies != null &amp;&amp; cookies.size() &gt; 0) {
+        for (Cookie item : cookies) {
+            cookieStore.add(url, item);
+        }
+    }
+}
+
+@Override
+public List&lt;Cookie&gt; loadForRequest(HttpUrl url) {
+    List&lt;Cookie&gt; cookies = cookieStore.get(url);
+    return cookies;
+}
+
+}
+</code></pre><p>#构建RetrofitClient客户端.</p>
+<p>今天重要的环节来了，RetrofitClient主要负责创建具体Retrofit，和调度分发请求。设置格式工厂。添加cookie同步，构建OkHttpClient，添加BaseUrl,对加密证书https我没做加入，希望读者参考我的本系列文章自行加入，因为我不喜欢升伸手党。</p>
+<pre><code>   /**
+ * RetrofitClient
+ * Created by Tamic on 2016-06-15.
+ */
+public class RetrofitClient {
+
+private static final int DEFAULT_TIMEOUT = 5;
+
+private ApiService apiService;
+
+private OkHttpClient okHttpClient;
+
+public static String baseUrl = ApiService.Base_URL;
+
+private static Context mContext;
+
+private static RetrofitClient sNewInstance;
+private static class SingletonHolder {
+    private static RetrofitClient INSTANCE = new RetrofitClient(
+            mContext);
+}
+
+public static RetrofitClient getInstance(Context context) {
+    if (context != null) {
+        Log.v(&quot;RetrofitClient&quot;, DevUtil.isDebug() + &quot;&quot;);
+        mContext = context;
+    }
+    return SingletonHolder.INSTANCE;
+}
+
+
+public static RetrofitClient getInstance(Context context, String url) {
+    if (context != null) {
+        mContext = context;
+    }
+    sNewInstance = new RetrofitClient(context, url);
+    return sNewInstance;
+}
+
+private RetrofitClient(Context context) {
+
+    this(context, null);
+}
+
+private RetrofitClient(Context context, String url) {
+
+    if (TextUtils.isEmpty(url)) {
+        url = baseUrl;
+    }
+    okHttpClient = new OkHttpClient.Builder()
+            .addNetworkInterceptor(
+                    new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS))
+            .cookieJar(new NovateCookieManger(context))
+            .addInterceptor(new BaseInterceptor(mContext))
+            .connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
+            .build();
+    Retrofit retrofit = new Retrofit.Builder()
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+            .baseUrl(url)
+            .build();
+    apiService = retrofit.create(ApiService.class);
+}
+
+public void getData(Subscriber&lt;ResponseBody&gt; subscriber, String ip) {
+    apiService.getData(ip)
+            .subscribeOn(Schedulers.io())
+            .unsubscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(subscriber);
+}
+
+public void get(String url, Map headers, Map parameters, Subscriber&lt;ResponseBody&gt; subscriber) {
+    apiService.executeGet(url, headers, parameters)
+            .subscribeOn(Schedulers.io())
+            .unsubscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(subscriber);
+}
+
+public void post(String url, Map headers, Map parameters, Subscriber&lt;ResponseBody&gt; subscriber) {
+    apiService.executePost(url, headers, parameters)
+            .subscribeOn(Schedulers.io())
+            .unsubscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(subscriber);
+ }
+
+}
+</code></pre><p>细心的朋友已经发现上面代码 在指定生产线程和消费线程的时候，步骤有点麻烦，每个api都得进行指定线程，那么可以利用rxJava的转换器写一个<code>Transformer</code></p>
+<pre><code>Observable.Transformer schedulersTransformer() {
+  return new Observable.Transformer() {
+
+
+  @Override
+  public Object call(Object observable) {
+   return ((Observable)  observable).subscribeOn(Schedulers.io())
+   .unsubscribeOn(Schedulers.io())
+   .observeOn(AndroidSchedulers.mainThread());
+   }
+   };
+}
+</code></pre><p> 那么api可以这样优化了：</p>
+<pre><code>public Subscription getData(Subscriber&lt;IpResult&gt; subscriber, String ip) {
+  return apiService.getData(ip)
+  .compose(schedulersTransformer())
+  .subscribe(subscriber);
+ }
+</code></pre><h1 id="调用-RetrofitClient"><a href="#调用-RetrofitClient" class="headerlink" title="调用 RetrofitClient"></a>调用 RetrofitClient</h1><pre><code>RetrofitClient.getInstance(this).getData(new Subscriber&lt;ResponseBody&gt;() {
+     @Override
+     public void onCompleted() {
+         Toast.makeText(MainActivity.this, &quot;加载完成&quot;, Toast.LENGTH_LONG).show();
+     }
+
+     @Override
+     public void onError(Throwable e) {
+         Toast.makeText(MainActivity.this, &quot;失败!: &quot; + e.getMessage(), Toast.LENGTH_LONG).show();
+     }
+
+     @Override
+     public void onNext(ResponseBody ResponseBody) {
+         Toast.makeText(MainActivity.this, ResponseBody.toString(), Toast.LENGTH_LONG).show();
+     }
+ }, &quot;21.22.11.33&quot;);
+</code></pre><p>代码很简洁，在用到的地方获取单列直接调用你需要的方法，在RxSubscriber回调中处理你的业务逻辑即可，无需考虑是否在主线程，其他调用方法同上。</p>
+<p>很多时候BaseApiService无法满足需求时，Retrofit增加了扩展接口 <code>create</code> 来创建你的API，接着调用execute就可以和RxJava关联  </p>
+<pre><code>   //create  you APiService    
+  MyApiService service =                 
+
+ RetrofitClient.getInstance(MainActivity.this).create(MyApiService.class);    
+// execute and add observable    
+RetrofitClient.getInstance(MainActivity.this).execute(            
+                           service.getData(&quot;21.22.11.33&quot;), new Subscriber&lt;IpResult&gt;() {                                     
+
+                  @Override                
+                   public void onCompleted() {               
+                   } 
+
+                   @Override                
+                   public void onError(Throwable e) {                    
+                          Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();                             
+                   }   
+
+                  @Override                
+                  public void onNext(IpResult responseBody) {    
+                                  Toast.makeText(MainActivity.this, responseBody.toString(),  Toast.LENGTH_LONG).show();                
+
+                }             
+            });}
+</code></pre><h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本次封装只对retrofit进行了简单封装，很多场景和需求还是存在缺陷，这种单列模式已不符合目前流行的Builder模式，本人已开始进行下一步的封装工作，：<br>笔者已开发了新的框架开发<a href="https://github.com/NeglectedByBoss/Novate" target="_blank" rel="external">Novate</a>：</p>
+<p><a href="https://github.com/NeglectedByBoss/Novate" target="_blank" rel="external">https://github.com/NeglectedByBoss/Novate</a></p>
+<hr>
+<blockquote>
+<p>源码 GitHub :<a href="https://github.com/NeglectedByBoss/RetrofitClient" target="_blank" rel="external">https://github.com/NeglectedByBoss/RetrofitClient</a><br>           已全部更新完成</p>
+</blockquote>
+<p><strong>系列导读</strong>：</p>
+<ul>
+<li><p><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
+</li>
+</ul>
+<p>第一时间获取各位大佬的技术文章和资讯请关注微信公众号！</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+</retrofit>
 
                 <hr>
 
@@ -205,11 +525,17 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="2016/03/14/This-is-Me/"
-                    data-title="博客终于开通啦！"
-                    data-url="http://tamicer.com/2016/03/14/This-is-Me/"
-                    data-images="http://tamicer.com/2016/03/14/This-is-Me/my.jpg"
-                    data-content="我在这里安家啦个人博客开通啦！以后这里你将会看到技术文章，一些行业经验，其他一些Tamic的鸡... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    data-thread-key="2016/07/08/retrofti006/"
+                    data-title="Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类"
+                    data-url="http://tamicer.com/2016/07/08/retrofti006/"
+                    data-images=""
+                    data-content="
+Tamic原文：http://www.tamicer.com
+
+
+
+
+RetrofitCli... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -228,9 +554,13 @@
                 <ul class="pager">
                     
                         <li class="previous">
-                            <a href="/2016/06/07/12/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（一），完美支持加密Https传输">&larr; Previous Post</a>
+                            <a href="/2016/07/12/retrofti007/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（七），Rxjava +Retrofit 你需要掌握的几个经典技巧">&larr; Previous Post</a>
                         </li>
                     
+                    
+                        <li class="next">
+                            <a href="/2016/07/03/retrofit5/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter">Next Post &rarr;</a>
+                        </li>
                     
                 </ul>
 
@@ -238,9 +568,9 @@
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="2016/03/14/This-is-Me/"
-                        data-title="博客终于开通啦！"
-                        data-url="http://tamicer.com/2016/03/14/This-is-Me/" >
+                        data-thread-key="2016/07/08/retrofti006/"
+                        data-title="Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类"
+                        data-url="http://tamicer.com/2016/07/08/retrofti006/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -286,9 +616,13 @@
                     <h5><a href="/tags/">FEATURED TAGS</a></h5>
                     <div class="tags">
                        
-                          <a class="tag" href="/tags/#个人介绍" title="个人介绍">个人介绍</a>
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Tamic" title="Tamic">Tamic</a>
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
                 </section>
@@ -346,8 +680,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "hexo-theme-huxblog";
-    var disqus_identifier = "http://tamicer.com/2016/03/14/This-is-Me/";
-    var disqus_url = "http://tamicer.com/2016/03/14/This-is-Me/";
+    var disqus_identifier = "http://tamicer.com/2016/07/08/retrofti006/";
+    var disqus_url = "http://tamicer.com/2016/07/08/retrofti006/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

@@ -13,11 +13,11 @@
 
     <title>
         
-          博客终于开通啦！ - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          Retrofit 2.0 超能实践（四），实现大文件多线程断点下载 - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
-    <link rel="canonical" href="http://tamicer.com/2016/03/14/This-is-Me/">
+    <link rel="canonical" href="http://tamicer.com/2016/06/17/retrofit_004/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -155,7 +155,7 @@
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
-        background-image: url('my.jpg')
+        background-image: url('/img/home-bg.jpg')
     }
 </style>
 <header class="intro-header" >
@@ -165,16 +165,20 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                          <a class="tag" href="/tags/#个人介绍" title="个人介绍">个人介绍</a>
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Tamic" title="Tamic">Tamic</a>
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
-                    <h1>博客终于开通啦！</h1>
-                    <h2 class="subheading">个人的一些介绍</h2>
+                    <h1>Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</h1>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
                     <span class="meta">
                         Posted by Tamic on
-                        2016-03-14
+                        2016-06-17
                     </span>
                 </div>
             </div>
@@ -193,9 +197,258 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-                <h2 id="我在这里安家啦"><a href="#我在这里安家啦" class="headerlink" title="我在这里安家啦"></a>我在这里安家啦</h2><p>个人博客开通啦！以后这里你将会看到技术文章，一些行业经验，其他一些Tamic的鸡汤。</p>
-<p>第一时间获资讯请关注微信公众号！</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+                <blockquote>
+<p>作者：码小白 （Tamic）<br>www.tamicer.com</p>
+</blockquote>
+<p>通过前几篇系统的介绍和综合运用，忘记介绍文件下载功能了，有朋友问到，目前APP文件下载主要有断点续传，多线程并发下载，多类型下载，今天就介绍下其Retrofit下载文件功能，已结合RxJava。</p>
+<p><strong>Retrofit系列导读：</strong></p>
+<ul>
+<li><p><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
+<ul>
+<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
+</li>
+</ul>
+</li>
+<li><p><a href="http://www.jianshu.com/p/d7734390895e" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></p>
+</li>
+</ul>
+<h1 id="ApiService"><a href="#ApiService" class="headerlink" title="ApiService"></a>ApiService</h1><p> 编写API，执行下载接口功能。</p>
+<pre><code>public interface ApiService {
+  @Streaming
+  @GET
+  Observable&lt;ResponseBody&gt; downloadFile(@Url String   fileUrl);
+}
+</code></pre><p>  url由于是可变的，因此用 <code>@URL</code>  注解符号来进行指定，大文件官方建议用 <code>@Streaming</code>  来进行注解，不然会出现IO异常，小文件可以忽略不注入。如果想进行断点续传的话 可以在此加入header，但不建议直接在api中写死，每个下载的请求大小是不同的，在拦截器加入更为妥善。</p>
+<h1 id="DownLoadManager"><a href="#DownLoadManager" class="headerlink" title="DownLoadManager"></a>DownLoadManager</h1><p>  实现一个下载管理者 来进行文件写入，类型判断等，如果想做完善，可以判断下http的请求头 <code>content-length</code>,  <code>content- type</code>, <code>RANGE</code>  第一个用来判断文件大小，第二个文件类型，第三个是文件从哪儿开始下载，如果对下载来源校验可以加入<code>referer</code>, 不是目标来源的可以不予下载权限。</p>
+<pre><code>public class DownLoadManager {
+
+  private static final String TAG = &quot;DownLoadManager&quot;;
+
+ private static String APK_CONTENTTYPE = &quot;application/vnd.android.package-archive&quot;;
+
+ private static String PNG_CONTENTTYPE = &quot;image/png&quot;;
+
+ private static String JPG_CONTENTTYPE = &quot;image/jpg&quot;;
+
+ private static String fileSuffix=&quot;&quot;;
+
+ public static boolean  writeResponseBodyToDisk(Context context, ResponseBody body) {
+
+    Log.d(TAG, &quot;contentType:&gt;&gt;&gt;&gt;&quot;+ body.contentType().toString());
+
+    String type = body.contentType().toString();
+
+    if (type.equals(APK_CONTENTTYPE)) {
+
+       fileSuffix = &quot;.apk&quot;;
+    } else if (type.equals(PNG_CONTENTTYPE)) {
+        fileSuffix = &quot;.png&quot;;
+    }
+
+    // 其他类型同上 自己判断加入.....
+
+
+    String path = context.getExternalFilesDir(null) + File.separator + System.currentTimeMillis() + fileSuffix;
+
+    Log.d(TAG, &quot;path:&gt;&gt;&gt;&gt;&quot;+ path);
+
+    try {
+        // todo change the file location/name according to your needs
+        File futureStudioIconFile = new File(path);
+
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+
+        try {
+            byte[] fileReader = new byte[4096];
+
+            long fileSize = body.contentLength();
+            long fileSizeDownloaded = 0;
+
+            inputStream = body.byteStream();
+            outputStream = new FileOutputStream(futureStudioIconFile);
+
+            while (true) {
+                int read = inputStream.read(fileReader);
+
+                if (read == -1) {
+                    break;
+                }
+
+                outputStream.write(fileReader, 0, read);
+
+                fileSizeDownloaded += read;
+
+                Log.d(TAG, &quot;file download: &quot; + fileSizeDownloaded + &quot; of &quot; + fileSize);
+            }
+
+            outputStream.flush();
+
+
+            return true;
+        } catch (IOException e) {
+            return false;
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+
+            if (outputStream != null) {
+                outputStream.close();
+            }
+        }
+    } catch (IOException e) {
+        return false;
+    }
+}
+</code></pre><p>}<br>   上面只是简单的对不同类型文件进行了判断，其他类型参考<code>http</code>协议描述类型自行加入，断点续传目前暂时没实现，基于HttpClinet下载的介绍很多，关键思想是记录一条下载产生后的<code>RANGE</code>   到数据库里，每条下载行对应一条数据，下载ID是区分唯一的主键,  包含<code>filename</code>, <code>fileSize, fileType, downTime, downRange</code>  <code>status</code>基本可满足多线程下载数据要求，在Retrofit结合RXJava后 解决了线程安全问题，实现多线程下载就更so yi z,  这里我不做过多的介绍。</p>
+<p>#调用下载</p>
+<pre><code> OkHttpClient okHttpClient = new OkHttpClient.Builder()
+            .build();
+ Retrofit retrofit = new Retrofit.Builder()
+            .client(okHttpClient)
+            .baseUrl(url)
+            .build();
+Api Service apiService = retrofit.create(ApiService.class);
+
+apiService..download(url1,
+                    new Subscriber&lt;ResponseBody&gt;() {
+                        @Override
+                        public void onCompleted() {
+
+                        }
+
+                        @Override
+                        public void onError(Throwable e) {
+
+                        }
+
+                        @Override
+                        public void onNext(ResponseBody responseBody) {
+
+                            if (DownLoadManager.writeResponseBodyToDisk(MainActivity.this, responseBody)) {
+                                Toast.makeText(MainActivity.this, &quot;Download is sucess&quot;, Toast.LENGTH_LONG).show();
+                            }
+
+                        }
+                    });
+        }
+    });
+</code></pre><p>  <strong><em>当</em></strong> 然我们可以在header中加入上次下载的进度大小，就可以实现基本的断点下载了，多线程下载目前业内主要由下面思想实现，我们可以请求到文件总长度的时候，均分三段大小区间，来开启三个新线程去下载，下载完后再以唯一的文件ID，将三段文件以此追加到一个文件就可以了，当然在retrofit结合RxJava，你无需开启新线程，只需订阅一下 Subscriber到IO线程即可，这里注意的是你需要判断最后的文件大小和HashCode来进行验证文件完整性，不然视频文件丢包没多大影响，最多会卡帧，但是apk却无法解析安装了。</p>
+<p>#断点下载</p>
+<p>##apiServiece</p>
+<pre><code>@GET
+@Streaming
+Observable&lt;Response&lt;ResponseBody&gt;&gt; download(@Header(&quot;Range&quot;) String range, @Url String url);
+</code></pre><p>##API</p>
+<p><strong>DownLoadInfos</strong>里面包含<code>name</code>,<code>length</code>, <code>url</code>等，这里不再贴了。</p>
+<p><strong>DownloadType</strong> 里面记录要有<code>stats</code>，<code>lastModify</code>，<code>downloaded</code> ，<code>savepath</code>等, 直接看API</p>
+<pre><code> public Observable&lt;DownloadInfos&gt; download(@NonNull final String url, @NonNull final String saveName,
+   @Nullable final String savePath) {
+return downloadDispatcher(url, saveName, savePath);
+}
+
+
+
+
+
+private Observable&lt;DownloadStatus&gt; downloadDispatcher(final String url, final String saveName, final String savePath) {
+    return getDownloadType(url)
+            .flatMap(new Func1&lt;DownloadType, Observable&lt;DownloadStatus&gt;&gt;() {
+                @Override
+                public Observable&lt;DownloadInfos&gt; call(DownloadType type) {
+                    try {
+                        type.prepare();
+                    } catch (IOException | ParseException e) {
+                        return Observable.error(e);
+                    }
+                    try {
+                        return type.start();
+                    } catch (IOException e) {
+                        return Observable.error(e);
+                    }
+                }
+            })
+            .doOnCompleted(new Action0() {
+                @Override
+                public void call() {
+                    mDownloadManager.delete(url);
+                }
+            })
+            .doOnError(new Action1&lt;Throwable&gt;() {
+                @Override
+                public void call(Throwable throwable) {
+
+                    mDownloadManager.delete(url);
+                }
+            })
+            .doOnUnsubscribe(new Action0() {
+                @Override
+                public void call() {
+                    mDownloadManager.delete（url）
+            });
+}
+</code></pre><p>   开始下载：</p>
+<pre><code>@Override
+Observable&lt;DownloadInfos&gt; start() {
+    Log.i(TAG, &quot;Normal download start!!&quot;);
+    return mDownloadHelper.getDownloadApi().download(null, mUrl)
+            .subscribeOn(Schedulers.io())
+            .flatMap(new Func1&lt;Response&lt;ResponseBody&gt;, Observable&lt;DownloadStatus&gt;&gt;() {
+                @Override
+                public Observable&lt;DownloadStatus&gt; call(final Response&lt;ResponseBody&gt; response) {
+                    return normalSave(response);
+                }
+            }).onBackpressureLatest().retry(new Func2&lt;Integer, Throwable, Boolean&gt;() {
+                @Override
+                public Boolean call(Integer integer, Throwable throwable) {
+                    return mDownloadHelper.retry(integer, throwable);
+                }
+            });
+}
+</code></pre><p>##调用</p>
+<pre><code>DownloadAgenti.getInstance(mContext)
+               .observeOn(Schedulers.io())
+               .observeOn(AndroidSchedulers.mainThread())
+               .subscribe(new Subscriber&lt;DownloadInfos&gt;() {
+                   @Override
+                   public void onCompleted() {
+                       // todo
+                   }
+
+                   @Override
+                   public void onError(Throwable e) {
+                      todo
+                   }
+
+                   @Override
+                   public void onNext(final DownloadStatus status) {
+                      todo
+                   }
+               }); 
+</code></pre><p>#总结</p>
+<p>步骤：</p>
+<blockquote>
+<p>请求文件总大小</p>
+<p>根据机型高低，分配多个线程下载</p>
+<p>记录下载进度，大小，类型等到数据库</p>
+<p>同时更新UI和通知栏，提示用户</p>
+<p>下载结束后更新数据库下载数据，追加组合文件</p>
+<p>判断文件大小，检验文件大小</p>
+</blockquote>
+<p>  下载功能是每个应用必须的功能，因此下载还是比较重要的一个模块，好的下载架构 会考虑到设备的CPU大小，网络状态，以及外部sdcard的大小，动态进行性能，流量分配，方便用户更好的体验和使用你的APP.</p>
+<p>  具体可以阅读  - <a href="http://blog.csdn.net/sk719887916/article/details/51958010" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a> 中的写法</p>
+<p><strong>项目github</strong>:<a href="https://github.com/Tamicer/FastDownloader" target="_blank" rel="external">https://github.com/Tamicer/FastDownloader</a></p>
 
 
                 <hr>
@@ -205,11 +458,14 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="2016/03/14/This-is-Me/"
-                    data-title="博客终于开通啦！"
-                    data-url="http://tamicer.com/2016/03/14/This-is-Me/"
-                    data-images="http://tamicer.com/2016/03/14/This-is-Me/my.jpg"
-                    data-content="我在这里安家啦个人博客开通啦！以后这里你将会看到技术文章，一些行业经验，其他一些Tamic的鸡... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    data-thread-key="2016/06/17/retrofit_004/"
+                    data-title="Retrofit 2.0 超能实践（四），实现大文件多线程断点下载"
+                    data-url="http://tamicer.com/2016/06/17/retrofit_004/"
+                    data-images=""
+                    data-content="
+作者：码小白 （Tamic）www.tamicer.com
+
+通过前几篇系统的介绍和综合运用... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -228,9 +484,13 @@
                 <ul class="pager">
                     
                         <li class="previous">
-                            <a href="/2016/06/07/12/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（一），完美支持加密Https传输">&larr; Previous Post</a>
+                            <a href="/2016/07/03/retrofit5/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter">&larr; Previous Post</a>
                         </li>
                     
+                    
+                        <li class="next">
+                            <a href="/2016/06/14/retrofti3/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传">Next Post &rarr;</a>
+                        </li>
                     
                 </ul>
 
@@ -238,9 +498,9 @@
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="2016/03/14/This-is-Me/"
-                        data-title="博客终于开通啦！"
-                        data-url="http://tamicer.com/2016/03/14/This-is-Me/" >
+                        data-thread-key="2016/06/17/retrofit_004/"
+                        data-title="Retrofit 2.0 超能实践（四），实现大文件多线程断点下载"
+                        data-url="http://tamicer.com/2016/06/17/retrofit_004/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -286,9 +546,13 @@
                     <h5><a href="/tags/">FEATURED TAGS</a></h5>
                     <div class="tags">
                        
-                          <a class="tag" href="/tags/#个人介绍" title="个人介绍">个人介绍</a>
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Tamic" title="Tamic">Tamic</a>
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
                 </section>
@@ -346,8 +610,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "hexo-theme-huxblog";
-    var disqus_identifier = "http://tamicer.com/2016/03/14/This-is-Me/";
-    var disqus_url = "http://tamicer.com/2016/03/14/This-is-Me/";
+    var disqus_identifier = "http://tamicer.com/2016/06/17/retrofit_004/";
+    var disqus_url = "http://tamicer.com/2016/06/17/retrofit_004/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

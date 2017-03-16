@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Retrofit 2.0 超能实践（一），完美支持加密Https传输 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2016/06/07/12/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                    </div>
+                    <h1>Retrofit 2.0 超能实践（一），完美支持加密Https传输</h1>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2016-06-07
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <p>前阵子看到圈子里Retrofit 2.0，RxJava(Android),  OkHttp3.3 ,加之支持Android和 iOS 的React Native 热更新技术,  火的不要不要的,  2015年新技术一大波来袭 ，看着自己项目还在用httpClient, asyncTask的原生开发 感觉自己已成火星人，实在顶不住内心强烈的自卑感，加之对新技术的追求，入手移动开发新三剑客，运用在目前的项目中，虽然目前关于他们的介绍资料网上一大把，但是自己亲自实践后，发现坑不少，为了能方便其他人安全顺利入坑，今天就先从Retrofit说起，前方高能，准备躲避。</p>
+<h1 id="Retrofit-2-0"><a href="#Retrofit-2-0" class="headerlink" title="Retrofit 2.0"></a>Retrofit 2.0</h1><p>  Retrofit是SQUARE美国一家移动支付公司最近新发布的在Android平台上http访问的开源项目</p>
+<hr>
+<h1 id="一-什么Retrofit"><a href="#一-什么Retrofit" class="headerlink" title="一 什么Retrofit"></a>一 什么Retrofit</h1><p>   官方标语；A type-safe HTTP client for Android and Java<br>    语意很明显一款android安全类型的http客户端， 那么怎么样才算安全？支持https？支持本地线程安全？<br>    发现Rertofit其内部都是支持lambda语法（国内称只链式语法），内部支持okhttp, 并且支持响应式RxJAava，当然jdk1.8 和android studio工具也支持lambda。带着这些疑问 我开始探究一下。</p>
+<p>   在此之前准备入手资料：</p>
+<blockquote>
+<p>国外博客<br><a href="https://inthecheesefactory.com/blog/retrofit-2.0/en" target="_blank" rel="external">https://inthecheesefactory.com/blog/retrofit-2.0/en</a></p>
+<p>官方github<br>    <a href="http://square.github.io/retrofit/" target="_blank" rel="external">http://square.github.io/retrofit/</a></p>
+</blockquote>
+<h2 id="二-Retrofit怎么使用"><a href="#二-Retrofit怎么使用" class="headerlink" title="二 Retrofit怎么使用"></a>二 Retrofit怎么使用</h2><p> 下文之前先给大家看下传统的httpclient（urlConnection） + AsyncTask实现的登录功能，这样我们才能发现Retrofit的优雅之处.</p>
+<p>   <strong>传统方式：</strong></p>
+<pre><code>  /**
+ * Represents an asynchronous login/registration task used to authenticate
+ * the user.
+ */
+public class UserLoginTask extends AsyncTask&lt;Void, Void, Boolean&gt; {
+
+    private final String mEmail;
+    private final String mPassword;
+
+    UserLoginTask(String email, String password) {
+        mEmail = email;
+        mPassword = password;
+    }
+
+    @Override
+    protected Boolean doInBackground(Void... params) {
+        // TODO: attempt authentication against a network service.
+
+        try {
+            // Simulate network access.
+            String result = &quot;&quot;;
+            BufferedReader in = null;
+            String path =&quot;http://localhost:8080/login/?&quot; +&quot;email =&quot; + mEmail + &quot;&amp; password =&quot; + mPassword;
+            URL url =new URL(path);
+            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+            conn.setConnectTimeout(5 * 1000);
+            conn.setRequestMethod(&quot;GET&quot;);
+            InputStream inStream = conn.getInputStream();
+            in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()));
+            String line;
+            while ((line = in.readLine()) != null)
+            {
+                result += &quot;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\n&quot; + line;
+            }
+
+        }catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+   //在这里我们还要对返回的json数据进行 要主动映射到modle上
+    ………
+        for (String credential : DUMMY_CREDENTIALS) {
+            String[] pieces = credential.split(&quot;:&quot;);
+            if (pieces[0].equals(mEmail)) {
+                // Account exists, return true if the password matches.
+                return pieces[1].equals(mPassword);
+            }
+        }
+
+        // TODO: register the new account here.
+        return true;
+    }
+
+    @Override
+    protected void onPostExecute(final Boolean success) {
+        mAuthTask = null;
+
+
+        if (success) {
+            // do SomeThing
+        } else {
+            mPasswordView.setError(getString(R.string.error_incorrect_password));
+            mPasswordView.requestFocus();
+        }
+    }
+
+    @Override
+    protected void onCancelled() {
+        mAuthTask = null;
+        showProgress(false);
+    }
+}
+
+private void enterhome() {
+    Intent intent = new Intent(LoginActivity.this, MainListActivity.class);
+    startActivity(intent);
+}
+</code></pre><p>发现原理也很简单，点击loginbtn开启一个异步线程 在AsyncTask在 doInBackground中访问登录API，在onPostExecute中进行UI更新；也能很简单流畅的解决UI线程请求网络 非UI线程更新UI的问题, 接下来介绍用Retrofit实现以上相同的功能的方式</p>
+<p><strong>2 Retrofit</strong></p>
+<pre><code>  /**
+ * 登录！
+ */
+private  void getLogin() {
+    Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl(&quot;http://localhost:8080/&quot;)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build();
+    ApiManager apiService = retrofit.create(ApiManager.class);
+
+    Call&lt;LoginResult&gt; call = apiService.getData(&quot;lyk&quot;, &quot;1234&quot;);
+   call.enqueue(new Callback&lt;LoginResult&gt;() {
+       @Override
+       public void onResponse(Call&lt;LoginResult&gt; call, Response&lt;LoginResult&gt; response) {
+           if (response.isSuccess()) {
+               // do SomeThing
+           } else {
+              //直接操作UI 返回的respone被直接解析成你指定的modle 
+           }
+       }
+
+       @Override
+       public void onFailure(Call&lt;LoginResult&gt; call, Throwable t) {
+
+           // do onFailure代码
+       }
+   });
+}
+</code></pre><p><strong>ApiManager接口</strong></p>
+<pre><code>/**
+ * Created by LIUYONGKUI on 2016-05-03.
+*/
+public interface ApiManager {
+
+ @GET(&quot;login/&quot;)
+ Call&lt;LoginResult&gt; getData(@Query(&quot;name&quot;) String name, @Query(&quot;password&quot;) String pw);
+</code></pre><p>好了 看了以上代码 或许你已经看到了他的链式优雅高大上的地方了，也许看不懂，有点蒙逼，但没关系我们继续入门。</p>
+<h2 id="1-配置gradle"><a href="#1-配置gradle" class="headerlink" title="1 配置gradle"></a>1 配置gradle</h2><pre><code>compile &apos;com.squareup.retrofit2:retrofit:2.0.0-beta4&apos;
+compile &apos;com.squareup.retrofit2:converter-gson:2.0.0-beta4&apos;  
+</code></pre><p>   com.squareup.retrofit2:converter-gson:2.0.0-beta4 此依赖非必须，只是方便我对http返回的数据进行解析。</p>
+<h2 id="2-定义实例化"><a href="#2-定义实例化" class="headerlink" title="2 定义实例化"></a>2 定义实例化</h2><p><strong>1》初始化Retrofit</strong></p>
+<pre><code>Retrofit retrofit = new Retrofit.Builder()
+         .baseUrl(&quot;http://localhost:8080/&quot;)
+         .addConverterFactory(GsonConverterFactory.create())
+          .build();
+</code></pre><p>  通过 Retrofit.Builder 来创建一个retrofit客户端，接着添加host url, 然后制定数据解析器，上面依赖的gson就是用在这里做默认数据返回的， 之后通过build()创建出来<br>    Retrofit也支持且内部自带如下格式：</p>
+<ul>
+<li><strong>Gson</strong>: com.squareup.retrofit2:converter-gson</li>
+<li><strong>Jackson</strong>: com.squareup.retrofit2:converter-jackson</li>
+<li><strong>Moshi</strong>: com.squareup.retrofit2:converter-moshi</li>
+<li><strong>Protobuf</strong>: com.squareup.retrofit2:converter-protobuf</li>
+<li><strong>Wire</strong>: com.squareup.retrofit2:converter-wire</li>
+<li><strong>Simple XML</strong>: com.squareup.retrofit2:converter-simplexml</li>
+<li><strong>Scalars (primitives, boxed, and String)</strong>: com.squareup.retrofit2:converter-scalars</li>
+</ul>
+<p><strong>2》编写API</strong></p>
+<pre><code>@GET(&quot;login/&quot;)
+Call&lt;LoginResult&gt; getData(@Query(&quot;name&quot;) String name, @Query(&quot;password&quot;) String pw);
+</code></pre><p>   Call<t>是继承Cloneable的 并支持泛型，且此类是Retrofit统一返回对象，支持Callback<t>回调，在2.0上已支持RxJava观察者对象Observable<t>，此案例暂时用call ，后面入门了retrofit之后再接入RxJava，接着我们可以传入制定的解析Modle，就会在主线程里返回对应的model数据，无需开发者手动解析json数据，返回格式由开发者自己设置，这里主要用注解@get @post 设置请求方式，后面<strong>“login/”</strong>是方法Url,  <strong>@Query</strong>(“name”)来设定body的parameters. </t></t></t></p>
+<ul>
+<li>如果想用表单 @FieldMap<pre><code>@FormUrlEncoded
+@POST(&quot;/url&quot;)
+ Call&lt;T&gt; postForm(
+     @FieldMap Map&lt;String , Object&gt; maps);
+</code></pre></li>
+</ul>
+<ul>
+<li><p>如果直接用对象 @Body</p>
+<pre><code>@POST(&quot;url&quot;)
+ Call&lt;T&gt; PostBody(
+      @Body Objects objects);
+</code></pre></li>
+<li><p>如果直接多参数 @QueryMap</p>
+<pre><code>@PUT(&quot;/url&quot;)
+Call&lt;T&gt; queryMap(
+      @QueryMap Map&lt;String, String&gt; maps);
+</code></pre></li>
+<li><p>如果上传文件 @Part</p>
+<pre><code>@Multipart
+@POST(&quot;/url&quot;)
+Call&lt;ResponseBody&gt; uploadFlie(
+      @Part(&quot;description&quot;) RequestBody description,
+      @Part(&quot;files&quot;) MultipartBody.Part file);
+</code></pre></li>
+</ul>
+<ul>
+<li><p>如果多文件上传 @PartMap()</p>
+<pre><code>@Multipart
+@POST(&quot;{url}&quot;)
+Call&lt;T&gt; uploadFiles(
+      @Path(&quot;url&quot;) String url,
+      @PartMap() Map&lt;String, RequestBody&gt; maps);
+</code></pre></li>
+</ul>
+<p><strong>3》 调用API</strong><br>Retrofit支持异步和同步，案例中用call.enqueue(new Callback<loginresult>）来采用异步请求，如果  调用call.execute() 则采用同步方式</loginresult></p>
+<pre><code>   Call&lt;LoginResult&gt; call = apiService.getData(&quot;lyk&quot;, &quot;1234&quot;);
+   call.enqueue(new Callback&lt;LoginResult&gt;() {
+       @Override
+       public void onResponse(Call&lt;LoginResult&gt; call, Response&lt;LoginResult&gt; response) {
+
+       }
+
+       @Override
+       public void onFailure(Call&lt;LoginResult&gt; call, Throwable t) {
+
+
+       }
+   });
+}
+</code></pre><p><strong>取消请求</strong></p>
+<p>   直接用call实例进行cancel即可</p>
+<pre><code>call.cancel(); 
+</code></pre><p>   如果还未理解请阅读参考入门资料:<a href="http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/0915/3460.html" target="_blank" rel="external">Retrofit 2.0：有史以来最大的改进</a></p>
+<h1 id="三-进阶拓展"><a href="#三-进阶拓展" class="headerlink" title="三 进阶拓展"></a>三 进阶拓展</h1><p>   通过以上的介绍和案列，我们了解了怎样运用Retrofit请求网络数据，展现数据更新UI，用什么数据模型接收 Retroifit就会返回什么类型的数据，我们也不用关心是否在主线程里访问网络 还是子线程更新ui的问题，但实际开发中会存在很多问题，很多同学会遇到：Retrofit的内部Log都无法输出 , header怎么加入，请求怎么支持https，包括怎么结合RxJava.? 不用担心，这些Retrofit 2.0 都提供了支持okhttp的自定义的Interceptor（拦截器），通过不同的Interceptor可以实现不同的自定义请求形式，比如统一加head，参数，加入证书（ssl）等，前提必须结合okhttp来实现 , 通过给OkHttpClient添加Interceptor，然后给Retrofit设置http客户端即可.Retrofit提供了<br>   .client(）方法供我们传入自定义的网络客户端，当然默认请求客户端就是okhttps.</p>
+<p> OkHttp入门请移步：<br> ~<a href="https://github.com/square/okhttp" target="_blank" rel="external">https://github.com/square/okhttp</a><br> ~ <a href="http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/0326/2643.html" target="_blank" rel="external">OKHttp源码解析</a></p>
+<h2 id="1-开启Log"><a href="#1-开启Log" class="headerlink" title="1 开启Log"></a>1 开启Log</h2><pre><code>Retrofit retrofit = new Retrofit.Builder().client(new OkHttpClient.Builder()
+
+                    .addNetworkInterceptor(
+                               new   HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS))        .build())
+</code></pre><h2 id="2-增加头部信息"><a href="#2-增加头部信息" class="headerlink" title="2 增加头部信息"></a>2 增加头部信息</h2><p>  通用请求头</p>
+<pre><code>new Retrofit.Builder()
+          .addConverterFactory(GsonConverterFactory.create())
+
+          .client(new OkHttpClient.Builder()
+                  .addInterceptor(new Interceptor() {
+                      @Override
+                      public Response intercept(Chain chain) throws IOException {
+                          Request request = chain.request()
+                                  .newBuilder()
+                                  .addHeader(&quot;mac&quot;, &quot;f8:00:ea:10:45&quot;)
+                                  .addHeader(&quot;uuid&quot;, &quot;gdeflatfgfg5454545e&quot;)
+                                  .addHeader(&quot;userId&quot;, &quot;Fea2405144&quot;)
+                                  .addHeader(&quot;netWork&quot;, &quot;wifi&quot;)
+                                  .build();
+                          return chain.proceed(request);
+                      }
+                  })
+
+                  .build()
+</code></pre><p>单独加入</p>
+<pre><code>@Headers({ &quot;Accept: application/vnd.github.v3.full+json&quot;, &quot;User-Agent: Retrofit-your-App&quot;})
+@get(&quot;users/{username}&quot;)
+Call&lt;User&gt;   getUser(@Path(&quot;username&quot;) String username);
+</code></pre><h2 id="3-添加证书Pinning"><a href="#3-添加证书Pinning" class="headerlink" title="3 添加证书Pinning"></a>3 添加证书Pinning</h2><p>  证书可以在自定义的OkHttpClient加入certificatePinner 实现</p>
+<pre><code>OkHttpClient client = new OkHttpClient.Builder()
+    .certificatePinner(new CertificatePinner.Builder()
+            .add(&quot;YOU API.com&quot;, &quot;sha1/DmxUShsZuNiqPQsX2Oi9uv2sCnw=&quot;)
+            .add(&quot;YOU API..com&quot;, &quot;sha1/SXxoaOSEzPC6BgGmxAt/EAcsajw=&quot;)
+            .add(&quot;YOU API..com&quot;, &quot;sha1/blhOM3W9V/bVQhsWAcLYwPU6n24=&quot;)
+            .add(&quot;YOU API..com&quot;, &quot;sha1/T5x9IXmcrQ7YuQxXnxoCmeeQ84c=&quot;)
+            .build())
+</code></pre><h2 id="4-支持https"><a href="#4-支持https" class="headerlink" title="4 支持https"></a>4 支持https</h2><p>  加密和普通http客户端请求支持https一样，步骤如下：</p>
+<blockquote>
+<p>1 CertificateFactory 得到Context.getSocketFactory<br>   2 添加证书源文件<br>   3 绑定到okhttpClient<br>   4设置okhttpClient到retrofit中</p>
+</blockquote>
+<p>   证书同样可以设置到okhttpclient中，我们可以把证书放到raw路径下</p>
+<pre><code>SLSocketFactory sslSocketFactory =getSSLSocketFactory_Certificate(context,&quot;BKS&quot;, R.raw.XXX);
+</code></pre><p><strong>准备证书源文件</strong></p>
+<p> 加入证书源文件，我的证书是放在Raw下面的： <img src="http://upload-images.jianshu.io/upload_images/2022038-78362355a77a9473?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="证书"></p>
+<p><strong>绑定证书</strong>   </p>
+<pre><code>protected static SSLSocketFactory getSSLSocketFactory(Context context, int[] certificates) {
+
+if (context == null) {
+    throw new NullPointerException(&quot;context == null&quot;);
+}
+
+CertificateFactory certificateFactory;
+try {
+    certificateFactory = CertificateFactory.getInstance(&quot;X.509&quot;);
+    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+    keyStore.load(null, null);
+
+    for (int i = 0; i &lt; certificates.length; i++) {
+        InputStream certificate = context.getResources().openRawResource(certificates[i]);
+        keyStore.setCertificateEntry(String.valueOf(i), certificateFactory.generateCertificate(certificate));
+
+        if (certificate != null) {
+            certificate.close();
+        }
+    }
+    SSLContext sslContext = SSLContext.getInstance(&quot;TLS&quot;);
+    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    trustManagerFactory.init(keyStore);
+    sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+   return sslContext.getSocketFactory();   
+</code></pre><p>   <strong>构建HostnameVerifier</strong></p>
+<pre><code> protected static HostnameVerifier getHostnameVerifier(final String[] hostUrls) {
+
+    HostnameVerifier TRUSTED_VERIFIER = new HostnameVerifier() {
+
+        public boolean verify(String hostname, SSLSession session) {
+            boolean ret = false;
+            for (String host : hostUrls) {
+                if (host.equalsIgnoreCase(hostname)) {
+                    ret = true;
+                }
+            }
+            return ret;
+        }
+    };
+
+return TRUSTED_VERIFIER;
+</code></pre><p>}</p>
+<p><strong>设置setSocketFactory</strong></p>
+<pre><code>okhttpBuilder.socketFactory(HttpsFactroy.getSSLSocketFactory(context, certificates));
+</code></pre><p>certificates 是你raw下证书源ID, int[] certificates = {R.raw.myssl}</p>
+<p><strong>设置setNameVerifie</strong></p>
+<pre><code>okhttpBuilder.hostnameVerifier(HttpsFactroy.getHostnameVerifier(hosts));
+</code></pre><p>hosts是你的host数据 列如 String hosts[]`= {“https//:aaaa,com”, “https//:bbb.com”}</p>
+<p><strong>实现自定义 添加到Retrofit</strong></p>
+<pre><code>okHttpClient = okhttpBuilder.build(); 
+Retrofit retrofit = new Retrofit.Builder() .client(okHttpClient) .build();
+</code></pre><hr>
+<p>#常规问题归总</p>
+<p>   <strong>1 url被转义</strong></p>
+<pre><code>http://api.myapi.com/http%3A%2F%2Fapi.mysite.com%2Fuser%2Flist
+</code></pre><p>  请将@path改成@url</p>
+<pre><code>public interface APIService { 
+ @GET Call&lt;Users&gt; getUsers(@Url String url);}
+</code></pre><p>   或者：</p>
+<pre><code>  public interface APIService {
+    @GET(&quot;{fullUrl}&quot;)
+    Call&lt;Users&gt; getUsers(@Path(value = &quot;fullUrl&quot;, encoded = true) String fullUrl);
+}
+</code></pre><p><strong>2Method方法找不到</strong></p>
+<blockquote>
+<p>java.lang.IllegalArgumentException: Method must not be null</p>
+</blockquote>
+<p>   请指定具体请求类型@get @post等</p>
+<pre><code>   public interface APIService { 
+
+   @GET Call&lt;Users&gt; getUsers(@Url String url);
+}
+</code></pre><p> <strong>3Url编码不对，@fieldMap parameters must be use FormUrlEncoded</strong></p>
+<p>  如果用fieldMap加上FormUrlEncoded编码</p>
+<pre><code>@POST()
+@FormUrlEncoded
+Observable&lt;ResponseBody&gt; executePost(
+        @FieldMap Map&lt;String, Object&gt; maps);
+</code></pre><p>   上层需要转换将自己的map转换为FieldMap</p>
+<pre><code>@FieldMap(encoded = true) Map&lt;String, Object&gt; parameters,
+</code></pre><p><strong>4 paht和url一起使用</strong></p>
+<p>  Using @Path and @Url paramers together with retrofit2  </p>
+<blockquote>
+<p>java.lang.IllegalArgumentException: @Path parameters may not be used with @Url. (parameter #4</p>
+</blockquote>
+<p>  如果你是这样的：</p>
+<pre><code> @GET
+Call&lt;DataResponse&gt; getOrder(@Url String url,
+ @Path(&quot;id&quot;) int id);
+</code></pre><p> 请在你的url指定占位符.url:</p>
+<pre><code>www.myAPi.com/{Id}
+</code></pre><h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>看了以上的知识点你发现Retrofit同样支持RxJava,通过以下设置Call适配模式.就可以完美关联RxJava。</p>
+<pre><code>retrofit .addCallAdapterFactory(RxJavaCallAdapterFactory.create())    
+</code></pre><p> 关于 Retrofit+ RxJava的案列, 结尾源码已经结合，以及实际遇到的坑可以看本人的系列文章（Retrofit+Rxjava使用技巧一文）。RxJava也是一款强大的多线程通讯利器，也支持本地线程安全，从以前编程习惯迁移到这种链式风格， 估计入门会让你头痛，但会让你在实际应用开发中无时无刻，随心所欲进行多线程响应式编程开发。一句话 ：谁用谁知道！</p>
+<p><strong>Retrofit 2.0系列请阅读</strong></p>
+<ul>
+<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
+</li>
+</ul>
+<ul>
+<li><a href="http://blog.csdn.net/sk719887916/article/details/52195428" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></li>
+</ul>
+<hr>
+<p>参考文章：</p>
+<ul>
+<li><a href="http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/0106/2275.html" target="_blank" rel="external">OkHttp使用教程</a></li>
+<li><a href="https://inthecheesefactory.com/blog/retrofit-2.0/en" target="_blank" rel="external">https://inthecheesefactory.com/blog/retrofit-2.0/en</a></li>
+</ul>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
+
+
+
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2016/06/07/12/"
+                    data-title="Retrofit 2.0 超能实践（一），完美支持加密Https传输"
+                    data-url="http://tamicer.com/2016/06/07/12/"
+                    data-images=""
+                    data-content="前阵子看到圈子里Retrofit 2.0，RxJava(Android),  OkHttp3.... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2016/06/10/jiamichuanshu_okhttp/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2016/03/14/This-is-Me/" data-toggle="tooltip" data-placement="top" title="博客终于开通啦！">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2016/06/07/12/"
+                        data-title="Retrofit 2.0 超能实践（一），完美支持加密Https传输"
+                        data-url="http://tamicer.com/2016/06/07/12/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2016/06/07/12/";
+    var disqus_url = "http://tamicer.com/2016/06/07/12/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
