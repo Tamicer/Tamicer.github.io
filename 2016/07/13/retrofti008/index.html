@@ -90,14 +90,14 @@
 
                         
                         <li>
-                            <a href="/archives/">Archives</a>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
 
                         
                         <li>
-                            <a href="/about/">About</a>
+                            <a href="/archives/">Archives</a>
                         </li>
                         
                     
@@ -210,7 +210,8 @@
 <p>Retrofit ：<a href="https://futurestud.io/blog" target="_blank" rel="external">https://futurestud.io/blog</a></p>
 </blockquote>
 <p>如果阅读外文吃力的话，建议阅读笔者之前的本系列文章</p>
-<p>#回顾Retrofit<br>Retrofit2.0是SQUARE美国一家移动支付公司最新发布的在Android平台上<code>http</code>访问客户端，具体简单用法列举</p>
+<p>#回顾Retrofit</p>
+<p>Retrofit2.0是SQUARE美国一家移动支付公司最新发布的在Android平台上<code>http</code>访问客户端，具体简单用法列举</p>
 <p> <strong>简单列子</strong></p>
 <figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment">// 创建ApiService</span></div><div class="line"><span class="keyword">public</span> <span class="keyword">interface</span> ApiService &#123;    </div><div class="line">    @GET(<span class="string">"service/getIpInfo.php"</span>)    <span class="keyword">Call</span>&lt;IpResult&gt; getData(@Query(<span class="string">"ip"</span>) String ip);</div><div class="line">&#125;</div><div class="line">   <span class="comment">// 实例化Retrofit</span></div><div class="line">    Retrofit retrofit = <span class="keyword">new</span> Retrofit.Builder()</div><div class="line">            .client(okHttpClient)</div><div class="line">            .baseUrl(url)</div><div class="line">            .build();</div><div class="line"></div><div class="line">    <span class="comment">// 构架ApiServiceImpl</span></div><div class="line">    ApiService apiService = retrofit.create(ApiService.<span class="keyword">class</span>);</div><div class="line">   </div><div class="line">     <span class="comment">// 执行异步请求</span></div><div class="line">    <span class="keyword">Call</span>&lt;IpResult&gt; <span class="keyword">call</span> = apiService.getData(<span class="string">"21.22.11.33"</span>);</div><div class="line"></div><div class="line">    <span class="keyword">call</span>.enqueue(<span class="keyword">new</span> Callback&lt;IpResult&gt;() &#123;</div><div class="line">        @Override</div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> onResponse(<span class="keyword">Call</span>&lt;IpResult&gt; <span class="keyword">call</span>, Response&lt;IpResult&gt; response) &#123;</div><div class="line"></div><div class="line">        &#125;</div><div class="line"></div><div class="line">        @Override</div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> onFailure(<span class="keyword">Call</span>&lt;IpResult&gt; <span class="keyword">call</span>, Throwable t) &#123;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">    &#125;);</div></pre></td></tr></table></figure>
 <p>代码很简洁，很多人甚是羡慕，想想自己何时才能写出如此优雅的代码，也想弄明白其内部怎么实现的，今天就给大家带来一款Tamic框架，来模仿下Retrofit的实现原理。<br>下文开始之前，不会对Retrofit的原理进行理论分析，其实也没这个必要，推荐一篇其他人写的文章：</p>
@@ -245,12 +246,25 @@
 <blockquote>
 <p>compile    ‘com.loopj.android:android-async-http:1.4.9’<br>compile ‘com.alibaba:fastjson:1.2.12’</p>
 </blockquote>
-<p>果不其然，并没有关于<code>Retrofit</code>的任何依赖，说明我们的<strong>Tamic</strong>并无投机取巧。<br>本次实现只关注Retrofit整体了一个流程思想，其他Retrofit的功能其实就通过以上思想来扩展的，设置解析工厂，返回内容格式，文件上传，下载等，本次实现并没有深入模仿，因为Retrofit整个流程思想比较系统，其他Api和普通Get请求一样，稍微改造一下就可以了。<br>与其说是对Retrofit的借鉴，还不如是对Ioc和Aop思想的综合运用。大家也发现本次主要学习依赖注入，和控反转的AOP思想，以及加入代理和接口编程，旨在以后的开发道路上能自我实现一种开发框架，如果感兴趣的同学可以去自我模仿一个<strong>RxJava</strong>.<br>如果你目前项目非常大，网络接口一直以前的httpclient的朋友，可以大但的迁移到Retrofit，只要你稍微做下接口适配，就能很好的让老旧Api接通Retrofit，或者也可以将老Api改造成属于你的<code>Retrofit</code>请求端！领导都无法阻止你用<code>Retrofit</code>的步伐…</p>
+<p>果不其然，并没有关于<code>Retrofit</code>的任何依赖，说明我们的<strong>Tamic</strong>并无投机取巧。<br>本次实现只关注Retrofit整体了一个流程思想，其他Retrofit的功能其实就通过以上思想来扩展的，设置解析工厂，返回内容格式，文件上传，下载等，本次实现并没有深入模仿，因为Retrofit整个流程思想比较系统，其他Api和普通Get请求一样，稍微改造一下就可以了。<br>与其说是对Retrofit的借鉴，还不如是对Ioc和Aop思想的综合运用。大家也发现本次主要学习依赖注入，和控反转的AOP思想，以及加入代理和接口编程，旨在以后的开发道路上能自我实现一种开发框架，如果感兴趣的同学可以去自我模仿一个<strong>RxJava</strong>.<br>如果你目前项目非常大，网络接口一直以前的·httpclien·t的朋友，可以大但的迁移到Retrofit，只要你稍微做下接口适配，就能很好的让老旧Api接通Retrofit，或者也可以将老Api改造成属于你的<code>Retrofit</code>请求端！领导都无法阻止你用<code>Retrofit</code>的步伐…</p>
 <p>最后感谢淘宝的测试地址:</p>
 <blockquote>
 <p>URL：”<a href="http://ip.taobao.com/service/getIpInfo.php?ip=21.22.11.33" target="_blank" rel="external">http://ip.taobao.com/service/getIpInfo.php?ip=21.22.11.33</a>“;</p>
 </blockquote>
 <p>源码：<br><a href="https://github.com/Tamicer/Tamic_Retrofit" target="_blank" rel="external">https://github.com/Tamicer/Tamic_Retrofit</a></p>
+<p>猜你喜欢；</p>
+<ul>
+<li><a href="https://tamicer.github.io/2016/08/10/novate10/" target="_blank" rel="external">Novate网络库：Retrofit2.0和RxJava1.x的又一次完美封装</a>。</li>
+<li><a href="https://tamicer.github.io/2016/08/01/retrofit010/" target="_blank" rel="external">Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！</a></li>
+<li><a href="https://tamicer.github.io/2016/07/13/retrofti008/" target="_blank" rel="external">Retrofit 2.0 超能实践（八）源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架</a></li>
+<li><a href="https://tamicer.github.io/2016/07/12/retrofti007/" target="_blank" rel="external">Retrofit 2.0 超能实践（七）Rxjava +Retrofit 你需要掌握的几个经典技巧</a></li>
+<li><a href="https://tamicer.github.io/2016/07/08/retrofti006/" target="_blank" rel="external">Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</a></li>
+<li><a href="https://tamicer.github.io/2016/07/03/retrofit5/" target="_blank" rel="external">Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter</a></li>
+<li><a href="https://tamicer.github.io/2016/06/17/retrofit_004/" target="_blank" rel="external">Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</a></li>
+<li><a href="https://tamicer.github.io/2016/06/14/retrofti3/" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传</a></li>
+<li><a href="https://tamicer.github.io/2016/06/10/jiamichuanshu_okhttp/" target="_blank" rel="external">Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</a></li>
+<li><a href="https://tamicer.github.io/2016/06/07/12/" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a></li>
+</ul>
 
 
                 <hr>

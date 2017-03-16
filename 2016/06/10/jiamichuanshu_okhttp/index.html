@@ -90,14 +90,14 @@
 
                         
                         <li>
-                            <a href="/archives/">Archives</a>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
 
                         
                         <li>
-                            <a href="/about/">About</a>
+                            <a href="/archives/">Archives</a>
                         </li>
                         
                     
@@ -197,11 +197,11 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-                <p>通过对Retrofit2.0的&lt;<a href="https://tamicer.github.io/2017/03/14/12/" target="_blank" rel="external">Retrofit 2.0 超能实践，完美支持Https传输</a>&gt;基础入门和案例实践，掌握了怎么样使用Retrofit访问网络，加入自定义header，包括加入SSL证书，基本的调试基础，但是正常的开发中会涉及cookie同步问题，可以实现一些自动或免登录登陆问题，接下来进入cookie同步姿势</p>
-<h1 id="Cookie"><a href="#Cookie" class="headerlink" title="Cookie"></a>Cookie</h1><p>   Cookies是一种能够让网站服务器把少量数据储存到客户端的硬盘或内存，或是从客户端的硬盘读取数据的一种技术。Cookies是当你浏览某网站时，由Web服务器置于你硬盘上的一个非常小的文本文件，它可以记录你的用户ID、密码、浏览过的网页、停留的时间等信息。当你再次来到该网站时，网站通过读取Cookies，得知你的相关信息，就可以做出相应的动作，如在页面显示欢迎你的标语，或者让你不用输入ID、密码就直接登录等等。 </p>
+                <p>通过对Retrofit2.0的<a href="https://tamicer.github.io/2016/06/07/12/" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a>基础入门和案例实践，掌握了怎么样使用Retrofit访问网络，加入自定义header，包括加入SSL证书，基本的调试基础，但是正常的开发中会涉及cookie同步问题，可以实现一些自动或免登录登陆问题，接下来进入cookie同步姿势</p>
+<h1 id="Cookie"><a href="#Cookie" class="headerlink" title="Cookie"></a>Cookie</h1><p>Cookies是一种能够让网站服务器把少量数据储存到客户端的硬盘或内存，或是从客户端的硬盘读取数据的一种技术。Cookies是当你浏览某网站时，由Web服务器置于你硬盘上的一个非常小的文本文件，它可以记录你的用户ID、密码、浏览过的网页、停留的时间等信息。当你再次来到该网站时，网站通过读取Cookies，得知你的相关信息，就可以做出相应的动作，如在页面显示欢迎你的标语，或者让你不用输入ID、密码就直接登录等等。 </p>
 <p>从本质上讲，它可以看作是你的身份证。但Cookies不能作为代码执行，也不会传送病毒，且为你所专有，并只能由提供它的服务器来读取。保存的信息片断以“名/值”对(name-value pairs)的形式储存，一个“名/值”对仅仅是一条命名的数据。一个网站只能取得它放在你的电脑中的信息，它无法从其它的Cookies文件中取得信息，也无法得到你的电脑上的其它任何东西。 </p>
 <p>Cookies中的内容大多数经过了加密处理，因此一般用户看来只是一些毫无意义的字母数字组合，只有服务器的CGI处理程序才知道它们真正的含义。 </p>
-<p>Cookie也是http的会话跟踪技术，也包含web端的session。cookie的作用就是为了解决HTTP协议无状态的缺陷所作的努力.</p>
+<p>Cookie也是http的会话跟踪技术，也包含web端的<code>session</code>。<code>cookie</code>的作用就是为了解决HTTP协议无状态的缺陷所作的努力.</p>
 <p>#方式一：</p>
 <h1 id="自定义cookie"><a href="#自定义cookie" class="headerlink" title="自定义cookie"></a>自定义cookie</h1><p> HttpClient中大家都知道加入cookie的方式</p>
 <figure class="highlight axapta"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">AsyncHttpClient <span class="keyword">client</span> = <span class="keyword">new</span> AsyncHttpClient();</div><div class="line">PersistentCookieStore myCookieStore = <span class="keyword">new</span> PersistentCookieStore(MainActivity.<span class="keyword">this</span>);</div><div class="line"><span class="keyword">client</span>.setCookieStore(myCookieStore);</div></pre></td></tr></table></figure>
@@ -256,23 +256,16 @@ okHttpClient.interceptors().add(new SaveCookiesInterceptor());
 <p>so iz 或许下一步你将会Retrofit遇到文件和图片上传问题，别急会  干货即将来临！</p>
 <p><strong>Retrofit 2.0系列请阅读</strong></p>
 <ul>
-<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0 超能实践，完美支持Https传输</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） Okhttp完美同步Cookie实现免登录</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 和Rxjava封装的超好用的RetrofitClient工具类</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
-</li>
-</ul>
-<ul>
-<li><a href="http://blog.csdn.net/sk719887916/article/details/52195428" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></li>
+<li><a href="https://tamicer.github.io/2016/08/10/novate10/" target="_blank" rel="external">Novate网络库：Retrofit2.0和RxJava1.x的又一次完美封装</a>。</li>
+<li><a href="https://tamicer.github.io/2016/08/01/retrofit010/" target="_blank" rel="external">Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！</a></li>
+<li><a href="https://tamicer.github.io/2016/07/13/retrofti008/" target="_blank" rel="external">Retrofit 2.0 超能实践（八）源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架</a></li>
+<li><a href="https://tamicer.github.io/2016/07/12/retrofti007/" target="_blank" rel="external">Retrofit 2.0 超能实践（七）Rxjava +Retrofit 你需要掌握的几个经典技巧</a></li>
+<li><a href="https://tamicer.github.io/2016/07/08/retrofti006/" target="_blank" rel="external">Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</a></li>
+<li><a href="https://tamicer.github.io/2016/07/03/retrofit5/" target="_blank" rel="external">Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter</a></li>
+<li><a href="https://tamicer.github.io/2016/06/17/retrofit_004/" target="_blank" rel="external">Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</a></li>
+<li><a href="https://tamicer.github.io/2016/06/14/retrofti3/" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传</a></li>
+<li><a href="https://tamicer.github.io/2016/06/10/jiamichuanshu_okhttp/" target="_blank" rel="external">Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</a></li>
+<li><a href="https://tamicer.github.io/2016/06/07/12/" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a></li>
 </ul>
 <p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
 
@@ -292,7 +285,7 @@ okHttpClient.interceptors().add(new SaveCookiesInterceptor());
                     data-title="Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录"
                     data-url="http://tamicer.com/2016/06/10/jiamichuanshu_okhttp/"
                     data-images=""
-                    data-content="通过对Retrofit2.0的&lt;Retrofit 2.0 超能实践，完美支持Https传... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    data-content="通过对Retrofit2.0的Retrofit 2.0 超能实践（一），完美支持加密Https... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -316,7 +309,7 @@ okHttpClient.interceptors().add(new SaveCookiesInterceptor());
                     
                     
                         <li class="next">
-                            <a href="/2016/06/07/12/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（一），完美支持加密Https传输">Next Post &rarr;</a>
+                            <a href="/2016/06/07/12/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（一）完美支持加密Https传输">Next Post &rarr;</a>
                         </li>
                     
                 </ul>

@@ -90,14 +90,14 @@
 
                         
                         <li>
-                            <a href="/archives/">Archives</a>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
 
                         
                         <li>
-                            <a href="/about/">About</a>
+                            <a href="/archives/">Archives</a>
                         </li>
                         
                     
@@ -205,27 +205,22 @@
 <p>作者/Tamic<br><a href="http://www.tamicer.com" target="_blank" rel="external">http://www.tamicer.com</a></p>
 </blockquote>
 <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p><img src="http://upload-images.jianshu.io/upload_images/2022038-6a900d93d8acb091.jpg" alt="Novate"></p>
-<p>  用过RxJava和Retrofit的朋友，用久了就会发现Retrofit说难不难，说易亦不易，对于实际项目中，单纯的运用Retrofit做网络请求库，开发起来还是有很多不便，诸如必须要对请求头和参数处理，API接口数目众多的情况下处理起来也不便， 还有Https证书验签，cookie持久，错误结果码处理，统一操作加载过渡UI等也存在不便，因此我对Retrofit再次进行了封装，一直关注我的朋友以前看我封装的《 <a href="http://blog.csdn.net/sk719887916/article/details/51958010" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a>》的一文，已对Retrofit结合RxJava时遇到上面的问题进行了完整封装，很多场景还未做到全面，也不是和Retrofit源码一样的<code>Builder</code>模式，因此感觉还是不太完美，特此我进行了长达两个月<strong>Novate</strong> 框架的开发，给旧的<code>HttpClent</code>迁移到<code>Retrofit2.0</code>也是带来了福音（不需要开发者掌握<code>RxJava</code>和<code>Retrofit</code>）。</p>
+<p>  用过RxJava和Retrofit的朋友，用久了就会发现Retrofit说难不难，说易亦不易，对于实际项目中，单纯的运用Retrofit做网络请求库，开发起来还是有很多不便，诸如必须要对请求头和参数处理，API接口数目众多的情况下处理起来也不便， 还有Https证书验签，cookie持久，错误结果码处理，统一操作加载过渡UI等也存在不便，因此我对Retrofit再次进行了封装，一直关注我的朋友以前看我封装的《 <a href="https://tamicer.github.io/2016/07/08/retrofti006/" target="_blank" rel="external">Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</a>》的一文，已对Retrofit结合RxJava时遇到上面的问题进行了完整封装，很多场景还未做到全面，也不是和Retrofit源码一样的<code>Builder</code>模式，因此感觉还是不太完美，特此我进行了长达两个月<strong>Novate</strong> 框架的开发，给旧的<code>HttpClent</code>迁移到<code>Retrofit2.0</code>也是带来了福音（不需要开发者掌握<code>RxJava</code>和<code>Retrofit</code>）。</p>
 <p>本框架从6月问世以来，无论对入门Rxjava还是实战retrofit的朋友，或多或少的带来的参考价值，无论你是copy源码还是采用maven形式。所以让我有动力进行下一版本（2.X）的强化！</p>
 <p> <strong>为何起名为<em>Novate</em>？</strong></p>
 <p>Novate的英文原意是用新事物代替 ，我开发目的是用新的东西来代替Retrofit结合Rxjava共同开发时的有些不易操作的地方，因此起名新奇的东西，所以结合了原来的<code>HttpClient</code>用法习惯，又加入了<code>Retrofit</code>和<code>RxJava</code>的特性，因此起名 ：<strong>Novate</strong></p>
 <p>进行下文前请先了解<code>Retrofit</code>和<code>Rxjava</code>，未阅读的请移步：</p>
-<p><strong>系列导读</strong>：</p>
 <ul>
-<li><p><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
-</li>
+<li>-<a href="https://tamicer.github.io/2016/08/10/novate10/" target="_blank" rel="external">Novate网络库：Retrofit2.0和RxJava1.x的又一次完美封装</a>。</li>
+<li><a href="https://tamicer.github.io/2016/08/01/retrofit010/" target="_blank" rel="external">Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！</a></li>
+<li><a href="https://tamicer.github.io/2016/07/13/retrofti008/" target="_blank" rel="external">Retrofit 2.0 超能实践（八）源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架</a></li>
+<li><a href="https://tamicer.github.io/2016/07/12/retrofti007/" target="_blank" rel="external">Retrofit 2.0 超能实践（七）Rxjava +Retrofit 你需要掌握的几个经典技巧</a></li>
+<li><a href="https://tamicer.github.io/2016/07/08/retrofti006/" target="_blank" rel="external">Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</a></li>
+<li><a href="https://tamicer.github.io/2016/07/03/retrofit5/" target="_blank" rel="external">Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter</a></li>
+<li><a href="https://tamicer.github.io/2016/06/17/retrofit_004/" target="_blank" rel="external">Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</a></li>
+<li><a href="https://tamicer.github.io/2016/06/14/retrofti3/" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传</a></li>
+<li><a href="https://tamicer.github.io/2016/06/10/jiamichuanshu_okhttp/" target="_blank" rel="external">Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</a></li>
+<li><a href="https://tamicer.github.io/2016/06/07/12/" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a></li>
 </ul>
 <h1 id="功能介绍"><a href="#功能介绍" class="headerlink" title="功能介绍"></a>功能介绍</h1><p>Novate的改进</p>
 <ul>
@@ -643,6 +638,19 @@ if (!subscription.isUnsubscribed()) {
 <p>#结束</p>
 <p> 如果你对本框架有无法满足你的需求或有何更好的想法，请及时联系我进行交流，谢谢您的支持！欢迎您的star. Tamic期待更多的技术大牛开车指导！</p>
 <p><strong>GitHub: <a href="https://github.com/Tamicer/Novate" target="_blank" rel="external">https://github.com/Tamicer/Novate</a></strong></p>
+<hr>
+<ul>
+<li>-<a href="https://tamicer.github.io/2016/08/10/novate10/" target="_blank" rel="external">Novate网络库：Retrofit2.0和RxJava1.x的又一次完美封装</a>。</li>
+<li><a href="https://tamicer.github.io/2016/08/01/retrofit010/" target="_blank" rel="external">Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！</a></li>
+<li><a href="https://tamicer.github.io/2016/07/13/retrofti008/" target="_blank" rel="external">Retrofit 2.0 超能实践（八）源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架</a></li>
+<li><a href="https://tamicer.github.io/2016/07/12/retrofti007/" target="_blank" rel="external">Retrofit 2.0 超能实践（七）Rxjava +Retrofit 你需要掌握的几个经典技巧</a></li>
+<li><a href="https://tamicer.github.io/2016/07/08/retrofti006/" target="_blank" rel="external">Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</a></li>
+<li><a href="https://tamicer.github.io/2016/07/03/retrofit5/" target="_blank" rel="external">Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter</a></li>
+<li><a href="https://tamicer.github.io/2016/06/17/retrofit_004/" target="_blank" rel="external">Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</a></li>
+<li><a href="https://tamicer.github.io/2016/06/14/retrofti3/" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传</a></li>
+<li><a href="https://tamicer.github.io/2016/06/10/jiamichuanshu_okhttp/" target="_blank" rel="external">Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</a></li>
+<li><a href="https://tamicer.github.io/2016/06/07/12/" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a></li>
+</ul>
 <hr>
 <p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
 

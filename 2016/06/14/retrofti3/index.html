@@ -90,14 +90,14 @@
 
                         
                         <li>
-                            <a href="/archives/">Archives</a>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
 
                         
                         <li>
-                            <a href="/about/">About</a>
+                            <a href="/archives/">Archives</a>
                         </li>
                         
                     
@@ -278,156 +278,42 @@ Observable&lt;ResponseBody&gt; uploads(
         @Part(&quot;description&quot;) RequestBody description,
         @Part(&quot;filekey&quot;) MultipartBody.Part file);
 </code></pre><h2 id="图文同时上报"><a href="#图文同时上报" class="headerlink" title="图文同时上报"></a><strong>图文同时上报</strong></h2><p> <strong>Part方式</strong></p>
-<pre><code>@Multipart
-@POST(&quot;upload/&quot;)
-Call&lt;ResponseBody&gt; register(
-                                   @FieldMap Map&lt;String , String&gt; usermaps,
-                                   @Part(&quot;avatar\\&quot;; filename=\\&quot;avatar.jpg&quot;) RequestBody avatar,
-                                   );
-</code></pre><p>  扩展一下：</p>
-<pre><code>@Multipart
-@POST
-Observable&lt;ResponseBody&gt; uploadFileWithPartMap(
-        @Url() String url,
-        @PartMap() Map&lt;String, RequestBody&gt; partMap,
-        @Part(&quot;file&quot;) MultipartBody.Part file);
-</code></pre><p>   java代码：</p>
-<pre><code>RequestBody requestFile =
-            RequestBody.create(MediaType.parse(&quot;multipart/form-data&quot;), file);
-
-    // MultipartBody.Part is used to send also the actual file name
-    MultipartBody.Part filePart = MultipartBody.Part.createFormData(&quot;file&quot;, file.getName(), requestFile);
-
-    // create a map of data to pass along
-    RequestBody tokenBody = RequestBody.create(
-            MediaType.parse(&quot;multipart/form-data&quot;), token);
-
-    HashMap&lt;String, RequestBody&gt; map = new HashMap&lt;&gt;();
-    map.put(&quot;token&quot;, tokenBody);
-
-    Call&lt;ResponseBody&gt; call = service.uploadFileWithPartMap(url, requestBody );
-   // 执行
-  call.enqueue(new Callback&lt;ResponseBody&gt;() {
-   @Override
-   public void onResponse(Call&lt;ResponseBody&gt; call,
-    Response&lt;ResponseBody&gt; response) {
-       Log.v(&quot;Upload&quot;, &quot;success&quot;);
-    }
-
-   @Override
-    public void onFailure(Call&lt;ResponseBody&gt; call, Throwable t) {
-      Log.e(&quot;Upload error:&quot;, t.getMessage());
-    }
-  });
-</code></pre><p><strong>更简单的用Body方式：</strong></p>
-<pre><code> @POST()
-Call&lt;ResponseBody&gt; upLoad(
-   @Url() String url,
-   @Body RequestBody Body);
-</code></pre><p> Java代码：</p>
-<pre><code>  //构建body
-  RequestBody requestBody = new MultipartBody.Builder().setType(MultipartBody.FORM)
-     .addFormDataPart(&quot;name&quot;, name)
-     .addFormDataPart(&quot;name&quot;, psd)
-     .addFormDataPart(&quot;file&quot;, file.getName(), RequestBody.create(MediaType.parse(&quot;image/*&quot;), file))
-     .build();
-
-  Call&lt;ResponseBody&gt; call = service.upload(url, requestBody );
- // 执行
-call.enqueue(new Callback&lt;ResponseBody&gt;() {
-  @Override
-  public void onResponse(Call&lt;ResponseBody&gt; call,
-   Response&lt;ResponseBody&gt; response) {
-      Log.v(&quot;Upload&quot;, &quot;success&quot;);
-   }
-
-  @Override
-   public void onFailure(Call&lt;ResponseBody&gt; call, Throwable t) {
-     Log.e(&quot;Upload error:&quot;, t.getMessage());
-   }
- });
-</code></pre><p> 此种方式让你很好的解决了用户注册问题,包含用户全部信息和头像，完美解决你想用表单一起将文字和图片一起提交的情况！</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">  </div><div class="line"><span class="variable">@Multipart</span></div><div class="line"><span class="variable">@POST</span>(<span class="string">"upload/"</span>)</div><div class="line">Call&lt;ResponseBody&gt; register(</div><div class="line">                                   <span class="variable">@FieldMap</span> Map&lt;String , String&gt; usermaps,</div><div class="line">                                   <span class="variable">@Part</span>(<span class="string">"avatar\\"</span>; filename=\\<span class="string">"avatar.jpg"</span>) RequestBody avatar,</div><div class="line">                                   );</div></pre></td></tr></table></figure>
+<p>  扩展一下：</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="variable">@Multipart</span></div><div class="line"><span class="variable">@POST</span></div><div class="line">Observable&lt;ResponseBody&gt; uploadFileWithPartMap(</div><div class="line">        <span class="variable">@Url</span>() String url,</div><div class="line">        <span class="variable">@PartMap</span>() Map&lt;String, RequestBody&gt; partMap,</div><div class="line">        <span class="variable">@Part</span>(<span class="string">"file"</span>) MultipartBody.Part file);</div></pre></td></tr></table></figure>
+<p>   java代码：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">RequestBody requestFile =</div><div class="line">            RequestBody.create(MediaType.parse(<span class="string">"multipart/form-data"</span>), <span class="keyword">file</span>);</div><div class="line"></div><div class="line">    <span class="comment">// MultipartBody.Part is used to send also the actual file name</span></div><div class="line">    MultipartBody.Part filePart = MultipartBody.Part.createFormData(<span class="string">"file"</span>, <span class="keyword">file</span>.getName(), requestFile);</div><div class="line"></div><div class="line">    <span class="comment">// create a map of data to pass along</span></div><div class="line">    RequestBody tokenBody = RequestBody.create(</div><div class="line">            MediaType.parse(<span class="string">"multipart/form-data"</span>), token);</div><div class="line"></div><div class="line">    HashMap&lt;String, RequestBody&gt; map = <span class="keyword">new</span> HashMap&lt;&gt;();</div><div class="line">    map.put(<span class="string">"token"</span>, tokenBody);</div><div class="line"></div><div class="line">    <span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span> = service.uploadFileWithPartMap(url, requestBody );</div><div class="line">   <span class="comment">// 执行</span></div><div class="line">  <span class="keyword">call</span>.enqueue(<span class="keyword">new</span> Callback&lt;ResponseBody&gt;() &#123;</div><div class="line">   @Override</div><div class="line">   <span class="keyword">public</span> <span class="keyword">void</span> onResponse(<span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span>,</div><div class="line">    Response&lt;ResponseBody&gt; response) &#123;</div><div class="line">       Log.v(<span class="string">"Upload"</span>, <span class="string">"success"</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">   @Override</div><div class="line">    <span class="keyword">public</span> <span class="keyword">void</span> onFailure(<span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span>, Throwable t) &#123;</div><div class="line">      Log.e(<span class="string">"Upload error:"</span>, t.getMessage());</div><div class="line">    &#125;</div><div class="line">  &#125;);</div></pre></td></tr></table></figure>
+<p><strong>更简单的用Body方式：</strong></p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="variable">@POST</span>()</div><div class="line">Call&lt;ResponseBody&gt; upLoad(</div><div class="line">   <span class="variable">@Url</span>() String url,</div><div class="line">   <span class="variable">@Body</span> RequestBody Body);</div></pre></td></tr></table></figure>
+<p> Java代码：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">  <span class="comment">//构建body</span></div><div class="line">  RequestBody requestBody = <span class="keyword">new</span> MultipartBody.Builder().setType(MultipartBody.FORM)</div><div class="line">     .addFormDataPart(<span class="string">"name"</span>, name)</div><div class="line">     .addFormDataPart(<span class="string">"name"</span>, psd)</div><div class="line">     .addFormDataPart(<span class="string">"file"</span>, <span class="keyword">file</span>.getName(), RequestBody.create(MediaType.parse(<span class="string">"image/*"</span>), <span class="keyword">file</span>))</div><div class="line">     .build();</div><div class="line">    </div><div class="line">  <span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span> = service.upload(url, requestBody );</div><div class="line"> <span class="comment">// 执行</span></div><div class="line"><span class="keyword">call</span>.enqueue(<span class="keyword">new</span> Callback&lt;ResponseBody&gt;() &#123;</div><div class="line">  @Override</div><div class="line">  <span class="keyword">public</span> <span class="keyword">void</span> onResponse(<span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span>,</div><div class="line">   Response&lt;ResponseBody&gt; response) &#123;</div><div class="line">      Log.v(<span class="string">"Upload"</span>, <span class="string">"success"</span>);</div><div class="line">   &#125;</div><div class="line">    </div><div class="line">  @Override</div><div class="line">   <span class="keyword">public</span> <span class="keyword">void</span> onFailure(<span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span>, Throwable t) &#123;</div><div class="line">     Log.e(<span class="string">"Upload error:"</span>, t.getMessage());</div><div class="line">   &#125;</div><div class="line"> &#125;);</div></pre></td></tr></table></figure>
+<p> 此种方式让你很好的解决了用户注册问题,包含用户全部信息和头像，完美解决你想用表单一起将文字和图片一起提交的情况！</p>
 <h1 id="表单提交"><a href="#表单提交" class="headerlink" title="表单提交"></a>表单提交</h1><p> 很多时候想用表单的方式：</p>
-<pre><code>@Multipart
-@POST(&quot;upload/&quot;)
-Call&lt;ResponseBody&gt; register(
-       @Body RequestBody body
-                                   );
-</code></pre><p>  Java代码：</p>
-<pre><code>   RequestBody requestFile =
-RequestBody.create(MediaType.parse(&quot;multipart/form-data&quot;), file);
-
-  Call&lt;ResponseBody&gt; call = service.register(body);  
-Response&lt;ResponseBody&gt; response = call.execute();
-</code></pre><p>##Json提交</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="variable">@Multipart</span></div><div class="line"><span class="variable">@POST</span>(<span class="string">"upload/"</span>)</div><div class="line">Call&lt;ResponseBody&gt; register(</div><div class="line">       <span class="variable">@Body</span> RequestBody body</div><div class="line">                                   );</div></pre></td></tr></table></figure>
+<p>  Java代码：</p>
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">   RequestBody requestFile =</div><div class="line">RequestBody.create(MediaType.parse(<span class="string">"multipart/form-data"</span>), file);</div><div class="line"></div><div class="line">  <span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span> = service.register(body);  </div><div class="line"><span class="built_in">Response</span>&lt;ResponseBody&gt; <span class="built_in">response</span> = <span class="keyword">call</span>.<span class="keyword">execute</span>();</div></pre></td></tr></table></figure>
+<p>##Json提交</p>
 <p><strong>上传Json</strong></p>
-<pre><code>@POST(&quot;/uploadJson&quot;)
-Observable&lt;ResponseBody&gt; uploadjson(
-        @Body RequestBody jsonBody);
-</code></pre><p><strong>upLoadJson 也可以具体指明Content-Type 为 “application/json”格式的</strong></p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="variable">@POST</span>(<span class="string">"/uploadJson"</span>)</div><div class="line">Observable&lt;ResponseBody&gt; uploadjson(</div><div class="line">        <span class="variable">@Body</span> RequestBody jsonBody);</div></pre></td></tr></table></figure>
+<p><strong><code>upLoadJson</code> 也可以具体指明<code>Content-Type</code>为 “<code>application/json</code>”格式的</strong></p>
 <p>具体组装我们的RequestBody则可以这样:</p>
-<pre><code>RequestBody body= 
-              RequestBody.create(okhttp3.MediaType.parse(&quot;application/json; charset=utf-8&quot;), jsonString);
-</code></pre><p>接着可以这样调用：</p>
-<pre><code>// 执行请求
-Call&lt;ResponseBody&gt; call = service.uploadJson(description, body);
-call.enqueue(new Callback&lt;ResponseBody&gt;() {
-    @Override
-    public void onResponse(Call&lt;ResponseBody&gt; call,
-                           Response&lt;ResponseBody&gt; response) {
-        Log.v(&quot;Upload&quot;, &quot;success&quot;);
-    }
-
-    @Override
-    public void onFailure(Call&lt;ResponseBody&gt; call, Throwable t) {
-        Log.e(&quot;Upload error:&quot;, t.getMessage());
-    }
-});
-</code></pre><p>}</p>
-<p>至于服务器返回什么类型的<strong>model</strong>, 开发者可以自定义， 譬如你可以把APi 中的 ResponseBody 指定为你自己的<code>javaBean</code>, 当然上层构建Call时候，<code>Callback</code>也必须是 <code>Call&lt;MyBean&gt;</code></p>
-<pre><code>@POST(&quot;/uploadJson&quot;)
-Call&lt;MyBean&gt; uploadjson(
-        @Body RequestBody jsonBody);
-</code></pre><p>仔细的朋友会发现有的地方用Call，有的地方用Observable,如果结合了RxJava就是用后者接收了，这里不关乎什么方式。</p>
-<p>上面的代码片段中显示的代码初始化(RequestBody 和description), 以及如何使用文件上传API。正如刚开始已经提到的, 从OkHttp 的RequestBody类中，需要两个RequestBody.create（）方法</p>
-<p>除了Body描述, 必须将添加文件包装成MultipartBody的实例。这就是你需要使用适当的从客户端上传文件到服务端。此外, 您可以添加createFormData中的uploadFile(Uri fileUri)方法，适合相机拍照回来上传图片的场景。</p>
-<pre><code>  public static File getFile(Context context, Uri uri) {
-    if (uri != null) {
-        String path = getPath(context, uri);
-        if (path != null &amp;&amp; isLocal(path)) {
-            return new File(path);
-        }
-    }
-    return null;
-}
-</code></pre><p>  通过以上代码片段，可以构造自己的file, 其他构建ResquestBody的步骤同上所示，以上案列总有一款适合你的web后端。</p>
-<h1 id="设置-Content-Type"><a href="#设置-Content-Type" class="headerlink" title="设置  Content-Type"></a>设置  Content-Type</h1><p>请注意设置的内容类型。如果你拦截底层OkHttp客户端和更改内容类型为application / json, 你的服务器可能反序列化过程出现的问题。请确保你没有自定义更改multipart/form-data。</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="attribute">RequestBody body</span>= </div><div class="line">                 RequestBody.create(okhttp3.MediaType.parse(<span class="string">"application/json; charset=utf-8"</span>), jsonString);</div></pre></td></tr></table></figure>
+<p>接着可以这样调用：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">    </div><div class="line">    <span class="comment">// 执行请求</span></div><div class="line">    <span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span> = service.uploadJson(<span class="keyword">description</span>, body);</div><div class="line">    <span class="keyword">call</span>.enqueue(<span class="keyword">new</span> Callback&lt;ResponseBody&gt;() &#123;</div><div class="line">        @Override</div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> onResponse(<span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span>,</div><div class="line">                               Response&lt;ResponseBody&gt; response) &#123;</div><div class="line">            Log.v(<span class="string">"Upload"</span>, <span class="string">"success"</span>);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        @Override</div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> onFailure(<span class="keyword">Call</span>&lt;ResponseBody&gt; <span class="keyword">call</span>, Throwable t) &#123;</div><div class="line">            Log.e(<span class="string">"Upload error:"</span>, t.getMessage());</div><div class="line">        &#125;</div><div class="line">    &#125;);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>至于服务器返回什么类型的<strong>model</strong>, 开发者可以自定义， 譬如你可以把APi 中的 <code>ResponseBody</code> 指定为你自己的<code>javaBean</code>, 当然上层构建<code>Call</code>时候，<code>Callback</code>也必须是 <code>Call&lt;MyBean&gt;</code></p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="variable">@POST</span>(<span class="string">"/uploadJson"</span>)</div><div class="line">Call&lt;MyBean&gt; uploadjson(</div><div class="line">        <span class="variable">@Body</span> RequestBody jsonBody);</div></pre></td></tr></table></figure>
+<p>仔细的朋友会发现有的地方用Call，有的地方用<code>Observable</code>,如果结合了RxJava就是用后者接收了，这里不关乎什么方式。</p>
+<p>上面的代码片段中显示的代码初始化(<code>RequestBody</code>和<code>description</code>), 以及如何使用文件上传API。正如刚开始已经提到的, 从OkHttp 的<code>RequestBody</code>类中，需要两个<code>RequestBody.create（）</code>方法</p>
+<p>除了Body描述, 必须将添加文件包装成<code>MultipartBody</code>的实例。这就是你需要使用适当的从客户端上传文件到服务端。此外, 您可以添加<code>createFormData</code>中的uploadFile(Uri fileUri)方法，适合相机拍照回来上传图片的场景。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">  <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">File</span> getFile(Context context, Uri uri) &#123;</div><div class="line">    <span class="keyword">if</span> (uri != <span class="keyword">null</span>) &#123;</div><div class="line">        String path = getPath(context, uri);</div><div class="line">        <span class="keyword">if</span> (path != <span class="keyword">null</span> &amp;&amp; isLocal(path)) &#123;</div><div class="line">            <span class="keyword">return</span> <span class="keyword">new</span> <span class="keyword">File</span>(path);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>  通过以上代码片段，可以构造自己的<code>file</code>, 其他构建<code>ResquestBody</code>的步骤同上所示，以上案列总有一款适合你的web后端。</p>
+<h1 id="设置-Content-Type"><a href="#设置-Content-Type" class="headerlink" title="设置  Content-Type"></a>设置  Content-Type</h1><p>请注意设置的内容类型。如果你拦截底层OkHttp客户端和更改内容类型为<code>application / json</code>, 你的服务器可能反序列化过程出现的问题。请确保你没有自定义更改<code>multipart/form-data</code>。</p>
 <p>  <strong>upLoad图片也可以具体指明Content-Type 为 “image/jpg”格式的</strong></p>
-<pre><code>RequestBody requestFile =
-         RequestBody.create(MediaType.parse(&quot;image/jpg&quot;), mFile);
-</code></pre><h1 id="上传文件到服务端示例"><a href="#上传文件到服务端示例" class="headerlink" title="上传文件到服务端示例"></a>上传文件到服务端示例</h1><p>如果你已经有你的后端项目, 您可以依靠下面的示例代码。我们使用一个简单api 上传到服务器。此外我们告诉api 传入参数的请求, 因为我们使用的是Node.js  </p>
-<p>解析的回调函数,我们记录每个字段来显示其输出。</p>
-<pre><code>method: &apos;POST&apos;, 
- path: &apos;/upload&apos;,  
-config: {  
-payload: {
-    maxBytes: 209715200,
-    output: &apos;stream&apos;,
-    parse: false
-},
-handler: function(request, reply) {
-    var multiparty = require(&apos;multiparty&apos;);
-    var form = new multiparty.Form();
-    form.parse(request.payload, function(err, fields, files) {
-        console.log(err);
-        console.log(fields);
-        console.log(files);
-
-        return reply(util.inspect({fields: fields, files: files}));
-    });
-}}
-</code></pre><p>Android客户端收到返回类型的字符串,  我们将接收到的上传成功的状态的回调。当然你可以处理也可以不处理状态。下面你将看到一个成功的请求的输出端和有效载荷的解析。第一个空对象。之后,你可以看到字段只描述作为请求的一部分。接着可以收到文件描述，文件大小，文件昵称和保存路径。</p>
-<h2 id="服务器解析有效数据的日志"><a href="#服务器解析有效数据的日志" class="headerlink" title="服务器解析有效数据的日志"></a>服务器解析有效数据的日志</h2><pre><code>   Null
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="attribute">RequestBody requestFile</span> =</div><div class="line">          RequestBody.create(MediaType.parse(<span class="string">"image/jpg"</span>), mFile);</div></pre></td></tr></table></figure>
+<h1 id="上传文件到服务端示例"><a href="#上传文件到服务端示例" class="headerlink" title="上传文件到服务端示例"></a>上传文件到服务端示例</h1><p>如果你已经有你的后端项目, 您可以依靠下面的示例代码。我们使用一个简单api 上传到服务器。此外我们告诉api 传入参数的请求, 因为我们使用的是Node.js  </p>
+<p>解析的回调函数,我们记录每个字段来显示其输出。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">method: <span class="string">'POST'</span>, </div><div class="line"> <span class="attr">path</span>: <span class="string">'/upload'</span>,  </div><div class="line"><span class="attr">config</span>: &#123;  </div><div class="line"><span class="attr">payload</span>: &#123;</div><div class="line">    <span class="attr">maxBytes</span>: <span class="number">209715200</span>,</div><div class="line">    <span class="attr">output</span>: <span class="string">'stream'</span>,</div><div class="line">    <span class="attr">parse</span>: <span class="literal">false</span></div><div class="line">&#125;,</div><div class="line"><span class="attr">handler</span>: <span class="function"><span class="keyword">function</span>(<span class="params">request, reply</span>) </span>&#123;</div><div class="line">    <span class="keyword">var</span> multiparty = <span class="built_in">require</span>(<span class="string">'multiparty'</span>);</div><div class="line">    <span class="keyword">var</span> form = <span class="keyword">new</span> multiparty.Form();</div><div class="line">    form.parse(request.payload, <span class="function"><span class="keyword">function</span>(<span class="params">err, fields, files</span>) </span>&#123;</div><div class="line">        <span class="built_in">console</span>.log(err);</div><div class="line">        <span class="built_in">console</span>.log(fields);</div><div class="line">        <span class="built_in">console</span>.log(files);</div><div class="line"></div><div class="line">        <span class="keyword">return</span> reply(util.inspect(&#123;<span class="attr">fields</span>: fields, <span class="attr">files</span>: files&#125;));</div><div class="line">    &#125;);</div><div class="line">&#125;&#125;</div></pre></td></tr></table></figure></p>
+<p>Android客户端收到返回类型的字符串,  我们将接收到的上传成功的状态的回调。当然你可以处理也可以不处理状态。下面你将看到一个成功的请求的输出端和有效载荷的解析。第一个空对象。之后,你可以看到字段只描述作为请求的一部分。接着可以收到文件描述，文件大小，文件昵称和保存路径。</p>
+<h2 id="服务器解析有效数据的日志"><a href="#服务器解析有效数据的日志" class="headerlink" title="服务器解析有效数据的日志"></a>服务器解析有效数据的日志</h2><pre><code> Null
   { description: [ &apos;hello, this is description speaking&apos; ] }
 { picture:
   [ { fieldName: &apos;picture&apos;,
@@ -439,25 +325,18 @@ handler: function(request, reply) {
 <h1 id="回顾"><a href="#回顾" class="headerlink" title="回顾"></a>回顾</h1><p>文件上传是应用程序中必不可却少的功能, 你可以将此功能集成在您的应用程序使用。本文指导您完成你的Android程序上报文件到您的后端服务器的第一个步骤。</p>
 <p>文件上传和下载进度实现，请继续关注后续文章！</p>
 <p><strong>源码：<a href="https://github.com/Tamicer/Novate" target="_blank" rel="external">https://github.com/Tamicer/Novate</a></strong></p>
-<p>Retrofit 2.0系列请阅读简书<br>更多技术文章请关注码小白</p>
 <p><strong>Retrofit 2.0+RxJava系列请阅读</strong></p>
 <ul>
-<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
-</li>
-<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51700659" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
-</li>
-<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51700659" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
-</li>
-<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51958010" target="_blank" rel="external">基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类（六）</a></p>
-</li>
-<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51957819" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架（七）</a></p>
-</li>
-<li><p><a href="http://blog.csdn.net/sk719887916/article/details/52132106" target="_blank" rel="external">Retrofit，Okhttp对每个Request统一动态添加header和参数（五）</a></p>
-</li>
-<li><a href="http://blog.csdn.net/sk719887916/article/details/52132106" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题（八）</a></li>
-<li><a href="http://blog.csdn.net/sk719887916/article/details/52195428" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></li>
+<li><a href="https://tamicer.github.io/2016/08/10/novate10/" target="_blank" rel="external">Novate网络库：Retrofit2.0和RxJava1.x的又一次完美封装</a>。</li>
+<li><a href="https://tamicer.github.io/2016/08/01/retrofit010/" target="_blank" rel="external">Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！</a></li>
+<li><a href="https://tamicer.github.io/2016/07/13/retrofti008/" target="_blank" rel="external">Retrofit 2.0 超能实践（八）源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架</a></li>
+<li><a href="https://tamicer.github.io/2016/07/12/retrofti007/" target="_blank" rel="external">Retrofit 2.0 超能实践（七）Rxjava +Retrofit 你需要掌握的几个经典技巧</a></li>
+<li><a href="https://tamicer.github.io/2016/07/08/retrofti006/" target="_blank" rel="external">Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</a></li>
+<li><a href="https://tamicer.github.io/2016/07/03/retrofit5/" target="_blank" rel="external">Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter</a></li>
+<li><a href="https://tamicer.github.io/2016/06/17/retrofit_004/" target="_blank" rel="external">Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</a></li>
+<li><a href="https://tamicer.github.io/2016/06/14/retrofti3/" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传</a></li>
+<li><a href="https://tamicer.github.io/2016/06/10/jiamichuanshu_okhttp/" target="_blank" rel="external">Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</a></li>
+<li><a href="https://tamicer.github.io/2016/06/07/12/" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a></li>
 </ul>
 <p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
 

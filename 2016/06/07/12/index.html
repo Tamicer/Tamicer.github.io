@@ -13,7 +13,7 @@
 
     <title>
         
-          Retrofit 2.0 超能实践（一），完美支持加密Https传输 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          Retrofit 2.0 超能实践（一）完美支持加密Https传输 - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
@@ -90,14 +90,14 @@
 
                         
                         <li>
-                            <a href="/archives/">Archives</a>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
 
                         
                         <li>
-                            <a href="/about/">About</a>
+                            <a href="/archives/">Archives</a>
                         </li>
                         
                     
@@ -172,7 +172,7 @@
                           <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
                         
                     </div>
-                    <h1>Retrofit 2.0 超能实践（一），完美支持加密Https传输</h1>
+                    <h1>Retrofit 2.0 超能实践（一）完美支持加密Https传输</h1>
                     <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
                     <span class="meta">
                         Posted by Tamic on
@@ -206,137 +206,19 @@
 </blockquote>
 <h2 id="二-Retrofit怎么使用"><a href="#二-Retrofit怎么使用" class="headerlink" title="二 Retrofit怎么使用"></a>二 Retrofit怎么使用</h2><p> 下文之前先给大家看下传统的httpclient（urlConnection） + AsyncTask实现的登录功能，这样我们才能发现Retrofit的优雅之处.</p>
 <p>   <strong>传统方式：</strong></p>
-<pre><code>  /**
- * Represents an asynchronous login/registration task used to authenticate
- * the user.
- */
-public class UserLoginTask extends AsyncTask&lt;Void, Void, Boolean&gt; {
-
-    private final String mEmail;
-    private final String mPassword;
-
-    UserLoginTask(String email, String password) {
-        mEmail = email;
-        mPassword = password;
-    }
-
-    @Override
-    protected Boolean doInBackground(Void... params) {
-        // TODO: attempt authentication against a network service.
-
-        try {
-            // Simulate network access.
-            String result = &quot;&quot;;
-            BufferedReader in = null;
-            String path =&quot;http://localhost:8080/login/?&quot; +&quot;email =&quot; + mEmail + &quot;&amp; password =&quot; + mPassword;
-            URL url =new URL(path);
-            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-            conn.setConnectTimeout(5 * 1000);
-            conn.setRequestMethod(&quot;GET&quot;);
-            InputStream inStream = conn.getInputStream();
-            in = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream()));
-            String line;
-            while ((line = in.readLine()) != null)
-            {
-                result += &quot;\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\n&quot; + line;
-            }
-
-        }catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (ProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-   //在这里我们还要对返回的json数据进行 要主动映射到modle上
-    ………
-        for (String credential : DUMMY_CREDENTIALS) {
-            String[] pieces = credential.split(&quot;:&quot;);
-            if (pieces[0].equals(mEmail)) {
-                // Account exists, return true if the password matches.
-                return pieces[1].equals(mPassword);
-            }
-        }
-
-        // TODO: register the new account here.
-        return true;
-    }
-
-    @Override
-    protected void onPostExecute(final Boolean success) {
-        mAuthTask = null;
-
-
-        if (success) {
-            // do SomeThing
-        } else {
-            mPasswordView.setError(getString(R.string.error_incorrect_password));
-            mPasswordView.requestFocus();
-        }
-    }
-
-    @Override
-    protected void onCancelled() {
-        mAuthTask = null;
-        showProgress(false);
-    }
-}
-
-private void enterhome() {
-    Intent intent = new Intent(LoginActivity.this, MainListActivity.class);
-    startActivity(intent);
-}
-</code></pre><p>发现原理也很简单，点击loginbtn开启一个异步线程 在AsyncTask在 doInBackground中访问登录API，在onPostExecute中进行UI更新；也能很简单流畅的解决UI线程请求网络 非UI线程更新UI的问题, 接下来介绍用Retrofit实现以上相同的功能的方式</p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">  <span class="comment">/**</span></div><div class="line"> * Represents an asynchronous login/registration task used to authenticate</div><div class="line"> * the user.</div><div class="line"> */</div><div class="line"><span class="keyword">public</span> <span class="keyword">class</span> UserLoginTask <span class="keyword">extends</span> AsyncTask&lt;Void, Void, <span class="built_in">Boolean</span>&gt; &#123;</div><div class="line"></div><div class="line">    <span class="keyword">private</span> final <span class="built_in">String</span> mEmail;</div><div class="line">    <span class="keyword">private</span> final <span class="built_in">String</span> mPassword;</div><div class="line"></div><div class="line">    UserLoginTask(<span class="built_in">String</span> email, <span class="built_in">String</span> password) &#123;</div><div class="line">        mEmail = email;</div><div class="line">        mPassword = password;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">protected</span> <span class="built_in">Boolean</span> doInBackground(Void... params) &#123;</div><div class="line">        <span class="comment">// <span class="doctag">TODO:</span> attempt authentication against a network service.</span></div><div class="line"></div><div class="line">        <span class="keyword">try</span> &#123;</div><div class="line">            <span class="comment">// Simulate network access.</span></div><div class="line">            <span class="built_in">String</span> result = <span class="string">""</span>;</div><div class="line">            BufferedReader <span class="keyword">in</span> = <span class="literal">null</span>;</div><div class="line">            <span class="built_in">String</span> path =<span class="string">"http://localhost:8080/login/?"</span> +<span class="string">"email ="</span> + mEmail + <span class="string">"&amp; password ="</span> + mPassword;</div><div class="line">            URL url =<span class="keyword">new</span> URL(path);</div><div class="line">            HttpURLConnection conn = (HttpURLConnection)url.openConnection();</div><div class="line">            conn.setConnectTimeout(<span class="number">5</span> * <span class="number">1000</span>);</div><div class="line">            conn.setRequestMethod(<span class="string">"GET"</span>);</div><div class="line">            InputStream inStream = conn.getInputStream();</div><div class="line">            <span class="keyword">in</span> = <span class="keyword">new</span> BufferedReader(</div><div class="line">                    <span class="keyword">new</span> InputStreamReader(conn.getInputStream()));</div><div class="line">            <span class="built_in">String</span> line;</div><div class="line">            <span class="keyword">while</span> ((line = <span class="keyword">in</span>.readLine()) != <span class="literal">null</span>)</div><div class="line">            &#123;</div><div class="line">                result += <span class="string">"\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\n"</span> + line;</div><div class="line">            &#125;</div><div class="line"></div><div class="line">        &#125;<span class="keyword">catch</span> (MalformedURLException e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125; <span class="keyword">catch</span> (UnsupportedEncodingException e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125; <span class="keyword">catch</span> (ProtocolException e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line">   <span class="comment">//在这里我们还要对返回的json数据进行 要主动映射到modle上</span></div><div class="line">    ………</div><div class="line">        <span class="keyword">for</span> (<span class="built_in">String</span> credential : DUMMY_CREDENTIALS) &#123;</div><div class="line">            <span class="built_in">String</span>[] pieces = credential.split(<span class="string">":"</span>);</div><div class="line">            <span class="keyword">if</span> (pieces[<span class="number">0</span>].equals(mEmail)) &#123;</div><div class="line">                <span class="comment">// Account exists, return true if the password matches.</span></div><div class="line">                <span class="keyword">return</span> pieces[<span class="number">1</span>].equals(mPassword);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="comment">// <span class="doctag">TODO:</span> register the new account here.</span></div><div class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">protected</span> <span class="built_in">void</span> onPostExecute(final <span class="built_in">Boolean</span> success) &#123;</div><div class="line">        mAuthTask = <span class="literal">null</span>;</div><div class="line"></div><div class="line"></div><div class="line">        <span class="keyword">if</span> (success) &#123;</div><div class="line">            <span class="comment">// do SomeThing</span></div><div class="line">        &#125; <span class="keyword">else</span> &#123;</div><div class="line">            mPasswordView.setError(getString(R.string.error_incorrect_password));</div><div class="line">            mPasswordView.requestFocus();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">protected</span> <span class="built_in">void</span> onCancelled() &#123;</div><div class="line">        mAuthTask = <span class="literal">null</span>;</div><div class="line">        showProgress(<span class="literal">false</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">private</span> <span class="built_in">void</span> enterhome() &#123;</div><div class="line">    Intent intent = <span class="keyword">new</span> Intent(LoginActivity.this, MainListActivity.class);</div><div class="line">    startActivity(intent);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>发现原理也很简单，点击<code>loginbtn</code>开启一个异步线程 在<code>AsyncTask</code>在 <code>doInBackground</code>中访问登录API，在<code>onPostExecute</code>中进行UI更新；也能很简单流畅的解决UI线程请求网络 非UI线程更新UI的问题, 但是<code>AsyncTask</code> 处理大数据耗时就会有弊端，况且他默认线程也是5个，容易造成泄漏，接下来介绍用<code>Retrofit</code>实现以上相同的功能的方式</p>
 <p><strong>2 Retrofit</strong></p>
-<pre><code>  /**
- * 登录！
- */
-private  void getLogin() {
-    Retrofit retrofit = new Retrofit.Builder()
-            .baseUrl(&quot;http://localhost:8080/&quot;)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build();
-    ApiManager apiService = retrofit.create(ApiManager.class);
-
-    Call&lt;LoginResult&gt; call = apiService.getData(&quot;lyk&quot;, &quot;1234&quot;);
-   call.enqueue(new Callback&lt;LoginResult&gt;() {
-       @Override
-       public void onResponse(Call&lt;LoginResult&gt; call, Response&lt;LoginResult&gt; response) {
-           if (response.isSuccess()) {
-               // do SomeThing
-           } else {
-              //直接操作UI 返回的respone被直接解析成你指定的modle 
-           }
-       }
-
-       @Override
-       public void onFailure(Call&lt;LoginResult&gt; call, Throwable t) {
-
-           // do onFailure代码
-       }
-   });
-}
-</code></pre><p><strong>ApiManager接口</strong></p>
-<pre><code>/**
- * Created by LIUYONGKUI on 2016-05-03.
-*/
-public interface ApiManager {
-
- @GET(&quot;login/&quot;)
- Call&lt;LoginResult&gt; getData(@Query(&quot;name&quot;) String name, @Query(&quot;password&quot;) String pw);
-</code></pre><p>好了 看了以上代码 或许你已经看到了他的链式优雅高大上的地方了，也许看不懂，有点蒙逼，但没关系我们继续入门。</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">  <span class="comment">/**</span></div><div class="line"> * 登录！</div><div class="line"> */</div><div class="line"><span class="keyword">private</span>  <span class="keyword">void</span> getLogin() &#123;</div><div class="line">    Retrofit retrofit = <span class="keyword">new</span> Retrofit.Builder()</div><div class="line">            .baseUrl(<span class="string">"http://localhost:8080/"</span>)</div><div class="line">            .addConverterFactory(GsonConverterFactory.create())</div><div class="line">            .build();</div><div class="line">    ApiManager apiService = retrofit.create(ApiManager.<span class="keyword">class</span>);</div><div class="line"></div><div class="line">    <span class="keyword">Call</span>&lt;LoginResult&gt; <span class="keyword">call</span> = apiService.getData(<span class="string">"lyk"</span>, <span class="string">"1234"</span>);</div><div class="line">   <span class="keyword">call</span>.enqueue(<span class="keyword">new</span> Callback&lt;LoginResult&gt;() &#123;</div><div class="line">       @Override</div><div class="line">       <span class="keyword">public</span> <span class="keyword">void</span> onResponse(<span class="keyword">Call</span>&lt;LoginResult&gt; <span class="keyword">call</span>, Response&lt;LoginResult&gt; response) &#123;</div><div class="line">           <span class="keyword">if</span> (response.isSuccess()) &#123;</div><div class="line">               <span class="comment">// do SomeThing</span></div><div class="line">           &#125; <span class="keyword">else</span> &#123;</div><div class="line">              <span class="comment">//直接操作UI 返回的respone被直接解析成你指定的modle </span></div><div class="line">           &#125;</div><div class="line">       &#125;</div><div class="line"></div><div class="line">       @Override</div><div class="line">       <span class="keyword">public</span> <span class="keyword">void</span> onFailure(<span class="keyword">Call</span>&lt;LoginResult&gt; <span class="keyword">call</span>, Throwable t) &#123;</div><div class="line"></div><div class="line">           <span class="comment">// do onFailure代码</span></div><div class="line">       &#125;</div><div class="line">   &#125;);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>ApiManager接口</strong></p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * Created by LIUYONGKUI on 2016-05-03.</div><div class="line">*/</div><div class="line"><span class="selector-tag">public</span> <span class="selector-tag">interface</span> <span class="selector-tag">ApiManager</span> &#123;</div><div class="line"></div><div class="line"> <span class="variable">@GET</span>(<span class="string">"login/"</span>)</div><div class="line"> Call&lt;LoginResult&gt; getData(<span class="variable">@Query</span>(<span class="string">"name"</span>) String name, <span class="variable">@Query</span>(<span class="string">"password"</span>) String pw);</div></pre></td></tr></table></figure>
+<p>好了 看了以上代码 或许你已经看到了他的链式优雅高大上的地方了，也许看不懂，有点蒙逼，但没关系我们继续入门。</p>
 <h2 id="1-配置gradle"><a href="#1-配置gradle" class="headerlink" title="1 配置gradle"></a>1 配置gradle</h2><pre><code>compile &apos;com.squareup.retrofit2:retrofit:2.0.0-beta4&apos;
 compile &apos;com.squareup.retrofit2:converter-gson:2.0.0-beta4&apos;  
-</code></pre><p>   com.squareup.retrofit2:converter-gson:2.0.0-beta4 此依赖非必须，只是方便我对http返回的数据进行解析。</p>
+</code></pre><p>  <code>com.squareup.retrofit2:converter-gson:2.0.0-beta4</code> 此依赖非必须，只是方便我对http返回的数据进行解析。</p>
 <h2 id="2-定义实例化"><a href="#2-定义实例化" class="headerlink" title="2 定义实例化"></a>2 定义实例化</h2><p><strong>1》初始化Retrofit</strong></p>
-<pre><code>Retrofit retrofit = new Retrofit.Builder()
-         .baseUrl(&quot;http://localhost:8080/&quot;)
-         .addConverterFactory(GsonConverterFactory.create())
-          .build();
-</code></pre><p>  通过 Retrofit.Builder 来创建一个retrofit客户端，接着添加host url, 然后制定数据解析器，上面依赖的gson就是用在这里做默认数据返回的， 之后通过build()创建出来<br>    Retrofit也支持且内部自带如下格式：</p>
+<figure class="highlight pony"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">      </div><div class="line"><span class="type">Retrofit</span> retrofit = <span class="function"><span class="keyword">new</span> <span class="title">Retrofit</span>.<span class="title">Builder</span>()</span></div><div class="line">         .<span class="title">baseUrl</span>("http://localhost:<span class="number">8080</span>/")</div><div class="line">         .<span class="title">addConverterFactory</span>(<span class="type">GsonConverterFactory</span>.create())</div><div class="line">          .<span class="title">build</span>();</div></pre></td></tr></table></figure>
+<p>  通过 <code>Retrofit.Builder</code> 来创建一个<code>retrofit</code>客户端，接着添加host url, 然后制定数据解析器，上面依赖的gson就是用在这里做默认数据返回的， 之后通过<code>build()</code>创建出来<br>    Retrofit也支持且内部自带如下格式：</p>
 <ul>
 <li><strong>Gson</strong>: com.squareup.retrofit2:converter-gson</li>
 <li><strong>Jackson</strong>: com.squareup.retrofit2:converter-jackson</li>
@@ -347,70 +229,46 @@ compile &apos;com.squareup.retrofit2:converter-gson:2.0.0-beta4&apos;
 <li><strong>Scalars (primitives, boxed, and String)</strong>: com.squareup.retrofit2:converter-scalars</li>
 </ul>
 <p><strong>2》编写API</strong></p>
-<pre><code>@GET(&quot;login/&quot;)
-Call&lt;LoginResult&gt; getData(@Query(&quot;name&quot;) String name, @Query(&quot;password&quot;) String pw);
-</code></pre><p>   Call<t>是继承Cloneable的 并支持泛型，且此类是Retrofit统一返回对象，支持Callback<t>回调，在2.0上已支持RxJava观察者对象Observable<t>，此案例暂时用call ，后面入门了retrofit之后再接入RxJava，接着我们可以传入制定的解析Modle，就会在主线程里返回对应的model数据，无需开发者手动解析json数据，返回格式由开发者自己设置，这里主要用注解@get @post 设置请求方式，后面<strong>“login/”</strong>是方法Url,  <strong>@Query</strong>(“name”)来设定body的parameters. </t></t></t></p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="variable">@GET</span>(<span class="string">"login/"</span>)</div><div class="line">Call&lt;LoginResult&gt; getData(<span class="variable">@Query</span>(<span class="string">"name"</span>) String name, <span class="variable">@Query</span>(<span class="string">"password"</span>) String pw);</div></pre></td></tr></table></figure>
+<p>   <code>Call&lt;T&gt;</code>是继承Cloneable的 并支持泛型，且此类是Retrofit统一返回对象，支持<code>Callback&lt;T&gt;</code>回调，在2.0上已支持RxJava观察者对象<code>Observable&lt;T&gt;</code>，此案例暂时用call ，后面入门了retrofit之后再接入RxJava，接着我们可以传入制定的解析Modle，就会在主线程里返回对应的model数据，无需开发者手动解析json数据，返回格式由开发者自己设置，这里主要用注解<code>@get @post</code> 设置请求方式，后面<strong>“login/”</strong>是方法Url,  <strong>@Query</strong>(“name”)来设定<code>body</code>的parameters. </p>
 <ul>
-<li>如果想用表单 @FieldMap<pre><code>@FormUrlEncoded
-@POST(&quot;/url&quot;)
- Call&lt;T&gt; postForm(
-     @FieldMap Map&lt;String , Object&gt; maps);
-</code></pre></li>
+<li>如果想用表单 @FieldMap</li>
 </ul>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="variable">@FormUrlEncoded</span></div><div class="line"><span class="variable">@POST</span>(<span class="string">"/url"</span>)</div><div class="line"> Call&lt;T&gt; postForm(</div><div class="line">     <span class="variable">@FieldMap</span> Map&lt;String , Object&gt; maps);</div></pre></td></tr></table></figure>
 <ul>
-<li><p>如果直接用对象 @Body</p>
-<pre><code>@POST(&quot;url&quot;)
- Call&lt;T&gt; PostBody(
-      @Body Objects objects);
-</code></pre></li>
-<li><p>如果直接多参数 @QueryMap</p>
-<pre><code>@PUT(&quot;/url&quot;)
-Call&lt;T&gt; queryMap(
-      @QueryMap Map&lt;String, String&gt; maps);
-</code></pre></li>
-<li><p>如果上传文件 @Part</p>
-<pre><code>@Multipart
-@POST(&quot;/url&quot;)
-Call&lt;ResponseBody&gt; uploadFlie(
-      @Part(&quot;description&quot;) RequestBody description,
-      @Part(&quot;files&quot;) MultipartBody.Part file);
-</code></pre></li>
+<li>如果直接用对象 @Body</li>
 </ul>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="variable">@POST</span>(<span class="string">"url"</span>)</div><div class="line"> Call&lt;T&gt; PostBody(</div><div class="line">      <span class="variable">@Body</span> Objects objects);</div></pre></td></tr></table></figure>
 <ul>
-<li><p>如果多文件上传 @PartMap()</p>
-<pre><code>@Multipart
-@POST(&quot;{url}&quot;)
-Call&lt;T&gt; uploadFiles(
-      @Path(&quot;url&quot;) String url,
-      @PartMap() Map&lt;String, RequestBody&gt; maps);
-</code></pre></li>
+<li>如果直接多参数 @QueryMap</li>
 </ul>
-<p><strong>3》 调用API</strong><br>Retrofit支持异步和同步，案例中用call.enqueue(new Callback<loginresult>）来采用异步请求，如果  调用call.execute() 则采用同步方式</loginresult></p>
-<pre><code>   Call&lt;LoginResult&gt; call = apiService.getData(&quot;lyk&quot;, &quot;1234&quot;);
-   call.enqueue(new Callback&lt;LoginResult&gt;() {
-       @Override
-       public void onResponse(Call&lt;LoginResult&gt; call, Response&lt;LoginResult&gt; response) {
-
-       }
-
-       @Override
-       public void onFailure(Call&lt;LoginResult&gt; call, Throwable t) {
-
-
-       }
-   });
-}
-</code></pre><p><strong>取消请求</strong></p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="variable">@PUT</span>(<span class="string">"/url"</span>)</div><div class="line">Call&lt;T&gt; queryMap(</div><div class="line">      <span class="variable">@QueryMap</span> Map&lt;String, String&gt; maps);</div></pre></td></tr></table></figure>
+<ul>
+<li>如果上传文件 @Part</li>
+</ul>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="variable">@Multipart</span></div><div class="line"><span class="variable">@POST</span>(<span class="string">"/url"</span>)</div><div class="line">Call&lt;ResponseBody&gt; uploadFlie(</div><div class="line">      <span class="variable">@Part</span>(<span class="string">"description"</span>) RequestBody description,</div><div class="line">      <span class="variable">@Part</span>(<span class="string">"files"</span>) MultipartBody.Part file);</div></pre></td></tr></table></figure>
+<ul>
+<li>如果多文件上传 @PartMap()</li>
+</ul>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"> </div><div class="line"><span class="variable">@Multipart</span></div><div class="line"><span class="variable">@POST</span>(<span class="string">"&#123;url&#125;"</span>)</div><div class="line">Call&lt;T&gt; uploadFiles(</div><div class="line">      <span class="variable">@Path</span>(<span class="string">"url"</span>) String url,</div><div class="line">      <span class="variable">@PartMap</span>() Map&lt;String, RequestBody&gt; maps);</div></pre></td></tr></table></figure>
+<p><strong>3》 调用API</strong><br>Retrofit支持异步和同步，案例中用<code>call.enqueue(new Callback&lt;LoginResult&gt;）</code>来采用异步请求，如果  调用<code>call.execute()</code> 则采用同步方式</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">  </div><div class="line">   <span class="keyword">Call</span>&lt;LoginResult&gt; <span class="keyword">call</span> = apiService.getData(<span class="string">"lyk"</span>, <span class="string">"1234"</span>);</div><div class="line">   <span class="keyword">call</span>.enqueue(<span class="keyword">new</span> Callback&lt;LoginResult&gt;() &#123;</div><div class="line">       @Override</div><div class="line">       <span class="keyword">public</span> <span class="keyword">void</span> onResponse(<span class="keyword">Call</span>&lt;LoginResult&gt; <span class="keyword">call</span>, Response&lt;LoginResult&gt; response) &#123;</div><div class="line">         </div><div class="line">       &#125;</div><div class="line"></div><div class="line">       @Override</div><div class="line">       <span class="keyword">public</span> <span class="keyword">void</span> onFailure(<span class="keyword">Call</span>&lt;LoginResult&gt; <span class="keyword">call</span>, Throwable t) &#123;</div><div class="line"></div><div class="line">           </div><div class="line">       &#125;</div><div class="line">   &#125;);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>取消请求</strong></p>
 <p>   直接用call实例进行cancel即可</p>
 <pre><code>call.cancel(); 
-</code></pre><p>   如果还未理解请阅读参考入门资料:<a href="http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/0915/3460.html" target="_blank" rel="external">Retrofit 2.0：有史以来最大的改进</a></p>
-<h1 id="三-进阶拓展"><a href="#三-进阶拓展" class="headerlink" title="三 进阶拓展"></a>三 进阶拓展</h1><p>   通过以上的介绍和案列，我们了解了怎样运用Retrofit请求网络数据，展现数据更新UI，用什么数据模型接收 Retroifit就会返回什么类型的数据，我们也不用关心是否在主线程里访问网络 还是子线程更新ui的问题，但实际开发中会存在很多问题，很多同学会遇到：Retrofit的内部Log都无法输出 , header怎么加入，请求怎么支持https，包括怎么结合RxJava.? 不用担心，这些Retrofit 2.0 都提供了支持okhttp的自定义的Interceptor（拦截器），通过不同的Interceptor可以实现不同的自定义请求形式，比如统一加head，参数，加入证书（ssl）等，前提必须结合okhttp来实现 , 通过给OkHttpClient添加Interceptor，然后给Retrofit设置http客户端即可.Retrofit提供了<br>   .client(）方法供我们传入自定义的网络客户端，当然默认请求客户端就是okhttps.</p>
+</code></pre><p> 优雅的取消请看<a href="https://tamicer.github.io/2016/08/01/retrofit010/" target="_blank" rel="external">Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！</a></p>
+<p>   如果还未理解请阅读参考入门资料:<a href="http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/0915/3460.html" target="_blank" rel="external">Retrofit 2.0：有史以来最大的改进</a></p>
+<h1 id="三-进阶拓展"><a href="#三-进阶拓展" class="headerlink" title="三 进阶拓展"></a>三 进阶拓展</h1><p>   通过以上的介绍和案列，我们了解了怎样运用Retrofit请求网络数据，展现数据更新UI，用什么数据模型接收 Retroifit就会返回什么类型的数据，我们也不用关心是否在主线程里访问网络 还是子线程更新ui的问题，但实际开发中会存在很多问题，很多同学会遇到：Retrofit的内部Log都无法输出 , header怎么加入，请求怎么支持https，包括怎么结合RxJava.? 不用担心，这些Retrofit 2.0 都提供了支持okhttp的自定义的Interceptor（拦截器），通过不同的Interceptor可以实现不同的自定义请求形式，比如统一加head，参数，加入证书（ssl）等，前提必须结合okhttp来实现 , 通过给OkHttpClient添加<code>Interceptor</code>·，然后给<code>Retrofit</code>设置http客户端即可.Retrofit提供了<br>   <code>.client(）</code>方法供我们传入自定义的网络客户端，当然默认请求客户端就是okhttps.</p>
 <p> OkHttp入门请移步：<br> ~<a href="https://github.com/square/okhttp" target="_blank" rel="external">https://github.com/square/okhttp</a><br> ~ <a href="http://www.jcodecraeer.com/a/anzhuokaifa/androidkaifa/2015/0326/2643.html" target="_blank" rel="external">OKHttp源码解析</a></p>
-<h2 id="1-开启Log"><a href="#1-开启Log" class="headerlink" title="1 开启Log"></a>1 开启Log</h2><pre><code>Retrofit retrofit = new Retrofit.Builder().client(new OkHttpClient.Builder()
-
-                    .addNetworkInterceptor(
-                               new   HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS))        .build())
-</code></pre><h2 id="2-增加头部信息"><a href="#2-增加头部信息" class="headerlink" title="2 增加头部信息"></a>2 增加头部信息</h2><p>  通用请求头</p>
+<h2 id="1-开启Log"><a href="#1-开启Log" class="headerlink" title="1 开启Log"></a>1 开启Log</h2><p>可以用拦截器自己实现， retrofit已经提供了<code>HttpLoggingInterceptor</code> 里面有四种级别，输出的格式 可以看下面介绍。</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">public enum Level &#123;</div><div class="line">    /** No logs. */</div><div class="line">    NONE,</div><div class="line">    /**</div><div class="line">     * Logs request <span class="keyword">and</span> response lines.</div><div class="line">     *</div><div class="line">     * &lt;p&gt;Example:</div><div class="line">     * &lt;pre&gt;&#123;@code</div><div class="line">     * <span class="comment">--&gt; POST /greeting http/1.1 (3-byte body)</span></div><div class="line">     *</div><div class="line">     * &lt;<span class="comment">-- 200 OK (22ms, 6-byte body)</span></div><div class="line">     * &#125;&lt;/pre&gt;</div><div class="line">     */</div><div class="line">    BASIC,</div><div class="line">    /**</div><div class="line">     * Logs request <span class="keyword">and</span> response lines <span class="keyword">and</span> their respective headers.</div><div class="line">     *</div><div class="line">     * &lt;p&gt;Example:</div><div class="line">     * &lt;pre&gt;&#123;@code</div><div class="line">     * <span class="comment">--&gt; POST /greeting http/1.1</span></div><div class="line">     * Host: example.com</div><div class="line">     * Content-<span class="keyword">Type</span>: plain/text</div><div class="line">     * Content-Length: <span class="number">3</span></div><div class="line">     * <span class="comment">--&gt; END POST</span></div><div class="line">     *</div><div class="line">     * &lt;<span class="comment">-- 200 OK (22ms)</span></div><div class="line">     * Content-<span class="keyword">Type</span>: plain/text</div><div class="line">     * Content-Length: <span class="number">6</span></div><div class="line">     * &lt;<span class="comment">-- END HTTP</span></div><div class="line">     * &#125;&lt;/pre&gt;</div><div class="line">     */</div><div class="line">    HEADERS,</div><div class="line">    /**</div><div class="line">     * Logs request <span class="keyword">and</span> response lines <span class="keyword">and</span> their respective headers <span class="keyword">and</span> bodies (<span class="keyword">if</span> present).</div><div class="line">     *</div><div class="line">     * &lt;p&gt;Example:</div><div class="line">     * &lt;pre&gt;&#123;@code</div><div class="line">     * <span class="comment">--&gt; POST /greeting http/1.1</span></div><div class="line">     * Host: example.com</div><div class="line">     * Content-<span class="keyword">Type</span>: plain/text</div><div class="line">     * Content-Length: <span class="number">3</span></div><div class="line">     *</div><div class="line">     * Hi?</div><div class="line">     * <span class="comment">--&gt; END GET</span></div><div class="line">     *</div><div class="line">     * &lt;<span class="comment">-- 200 OK (22ms)</span></div><div class="line">     * Content-<span class="keyword">Type</span>: plain/text</div><div class="line">     * Content-Length: <span class="number">6</span></div><div class="line">     *</div><div class="line">     * Hello!</div><div class="line">     * &lt;<span class="comment">-- END HTTP</span></div><div class="line">     * &#125;&lt;/pre&gt;</div><div class="line">     */</div><div class="line">    <span class="keyword">BODY</span></div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+<p>开启请求头</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">Retrofit retrofit = <span class="keyword">new</span> <span class="type">Retrofit</span>.Builder().client(<span class="keyword">new</span> <span class="type">OkHttpClient</span>.Builder()</div><div class="line">                       </div><div class="line">                    .addNetworkInterceptor(</div><div class="line">                               <span class="keyword">new</span>   <span class="type">HttpLoggingInterceptor</span>().setLevel(HttpLoggingInterceptor.Level.HEADERS))       </div><div class="line">.build())</div></pre></td></tr></table></figure>
+<p>开启body日志</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="selector-class">.addNetworkInterceptor</span>(</div><div class="line">                                    <span class="selector-tag">new</span>   <span class="selector-tag">HttpLoggingInterceptor</span>()<span class="selector-class">.setLevel</span>(<span class="selector-tag">HttpLoggingInterceptor</span><span class="selector-class">.Level</span><span class="selector-class">.BODY</span>))</div></pre></td></tr></table></figure>
+<p>基础输出</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="selector-class">.addNetworkInterceptor</span>(</div><div class="line">                                    <span class="selector-tag">new</span>   <span class="selector-tag">HttpLoggingInterceptor</span>()<span class="selector-class">.setLevel</span>(<span class="selector-tag">HttpLoggingInterceptor</span><span class="selector-class">.Level</span><span class="selector-class">.BASIC</span>))</div></pre></td></tr></table></figure>
+<h2 id="2-增加头部信息"><a href="#2-增加头部信息" class="headerlink" title="2 增加头部信息"></a>2 增加头部信息</h2><p>  通用请求头</p>
 <pre><code>new Retrofit.Builder()
           .addConverterFactory(GsonConverterFactory.create())
 
@@ -503,7 +361,9 @@ return TRUSTED_VERIFIER;
 <p><strong>实现自定义 添加到Retrofit</strong></p>
 <pre><code>okHttpClient = okhttpBuilder.build(); 
 Retrofit retrofit = new Retrofit.Builder() .client(okHttpClient) .build();
-</code></pre><hr>
+</code></pre><p>如果忽略所有https请求，<br>可以直接将OkHttpClient的HostnameVerifier设置为false</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">OkHttpClient client = <span class="keyword">new</span> OkHttpClient();</div><div class="line"> </div><div class="line">  client.setHostnameVerifier(<span class="keyword">new</span> HostnameVerifier() &#123;</div><div class="line">      <span class="meta">@Override</span></div><div class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">verify</span><span class="params">(String s, SSLSession sslSession)</span> </span>&#123;</div><div class="line">          <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">      &#125;</div><div class="line">  &#125;);</div><div class="line">  TrustManager[] trustAllCerts = <span class="keyword">new</span> TrustManager[] &#123; <span class="keyword">new</span> X509TrustManager() &#123;</div><div class="line">      <span class="meta">@Override</span></div><div class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">checkClientTrusted</span><span class="params">(</span></span></div><div class="line">              java.security.cert.X509Certificate[] x509Certificates,</div><div class="line">              String s) <span class="keyword">throws</span> java.security.cert.CertificateException &#123;</div><div class="line">      &#125;</div><div class="line"></div><div class="line">      <span class="meta">@Override</span></div><div class="line">      <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">checkServerTrusted</span><span class="params">(</span></span></div><div class="line">              java.security.cert.X509Certificate[] x509Certificates,</div><div class="line">              String s) <span class="keyword">throws</span> java.security.cert.CertificateException &#123;</div><div class="line">      &#125;</div><div class="line"></div><div class="line">      <span class="meta">@Override</span></div><div class="line">      <span class="keyword">public</span> java.security.cert.X509Certificate[] getAcceptedIssuers() &#123;</div><div class="line">          <span class="keyword">return</span> <span class="keyword">new</span> java.security.cert.X509Certificate[] &#123;&#125;;</div><div class="line">      &#125;</div><div class="line">  &#125; &#125;;</div><div class="line">  <span class="keyword">try</span> &#123;</div><div class="line">      SSLContext sc = SSLContext.getInstance(<span class="string">"TLS"</span>);</div><div class="line">      sc.init(<span class="keyword">null</span>, trustAllCerts, <span class="keyword">new</span> java.security.SecureRandom());</div><div class="line">      client.setSslSocketFactory(sc.getSocketFactory());</div><div class="line">  &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">      e.printStackTrace();</div><div class="line">  &#125;</div><div class="line"></div><div class="line"></div><div class="line">       clent.protocols(Collections.singletonList(Protocol.HTTP_1_1))</div><div class="line">       .build();</div></pre></td></tr></table></figure>
+<hr>
 <p>#常规问题归总</p>
 <p>   <strong>1 url被转义</strong></p>
 <pre><code>http://api.myapi.com/http%3A%2F%2Fapi.mysite.com%2Fuser%2Flist
@@ -547,24 +407,19 @@ Call&lt;DataResponse&gt; getOrder(@Url String url,
 <pre><code>retrofit .addCallAdapterFactory(RxJavaCallAdapterFactory.create())    
 </code></pre><p> 关于 Retrofit+ RxJava的案列, 结尾源码已经结合，以及实际遇到的坑可以看本人的系列文章（Retrofit+Rxjava使用技巧一文）。RxJava也是一款强大的多线程通讯利器，也支持本地线程安全，从以前编程习惯迁移到这种链式风格， 估计入门会让你头痛，但会让你在实际应用开发中无时无刻，随心所欲进行多线程响应式编程开发。一句话 ：谁用谁知道！</p>
 <p><strong>Retrofit 2.0系列请阅读</strong></p>
+<p> -<a href="https://tamicer.github.io/2016/08/10/novate10/" target="_blank" rel="external">Novate网络库：Retrofit2.0和RxJava1.x的又一次完美封装</a>。</p>
 <ul>
-<li><p><a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
-</li>
+<li><a href="https://tamicer.github.io/2016/08/01/retrofit010/" target="_blank" rel="external">Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！</a><ul>
+<li><a href="https://tamicer.github.io/2016/07/13/retrofti008/" target="_blank" rel="external">Retrofit 2.0 超能实践（八）源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架</a></li>
+<li><a href="https://tamicer.github.io/2016/07/12/retrofti007/" target="_blank" rel="external">Retrofit 2.0 超能实践（七）Rxjava +Retrofit 你需要掌握的几个经典技巧</a></li>
+<li><a href="https://tamicer.github.io/2016/07/08/retrofti006/" target="_blank" rel="external">Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</a></li>
+<li><a href="https://tamicer.github.io/2016/07/03/retrofit5/" target="_blank" rel="external">Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter</a></li>
+<li><a href="https://tamicer.github.io/2016/06/17/retrofit_004/" target="_blank" rel="external">Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</a></li>
+<li><a href="https://tamicer.github.io/2016/06/14/retrofti3/" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传</a></li>
+<li><a href="https://tamicer.github.io/2016/06/10/jiamichuanshu_okhttp/" target="_blank" rel="external">Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</a></li>
+<li><a href="https://tamicer.github.io/2016/06/07/12/" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a></li>
 </ul>
-<ul>
-<li><a href="http://blog.csdn.net/sk719887916/article/details/52195428" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></li>
+</li>
 </ul>
 <hr>
 <p>参考文章：</p>
@@ -587,7 +442,7 @@ Call&lt;DataResponse&gt; getOrder(@Url String url,
                 <div class="ds-share"
                     style="text-align: right"
                     data-thread-key="2016/06/07/12/"
-                    data-title="Retrofit 2.0 超能实践（一），完美支持加密Https传输"
+                    data-title="Retrofit 2.0 超能实践（一）完美支持加密Https传输"
                     data-url="http://tamicer.com/2016/06/07/12/"
                     data-images=""
                     data-content="前阵子看到圈子里Retrofit 2.0，RxJava(Android),  OkHttp3.... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
@@ -624,7 +479,7 @@ Call&lt;DataResponse&gt; getOrder(@Url String url,
                 <div class="comment">
                     <div class="ds-thread"
                         data-thread-key="2016/06/07/12/"
-                        data-title="Retrofit 2.0 超能实践（一），完美支持加密Https传输"
+                        data-title="Retrofit 2.0 超能实践（一）完美支持加密Https传输"
                         data-url="http://tamicer.com/2016/06/07/12/" >
                     </div>
                 </div>

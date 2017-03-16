@@ -90,14 +90,14 @@
 
                         
                         <li>
-                            <a href="/archives/">Archives</a>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
 
                         
                         <li>
-                            <a href="/about/">About</a>
+                            <a href="/archives/">Archives</a>
                         </li>
                         
                     
@@ -216,14 +216,7 @@
 <li>结合RxJava</li>
 <li>支持缓存机制</li>
 </ul>
-<p>使用原生的Retrofit请求网络，熟悉的朋友必定了解，在某个ApiServie方法多时 Retrofit设置就显得有点累赘，今天给大家带来对Retrofit的基本封装。这次对Retrofit进阶篇，本次封装已加入RxJava，请在阅读下文前请先了解RXJAVA和本人写的Retrofit系列文章，</p>
-<ul>
-<li><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0<br> 超能实践，完美支持Https传输</a></li>
-<li><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0<br>完美同步Cookie实现免登录</a></li>
-</ul>
-<ul>
-<li><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践，轻松实现多文件/图片上传</a></li>
-</ul>
+<p>使用原生的Retrofit请求网络，熟悉的朋友必定了解，在某个ApiServie方法多时 Retrofit设置就显得有点累赘，今天给大家带来对Retrofit的基本封装。这次对Retrofit进阶篇，本次封装已加入RxJava，请在阅读下文前请先了解RXJAVA和本人写的Retrofit系列文章;</p>
 <p>基本步骤：</p>
 <blockquote>
 <p>构建Retrofit的接口service.</p>
@@ -233,290 +226,52 @@
 <p>RetrofitClient的使用.</p>
 </blockquote>
 <h1 id="ApiService"><a href="#ApiService" class="headerlink" title="ApiService"></a>ApiService</h1><p>请求网络的API接口类，这里你可以增加你需要的请求接口，也可复用已经实现的几个方法。</p>
-<pre><code>   /**
-* Created by Ｔａｍｉｃ on 2016-07-08.
-*/
- public interface ApiService {
-
-public static final String Base_URL = &quot;http://ip.taobao.com/&quot;;
-/**
- *普通写法
- */
-@GET(&quot;service/getIpInfo.php/&quot;)
-Observable&lt;ResponseBody&gt; getData(@Query(&quot;ip&quot;) String ip);
-
-
-@GET(&quot;{url}&quot;)
-Observable&lt;ResponseBody&gt; executeGet(
-        @Path(&quot;url&quot;) String url, 
-        @QueryMap Map&lt;String, String&gt; maps);
-
-
-@POST(&quot;{url}&quot;)
-Observable&lt;ResponseBody&gt; executePost(
-        @Path(&quot;url&quot;) String url,
-        @FieldMap Map&lt;String, String&gt; maps);
-
-@Multipart
-@POST(&quot;{url}&quot;)
-Observable&lt;ResponseBody&gt; upLoadFile(
-        @Path(&quot;url&quot;) String url,
-        @Part(&quot;image\\&quot;; filename=\\&quot;image.jpg&quot;) RequestBody avatar);
-
-@POST(&quot;{url}&quot;)
-Call&lt;ResponseBody&gt; uploadFiles(
-        @Url(&quot;url&quot;) String url,
-        @Part(&quot;filename&quot;) String description,
-        @PartMap()  Map&lt;String, RequestBody&gt; maps);
-
-}
-</code></pre><p>上面新增了几个常用的请求方法</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line">  </div><div class="line"></div><div class="line"><span class="dart"> <span class="comment"><span class="markdown">/**</span></span></span></div><div class="line"><span class="bullet">* </span>Created by Ｔａｍｉｃ on 2016-07-08.</div><div class="line">*/</div><div class="line"> public <span class="class"><span class="keyword">interface</span> <span class="title">ApiService</span> </span>&#123;</div><div class="line"></div><div class="line">public <span class="keyword">static</span> <span class="keyword">final</span> <span class="built_in">String</span> Base_URL = <span class="string">"http://ip.taobao.com/"</span>;</div><div class="line"><span class="comment"><span class="markdown">/**</span></span></div><div class="line"> *普通写法</div><div class="line"> */</div><div class="line"><span class="meta">@GET</span>(<span class="string">"service/getIpInfo.php/"</span>)</div><div class="line">Observable&lt;ResponseBody&gt; getData(<span class="meta">@Query</span>(<span class="string">"ip"</span>) <span class="built_in">String</span> ip);</div><div class="line"></div><div class="line"></div><div class="line"><span class="meta">@GET</span>(<span class="string">"&#123;url&#125;"</span>)</div><div class="line">Observable&lt;ResponseBody&gt; executeGet(</div><div class="line">        <span class="meta">@Path</span>(<span class="string">"url"</span>) <span class="built_in">String</span> url, </div><div class="line">        <span class="meta">@QueryMap</span> <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; maps);</div><div class="line"></div><div class="line"></div><div class="line"><span class="meta">@POST</span>(<span class="string">"&#123;url&#125;"</span>)</div><div class="line">Observable&lt;ResponseBody&gt; executePost(</div><div class="line">        <span class="meta">@Path</span>(<span class="string">"url"</span>) <span class="built_in">String</span> url,</div><div class="line">        <span class="meta">@FieldMap</span> <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; maps);</div><div class="line"></div><div class="line"><span class="meta">@Multipart</span></div><div class="line"><span class="meta">@POST</span>(<span class="string">"&#123;url&#125;"</span>)</div><div class="line">Observable&lt;ResponseBody&gt; upLoadFile(</div><div class="line">        <span class="meta">@Path</span>(<span class="string">"url"</span>) <span class="built_in">String</span> url,</div><div class="line">        <span class="meta">@Part</span>(<span class="string">"image\\"</span>; filename=\\<span class="string">"image.jpg"</span>) RequestBody avatar);</div><div class="line"></div><div class="line"><span class="meta">@POST</span>(<span class="string">"&#123;url&#125;"</span>)</div><div class="line">Call&lt;ResponseBody&gt; uploadFiles(</div><div class="line">        <span class="meta">@Url</span>(<span class="string">"url"</span>) <span class="built_in">String</span> url,</div><div class="line">        <span class="meta">@Part</span>(<span class="string">"filename"</span>) <span class="built_in">String</span> description,</div><div class="line">        <span class="meta">@PartMap</span>()  <span class="built_in">Map</span>&lt;<span class="built_in">String</span>, RequestBody&gt; maps);</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>上面新增了几个常用的请求方法</p>
 <blockquote>
-<p>第一个只是普通写法的列子, url ,请求头，参数都是写死的。 不建议这么做</p>
-<p>第二，三个分别是Get 和POST请求，method Url, headers, body参数都可以动态外部传入。</p>
+<p>第一个只是普通写法的列子,<code>url</code> ,请求头，参数都是写死的。 不建议这么做</p>
+<p>第二，三个分别是Get 和POST请求，<code>method Url</code>, <code>headers</code>, <code>body</code>参数都可以动态外部传入。</p>
 <p>四 五是单文件/图片和多文件/图片上传</p>
 </blockquote>
-<h1 id="构建基础拦截器"><a href="#构建基础拦截器" class="headerlink" title="构建基础拦截器"></a>构建基础拦截器</h1><p>用来设置基础header，这里是通过MAP键值对来构建，将heder加入到Request中。</p>
-<pre><code>  /**
- * BaseInterceptor，use set okhttp call header
- * Created by Tamic on 2016-06-30.
-*/
-public class BaseInterceptor implements Interceptor{
-
-   private Map&lt;String, String&gt; headers;
-
-   public BaseInterceptor(Map&lt;String, String&gt; headers) {
-      this.headers = headers;
-    }
-
-   @Override
-   public Response intercept(Chain chain) throws    IOException {
-
-    Request.Builder builder = chain.request()
-            .newBuilder();
-    if (headers != null &amp;&amp; headers.size() &gt; 0) {
-        Set&lt;String&gt; keys = headers.keySet();
-        for (String headerKey : keys) {
-            builder.addHeader(headerKey,   headers.get(headerKey)).build();
-        }
-    }
-    return chain.proceed(builder.build());
-
- }
-}
-</code></pre><h1 id="构建Cookie管理者"><a href="#构建Cookie管理者" class="headerlink" title="构建Cookie管理者"></a>构建Cookie管理者</h1><p>   用来管理cookie, 储存cookie的store这里不再重复说明，具体列子请见:</p>
-   <retrofit 2.0="" 超能实践，完美同步cookie实现免登录="">
-
-<pre><code>public class NovateCookieManger implements CookieJar {
-
-private static final String TAG = &quot;NovateCookieManger&quot;;
-private static Context mContext;
-private static PersistentCookieStore cookieStore;
-
-/**
- * Mandatory constructor for the NovateCookieManger
- */
-public NovateCookieManger(Context context) {
-    mContext = context;
-    if (cookieStore == null) {
-        cookieStore = new PersistentCookieStore(mContext);
-    }
-}
-
-@Override
-public void saveFromResponse(HttpUrl url, List&lt;Cookie&gt; cookies) {
-    if (cookies != null &amp;&amp; cookies.size() &gt; 0) {
-        for (Cookie item : cookies) {
-            cookieStore.add(url, item);
-        }
-    }
-}
-
-@Override
-public List&lt;Cookie&gt; loadForRequest(HttpUrl url) {
-    List&lt;Cookie&gt; cookies = cookieStore.get(url);
-    return cookies;
-}
-
-}
-</code></pre><p>#构建RetrofitClient客户端.</p>
+<h1 id="构建基础拦截器"><a href="#构建基础拦截器" class="headerlink" title="构建基础拦截器"></a>构建基础拦截器</h1><p>用来设置基础<code>heade</code>r，这里是通过MAP键值对来构建，将heder加入到<code>Request</code>中。</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">  <span class="comment">/**</span></div><div class="line"> * BaseInterceptor，use set okhttp call header</div><div class="line"> * Created by Tamic on 2016-06-30.</div><div class="line">*/</div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BaseInterceptor</span> <span class="keyword"><span class="keyword">implements</span> <span class="type">Interceptor</span></span></span>&#123;</div><div class="line"></div><div class="line">   <span class="keyword">private</span> Map&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; headers;</div><div class="line"></div><div class="line">   <span class="keyword">public</span> BaseInterceptor(Map&lt;<span class="keyword">String</span>, <span class="keyword">String</span>&gt; headers) &#123;</div><div class="line">      <span class="built_in">this</span>.headers = headers;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">   @Override</div><div class="line">   <span class="keyword">public</span> Response intercept(Chain chain) throws    IOException &#123;</div><div class="line"></div><div class="line">    Request.Builder builder = chain.request()</div><div class="line">            .<span class="keyword">new</span><span class="type">Builder</span>();</div><div class="line">    <span class="keyword">if</span> (headers != <span class="literal">null</span> &amp;&amp; headers.size() &gt; <span class="number">0</span>) &#123;</div><div class="line">        Set&lt;<span class="keyword">String</span>&gt; keys = headers.keySet();</div><div class="line">        <span class="keyword">for</span> (<span class="keyword">String</span> headerKey : <span class="type">keys</span>) &#123;</div><div class="line">            builder.addHeader(headerKey,   headers.<span class="keyword">get</span>(headerKey)).build();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> chain.proceed(builder.build());</div><div class="line"></div><div class="line"> &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h1 id="构建Cookie管理者"><a href="#构建Cookie管理者" class="headerlink" title="构建Cookie管理者"></a>构建Cookie管理者</h1><p>   用来管理cookie, 储存cookie的store这里不再重复说明，具体列子请见:</p>
+<ul>
+<li><a href="https://tamicer.github.io/2016/06/10/jiamichuanshu_okhttp/" target="_blank" rel="external">Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</a></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">NovateCookieManger</span> <span class="keyword">implements</span> <span class="title">CookieJar</span> </span>&#123;</div><div class="line"></div><div class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String TAG = <span class="string">"NovateCookieManger"</span>;</div><div class="line"><span class="keyword">private</span> <span class="keyword">static</span> Context mContext;</div><div class="line"><span class="keyword">private</span> <span class="keyword">static</span> PersistentCookieStore cookieStore;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * Mandatory constructor for the NovateCookieManger</div><div class="line"> */</div><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">NovateCookieManger</span><span class="params">(Context context)</span> </span>&#123;</div><div class="line">    mContext = context;</div><div class="line">    <span class="keyword">if</span> (cookieStore == <span class="keyword">null</span>) &#123;</div><div class="line">        cookieStore = <span class="keyword">new</span> PersistentCookieStore(mContext);</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">saveFromResponse</span><span class="params">(HttpUrl url, List&lt;Cookie&gt; cookies)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (cookies != <span class="keyword">null</span> &amp;&amp; cookies.size() &gt; <span class="number">0</span>) &#123;</div><div class="line">        <span class="keyword">for</span> (Cookie item : cookies) &#123;</div><div class="line">            cookieStore.add(url, item);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">public</span> List&lt;Cookie&gt; <span class="title">loadForRequest</span><span class="params">(HttpUrl url)</span> </span>&#123;</div><div class="line">    List&lt;Cookie&gt; cookies = cookieStore.get(url);</div><div class="line">    <span class="keyword">return</span> cookies;</div><div class="line">&#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>#构建RetrofitClient客户端.</p>
 <p>今天重要的环节来了，RetrofitClient主要负责创建具体Retrofit，和调度分发请求。设置格式工厂。添加cookie同步，构建OkHttpClient，添加BaseUrl,对加密证书https我没做加入，希望读者参考我的本系列文章自行加入，因为我不喜欢升伸手党。</p>
-<pre><code>   /**
- * RetrofitClient
- * Created by Tamic on 2016-06-15.
- */
-public class RetrofitClient {
-
-private static final int DEFAULT_TIMEOUT = 5;
-
-private ApiService apiService;
-
-private OkHttpClient okHttpClient;
-
-public static String baseUrl = ApiService.Base_URL;
-
-private static Context mContext;
-
-private static RetrofitClient sNewInstance;
-private static class SingletonHolder {
-    private static RetrofitClient INSTANCE = new RetrofitClient(
-            mContext);
-}
-
-public static RetrofitClient getInstance(Context context) {
-    if (context != null) {
-        Log.v(&quot;RetrofitClient&quot;, DevUtil.isDebug() + &quot;&quot;);
-        mContext = context;
-    }
-    return SingletonHolder.INSTANCE;
-}
-
-
-public static RetrofitClient getInstance(Context context, String url) {
-    if (context != null) {
-        mContext = context;
-    }
-    sNewInstance = new RetrofitClient(context, url);
-    return sNewInstance;
-}
-
-private RetrofitClient(Context context) {
-
-    this(context, null);
-}
-
-private RetrofitClient(Context context, String url) {
-
-    if (TextUtils.isEmpty(url)) {
-        url = baseUrl;
-    }
-    okHttpClient = new OkHttpClient.Builder()
-            .addNetworkInterceptor(
-                    new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS))
-            .cookieJar(new NovateCookieManger(context))
-            .addInterceptor(new BaseInterceptor(mContext))
-            .connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
-            .build();
-    Retrofit retrofit = new Retrofit.Builder()
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-            .baseUrl(url)
-            .build();
-    apiService = retrofit.create(ApiService.class);
-}
-
-public void getData(Subscriber&lt;ResponseBody&gt; subscriber, String ip) {
-    apiService.getData(ip)
-            .subscribeOn(Schedulers.io())
-            .unsubscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(subscriber);
-}
-
-public void get(String url, Map headers, Map parameters, Subscriber&lt;ResponseBody&gt; subscriber) {
-    apiService.executeGet(url, headers, parameters)
-            .subscribeOn(Schedulers.io())
-            .unsubscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(subscriber);
-}
-
-public void post(String url, Map headers, Map parameters, Subscriber&lt;ResponseBody&gt; subscriber) {
-    apiService.executePost(url, headers, parameters)
-            .subscribeOn(Schedulers.io())
-            .unsubscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(subscriber);
- }
-
-}
-</code></pre><p>细心的朋友已经发现上面代码 在指定生产线程和消费线程的时候，步骤有点麻烦，每个api都得进行指定线程，那么可以利用rxJava的转换器写一个<code>Transformer</code></p>
-<pre><code>Observable.Transformer schedulersTransformer() {
-  return new Observable.Transformer() {
-
-
-  @Override
-  public Object call(Object observable) {
-   return ((Observable)  observable).subscribeOn(Schedulers.io())
-   .unsubscribeOn(Schedulers.io())
-   .observeOn(AndroidSchedulers.mainThread());
-   }
-   };
-}
-</code></pre><p> 那么api可以这样优化了：</p>
-<pre><code>public Subscription getData(Subscriber&lt;IpResult&gt; subscriber, String ip) {
-  return apiService.getData(ip)
-  .compose(schedulersTransformer())
-  .subscribe(subscriber);
- }
-</code></pre><h1 id="调用-RetrofitClient"><a href="#调用-RetrofitClient" class="headerlink" title="调用 RetrofitClient"></a>调用 RetrofitClient</h1><pre><code>RetrofitClient.getInstance(this).getData(new Subscriber&lt;ResponseBody&gt;() {
-     @Override
-     public void onCompleted() {
-         Toast.makeText(MainActivity.this, &quot;加载完成&quot;, Toast.LENGTH_LONG).show();
-     }
-
-     @Override
-     public void onError(Throwable e) {
-         Toast.makeText(MainActivity.this, &quot;失败!: &quot; + e.getMessage(), Toast.LENGTH_LONG).show();
-     }
-
-     @Override
-     public void onNext(ResponseBody ResponseBody) {
-         Toast.makeText(MainActivity.this, ResponseBody.toString(), Toast.LENGTH_LONG).show();
-     }
- }, &quot;21.22.11.33&quot;);
-</code></pre><p>代码很简洁，在用到的地方获取单列直接调用你需要的方法，在RxSubscriber回调中处理你的业务逻辑即可，无需考虑是否在主线程，其他调用方法同上。</p>
-<p>很多时候BaseApiService无法满足需求时，Retrofit增加了扩展接口 <code>create</code> 来创建你的API，接着调用execute就可以和RxJava关联  </p>
-<pre><code>   //create  you APiService    
-  MyApiService service =                 
-
- RetrofitClient.getInstance(MainActivity.this).create(MyApiService.class);    
-// execute and add observable    
-RetrofitClient.getInstance(MainActivity.this).execute(            
-                           service.getData(&quot;21.22.11.33&quot;), new Subscriber&lt;IpResult&gt;() {                                     
-
-                  @Override                
-                   public void onCompleted() {               
-                   } 
-
-                   @Override                
-                   public void onError(Throwable e) {                    
-                          Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();                             
-                   }   
-
-                  @Override                
-                  public void onNext(IpResult responseBody) {    
-                                  Toast.makeText(MainActivity.this, responseBody.toString(),  Toast.LENGTH_LONG).show();                
-
-                }             
-            });}
-</code></pre><h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本次封装只对retrofit进行了简单封装，很多场景和需求还是存在缺陷，这种单列模式已不符合目前流行的Builder模式，本人已开始进行下一步的封装工作，：<br>笔者已开发了新的框架开发<a href="https://github.com/NeglectedByBoss/Novate" target="_blank" rel="external">Novate</a>：</p>
-<p><a href="https://github.com/NeglectedByBoss/Novate" target="_blank" rel="external">https://github.com/NeglectedByBoss/Novate</a></p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/**</span></div><div class="line"> * RetrofitClient</div><div class="line"> * Created by Tamic on 2016-06-15.</div><div class="line"> */</div><div class="line">public class RetrofitClient &#123;</div><div class="line"></div><div class="line">private static final int DEFAULT_TIMEOUT = <span class="number">5</span><span class="comment">;</span></div><div class="line"></div><div class="line">private ApiService apiService<span class="comment">;</span></div><div class="line"></div><div class="line">private OkHttpClient okHttpClient<span class="comment">;</span></div><div class="line"></div><div class="line">public static String <span class="keyword">baseUrl </span>= ApiService.<span class="keyword">Base_URL;</span></div><div class="line"></div><div class="line">private static <span class="built_in">Context</span> mContext<span class="comment">;</span></div><div class="line"></div><div class="line">private static RetrofitClient sNewInstance<span class="comment">;</span></div><div class="line">private static class SingletonHolder &#123;</div><div class="line">    private static RetrofitClient <span class="keyword">INSTANCE </span>= new RetrofitClient(</div><div class="line">            mContext)<span class="comment">;</span></div><div class="line">&#125;</div><div class="line"></div><div class="line">public static RetrofitClient getInstance(<span class="built_in">Context</span> <span class="built_in">context</span>) &#123;</div><div class="line">    if (<span class="built_in">context</span> != null) &#123;</div><div class="line">        Log.v(<span class="string">"RetrofitClient"</span>, DevUtil.isDebug() + <span class="string">""</span>)<span class="comment">;</span></div><div class="line">        mContext = <span class="built_in">context</span><span class="comment">;</span></div><div class="line">    &#125;</div><div class="line">    return SingletonHolder.<span class="keyword">INSTANCE;</span></div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line">public static RetrofitClient getInstance(<span class="built_in">Context</span> <span class="built_in">context</span>, String url) &#123;</div><div class="line">    if (<span class="built_in">context</span> != null) &#123;</div><div class="line">        mContext = <span class="built_in">context</span><span class="comment">;</span></div><div class="line">    &#125;</div><div class="line">    sNewInstance = new RetrofitClient(<span class="built_in">context</span>, url)<span class="comment">;</span></div><div class="line">    return sNewInstance<span class="comment">;</span></div><div class="line">&#125;</div><div class="line"></div><div class="line">private RetrofitClient(<span class="built_in">Context</span> <span class="built_in">context</span>) &#123;</div><div class="line"></div><div class="line">    this(<span class="built_in">context</span>, null)<span class="comment">;</span></div><div class="line">&#125;</div><div class="line"></div><div class="line">private RetrofitClient(<span class="built_in">Context</span> <span class="built_in">context</span>, String url) &#123;</div><div class="line"></div><div class="line">    if (TextUtils.isEmpty(url)) &#123;</div><div class="line">        url = <span class="keyword">baseUrl;</span></div><div class="line">    &#125;</div><div class="line">    okHttpClient = new OkHttpClient.<span class="keyword">Builder()</span></div><div class="line">            .<span class="keyword">addNetworkInterceptor(</span></div><div class="line">                    new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.HEADERS))</div><div class="line">            .cookieJar(new NovateCookieManger(<span class="built_in">context</span>))</div><div class="line">            .<span class="keyword">addInterceptor(new </span><span class="keyword">BaseInterceptor(mContext))</span></div><div class="line">            .connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)</div><div class="line">            .<span class="keyword">build();</span></div><div class="line">    Retrofit retrofit = new Retrofit.<span class="keyword">Builder()</span></div><div class="line">            .client(okHttpClient)</div><div class="line">            .<span class="keyword">addConverterFactory(GsonConverterFactory.create())</span></div><div class="line">            .<span class="keyword">addCallAdapterFactory(RxJavaCallAdapterFactory.create())</span></div><div class="line">            .<span class="keyword">baseUrl(url)</span></div><div class="line">            .<span class="keyword">build();</span></div><div class="line">    apiService = retrofit.create(ApiService.class)<span class="comment">;</span></div><div class="line">&#125;</div><div class="line"></div><div class="line">public void getData(<span class="keyword">Subscriber&lt;ResponseBody&gt; </span><span class="keyword">subscriber, </span>String ip) &#123;</div><div class="line">    apiService.getData(ip)</div><div class="line">            .<span class="keyword">subscribeOn(Schedulers.io())</span></div><div class="line">            .unsubscribeOn(<span class="keyword">Schedulers.io())</span></div><div class="line">            .observeOn(<span class="keyword">AndroidSchedulers.mainThread())</span></div><div class="line">            .<span class="keyword">subscribe(subscriber);</span></div><div class="line">&#125;</div><div class="line"></div><div class="line">public void get(String url, Map headers, Map parameters, <span class="keyword">Subscriber&lt;ResponseBody&gt; </span><span class="keyword">subscriber) </span>&#123;</div><div class="line">    apiService.executeGet(url, headers, parameters)</div><div class="line">            .<span class="keyword">subscribeOn(Schedulers.io())</span></div><div class="line">            .unsubscribeOn(<span class="keyword">Schedulers.io())</span></div><div class="line">            .observeOn(<span class="keyword">AndroidSchedulers.mainThread())</span></div><div class="line">            .<span class="keyword">subscribe(subscriber);</span></div><div class="line">&#125;</div><div class="line"></div><div class="line">public void post(String url, Map headers, Map parameters, <span class="keyword">Subscriber&lt;ResponseBody&gt; </span><span class="keyword">subscriber) </span>&#123;</div><div class="line">    apiService.executePost(url, headers, parameters)</div><div class="line">            .<span class="keyword">subscribeOn(Schedulers.io())</span></div><div class="line">            .unsubscribeOn(<span class="keyword">Schedulers.io())</span></div><div class="line">            .observeOn(<span class="keyword">AndroidSchedulers.mainThread())</span></div><div class="line">            .<span class="keyword">subscribe(subscriber);</span></div><div class="line"> &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>细心的朋友已经发现上面代码 在指定生产线程和消费线程的时候，步骤有点麻烦，每个api都得进行指定线程，那么可以利用rxJava的转换器写一个<code>Transformer</code><br><figure class="highlight pony"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="type">Observable</span>.<span class="type">Transformer</span> schedulersTransformer() &#123;</div><div class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">new</span> <span class="title">Observable</span>.<span class="title">Transformer</span>() &#123;</span></div><div class="line"></div><div class="line"></div><div class="line">  @<span class="title">Override</span></div><div class="line">  <span class="title">public</span> <span class="title">Object</span> <span class="title">call</span>(<span class="type">Object</span> observable) &#123;</div><div class="line">   <span class="title">return</span> ((<span class="type">Observable</span>)  <span class="title">observable</span>).<span class="title">subscribeOn</span>(<span class="type">Schedulers</span>.io())</div><div class="line">   .<span class="title">unsubscribeOn</span>(<span class="type">Schedulers</span>.io())</div><div class="line">   .<span class="title">observeOn</span>(<span class="type">AndroidSchedulers</span>.mainThread());</div><div class="line">   &#125;</div><div class="line">   &#125;;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p> 那么api可以这样优化了：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="symbol">public</span> <span class="keyword">Subscription </span>getData(<span class="keyword">Subscriber&lt;IpResult&gt; </span><span class="keyword">subscriber, </span><span class="keyword">String </span><span class="built_in">ip</span>) &#123;</div><div class="line">  return apiService.getData(<span class="built_in">ip</span>)</div><div class="line">  .compose(schedulersTransformer())</div><div class="line">  .<span class="keyword">subscribe(subscriber);</span></div><div class="line"> &#125;</div></pre></td></tr></table></figure>
+<h1 id="调用-RetrofitClient"><a href="#调用-RetrofitClient" class="headerlink" title="调用 RetrofitClient"></a>调用 RetrofitClient</h1><figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">RetrofitClient.getInstance(<span class="keyword">this</span>).getData(<span class="keyword">new</span> Subscriber&lt;ResponseBody&gt;() &#123;</div><div class="line">     <span class="meta">@Override</span></div><div class="line">     <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onCompleted</span><span class="params">()</span> </span>&#123;</div><div class="line">         Toast.makeText(MainActivity.<span class="keyword">this</span>, <span class="string">"加载完成"</span>, Toast.LENGTH_LONG).show();</div><div class="line">     &#125;</div><div class="line"></div><div class="line">     <span class="meta">@Override</span></div><div class="line">     <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onError</span><span class="params">(Throwable e)</span> </span>&#123;</div><div class="line">         Toast.makeText(MainActivity.<span class="keyword">this</span>, <span class="string">"失败!: "</span> + e.getMessage(), Toast.LENGTH_LONG).show();</div><div class="line">     &#125;</div><div class="line"></div><div class="line">     <span class="meta">@Override</span></div><div class="line">     <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onNext</span><span class="params">(ResponseBody ResponseBody)</span> </span>&#123;</div><div class="line">         Toast.makeText(MainActivity.<span class="keyword">this</span>, ResponseBody.toString(), Toast.LENGTH_LONG).show();</div><div class="line">     &#125;</div><div class="line"> &#125;, <span class="string">"21.22.11.33"</span>);</div></pre></td></tr></table></figure>
+<p>代码很简洁，在用到的地方获取单列直接调用你需要的方法，在<code>RxSubscriber</code>回调中处理你的业务逻辑即可，无需考虑是否在主线程，其他调用方法同上。</p>
+<p>很多时候BaseApiService无法满足需求时，Retrofit增加了扩展接口 <code>create</code> 来创建你的API，接着调用<code>execute</code>就可以和RxJava关联  </p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">   </div><div class="line"> <span class="comment">//create  you APiService    </span></div><div class="line"> MyApiService service =                 </div><div class="line"></div><div class="line"> RetrofitClient.getInstance(MainActivity.<span class="keyword">this</span>).create(MyApiService.class);    </div><div class="line"><span class="comment">// execute and add observable    </span></div><div class="line">RetrofitClient.getInstance(MainActivity.<span class="keyword">this</span>).execute(            </div><div class="line">                           service.getData(<span class="string">"21.22.11.33"</span>), <span class="keyword">new</span> Subscriber&lt;IpResult&gt;() &#123;                                     </div><div class="line"></div><div class="line">                  <span class="meta">@Override</span>                </div><div class="line">                   <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onCompleted</span><span class="params">()</span> </span>&#123;               </div><div class="line">                   &#125; </div><div class="line">   </div><div class="line">                   <span class="meta">@Override</span>                </div><div class="line">                   <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onError</span><span class="params">(Throwable e)</span> </span>&#123;                    </div><div class="line">                          Toast.makeText(MainActivity.<span class="keyword">this</span>, e.getMessage(), Toast.LENGTH_LONG).show();                             </div><div class="line">                   &#125;   </div><div class="line"> </div><div class="line">                  <span class="meta">@Override</span>                </div><div class="line">                  <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onNext</span><span class="params">(IpResult responseBody)</span> </span>&#123;    </div><div class="line">                                  Toast.makeText(MainActivity.<span class="keyword">this</span>, responseBody.toString(),  Toast.LENGTH_LONG).show();                </div><div class="line"></div><div class="line">                &#125;             </div><div class="line">            &#125;);&#125;</div></pre></td></tr></table></figure>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>本次封装只对retrofit进行了简单封装，很多场景和需求还是存在缺陷，这种单列模式已不符合目前流行的Builder模式，本人已开始进行下一步的封装工作，：<br>笔者已开发了新的框架开发<a href="https://github.com/tamicer/Novate" target="_blank" rel="external">Novate</a>：</p>
+<p><a href="https://github.com/tamicer/Novat" target="_blank" rel="external">https://github.com/tamicer/Novat</a></p>
 <hr>
 <blockquote>
 <p>源码 GitHub :<a href="https://github.com/NeglectedByBoss/RetrofitClient" target="_blank" rel="external">https://github.com/NeglectedByBoss/RetrofitClient</a><br>           已全部更新完成</p>
 </blockquote>
 <p><strong>系列导读</strong>：</p>
 <ul>
-<li><p><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
-</li>
+<li><a href="https://tamicer.github.io/2016/08/10/novate10/" target="_blank" rel="external">Novate网络库：Retrofit2.0和RxJava1.x的又一次完美封装</a>。</li>
+<li><a href="https://tamicer.github.io/2016/08/01/retrofit010/" target="_blank" rel="external">Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！</a></li>
+<li><a href="https://tamicer.github.io/2016/07/13/retrofti008/" target="_blank" rel="external">Retrofit 2.0 超能实践（八）源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架</a></li>
+<li><a href="https://tamicer.github.io/2016/07/12/retrofti007/" target="_blank" rel="external">Retrofit 2.0 超能实践（七）Rxjava +Retrofit 你需要掌握的几个经典技巧</a></li>
+<li><a href="https://tamicer.github.io/2016/07/08/retrofti006/" target="_blank" rel="external">Retrofit 2.0 超能实践（六）基于Retrofit2.0+RxJava 封装的超好用的RetrofitClient工具类</a></li>
+<li><a href="https://tamicer.github.io/2016/07/03/retrofit5/" target="_blank" rel="external">Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter</a></li>
+<li><a href="https://tamicer.github.io/2016/06/17/retrofit_004/" target="_blank" rel="external">Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</a></li>
+<li><a href="https://tamicer.github.io/2016/06/14/retrofti3/" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传</a></li>
+<li><a href="https://tamicer.github.io/2016/06/10/jiamichuanshu_okhttp/" target="_blank" rel="external">Retrofit 2.0 超能实践（二），Okhttp完美同步持久Cookie实现免登录</a></li>
+<li><a href="https://tamicer.github.io/2016/06/07/12/" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a></li>
 </ul>
 <p>第一时间获取各位大佬的技术文章和资讯请关注微信公众号！</p>
 <p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
-</retrofit>
+
 
                 <hr>
 
