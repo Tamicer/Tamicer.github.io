@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Novate网络库： Retrofit2.0和RxJava1.x的又一次完美封装。 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2016/08/10/novate10/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#novate" title="novate">novate</a>
+                        
+                          <a class="tag" href="/tags/#架构" title="架构">架构</a>
+                        
+                    </div>
+                    <h1>Novate网络库： Retrofit2.0和RxJava1.x的又一次完美封装。</h1>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2016-08-10
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <blockquote>
+<p>作者/Tamic<br><a href="http://www.tamicer.com" target="_blank" rel="external">http://www.tamicer.com</a></p>
+</blockquote>
+<h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p><img src="http://upload-images.jianshu.io/upload_images/2022038-6a900d93d8acb091.jpg" alt="Novate"></p>
+<p>  用过RxJava和Retrofit的朋友，用久了就会发现Retrofit说难不难，说易亦不易，对于实际项目中，单纯的运用Retrofit做网络请求库，开发起来还是有很多不便，诸如必须要对请求头和参数处理，API接口数目众多的情况下处理起来也不便， 还有Https证书验签，cookie持久，错误结果码处理，统一操作加载过渡UI等也存在不便，因此我对Retrofit再次进行了封装，一直关注我的朋友以前看我封装的《 <a href="http://blog.csdn.net/sk719887916/article/details/51958010" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a>》的一文，已对Retrofit结合RxJava时遇到上面的问题进行了完整封装，很多场景还未做到全面，也不是和Retrofit源码一样的<code>Builder</code>模式，因此感觉还是不太完美，特此我进行了长达两个月<strong>Novate</strong> 框架的开发，给旧的<code>HttpClent</code>迁移到<code>Retrofit2.0</code>也是带来了福音（不需要开发者掌握<code>RxJava</code>和<code>Retrofit</code>）。</p>
+<p>本框架从6月问世以来，无论对入门Rxjava还是实战retrofit的朋友，或多或少的带来的参考价值，无论你是copy源码还是采用maven形式。所以让我有动力进行下一版本（2.X）的强化！</p>
+<p> <strong>为何起名为<em>Novate</em>？</strong></p>
+<p>Novate的英文原意是用新事物代替 ，我开发目的是用新的东西来代替Retrofit结合Rxjava共同开发时的有些不易操作的地方，因此起名新奇的东西，所以结合了原来的<code>HttpClient</code>用法习惯，又加入了<code>Retrofit</code>和<code>RxJava</code>的特性，因此起名 ：<strong>Novate</strong></p>
+<p>进行下文前请先了解<code>Retrofit</code>和<code>Rxjava</code>，未阅读的请移步：</p>
+<p><strong>系列导读</strong>：</p>
+<ul>
+<li><p><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
+</li>
+<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
+</li>
+</ul>
+<h1 id="功能介绍"><a href="#功能介绍" class="headerlink" title="功能介绍"></a>功能介绍</h1><p>Novate的改进</p>
+<ul>
+<li>优化设计：加入基础API，减少Api冗余</li>
+<li>强大的缓存模式： 支持离线缓存， 无网络智能加载缓存，可配置是否需要缓存</li>
+<li>cookie管理：自带cookie管理机制</li>
+<li>全方位请求模式：支持多种方式访问网络（get,put, post ,delete）</li>
+<li>轻送调用：支持表单,图文一起，json上传。</li>
+<li>文件传输：支持文件下载和上传</li>
+<li>动态添加：支持请求头和参数统一添加，分别添加。</li>
+<li>结果处理：支持对返回结果的统一处理</li>
+<li>扩展性强：支持自定义的扩展API，默认Api无法满足时可自定义自己的Service</li>
+<li>悠雅方便：支持统一请求访问网络的流程控制，以方便帮你完美加入Processbar进度。</li>
+<li>RxJava结合： 结合RxJava，线程智能控制.</li>
+</ul>
+<h2 id="APi说明"><a href="#APi说明" class="headerlink" title="APi说明"></a>APi说明</h2><ul>
+<li>集成</li>
+</ul>
+<p>依赖Gradle:</p>
+<ul>
+<li>root：</li>
+</ul>
+<pre><code> repositories {
+    maven { url &quot;https://jitpack.io&quot; }
+    jcenter()
+}
+</code></pre><ul>
+<li>app:</li>
+</ul>
+<pre><code>
+dependencies {
+ .....
+   compile &apos;com.tamic.novate:novate:1.2.8&apos;
+}
+</code></pre><p>基本构建:</p>
+<pre><code>Novate novate = new Novate.Builder(this)
+           .baseUrl(baseUrl)
+           .build();
+</code></pre><p>  除了基本的构建还提供更了其他API</p>
+<pre><code>
+构建你的header头和参数
+Map&lt;String, String&gt; headers = new HashMap&lt;&gt;();
+ headers.put(&quot;apikey&quot;, &quot;4545sdsddfd7sds&quot;);
+
+Map&lt;String, String&gt; parameters = new HashMap&lt;&gt;();
+ parameters.put(&quot;uid&quot;, &quot;878787878sdsd&quot;);
+</code></pre><p>  实例化：</p>
+<pre><code>
+Novate novate = new Novate.Builder(this)
+          .addParameters(parameters)
+          .connectTimeout(8)
+          .baseUrl(&quot;you api url&quot;)
+          .addHeader(headers)
+          .addLog(true)
+          .build();
+</code></pre><p>   如果你需要接入证书：</p>
+<pre><code>
+novate.addSSL(hosts,  certificates)
+</code></pre><p>   怎么用？</p>
+<pre><code>
+int[] certificates = {R.raw.myssl1, R.raw.myssl2,......}
+
+int[] hosts = {&quot;https:// you hosturl2&quot;, &quot;https:// you hosturl2&quot;,......}
+</code></pre><p>  还要说明？</p>
+<p>   <code>certificates</code>是你的ssl证书文件在<code>raw</code>文件下的的id数组，项目中请放到<code>raw</code>资源文件下, <code>myssl.cer</code>怎么生成，这个就不是我这边讲的内容，请用pc浏览器自动导出证书，保存, 还不清楚的话，我会醉醉。</p>
+<p> 想对某个api不想缓存， </p>
+<pre><code>novate.addCache(false)
+</code></pre><p> 想对某个api不想cookiet持久 </p>
+<pre><code>
+novate.addCookie(false)
+</code></pre><p>  同样很多人想问 我想对novate进行扩展，咋办，别担心，Novate也提供了以下方法</p>
+<pre><code>novate.addInterceptor()
+           .addCallAdapterFactory()
+           .callFactory()
+           .client()
+</code></pre><p>上面只是列举了几个简单的api，更多的还是沿用的<code>retrofit</code>的方法名，Retrofit怎么使用，<code>Novate</code>就怎么用。</p>
+<p>RxJava怎么处理？</p>
+<pre><code>
+observable.subscribeOn(Schedulers.io())
+               .unsubscribeOn(Schedulers.io())
+               .observeOn(AndroidSchedulers.mainThread());
+</code></pre><p>内部统一已进行线程控制，所有请求都采用以上线程形式，无需你手动添加。</p>
+<h1 id="Get"><a href="#Get" class="headerlink" title="Get"></a>Get</h1><p>   提供了<code>novate.executeGet（）</code>和<code>novate.get（）</code> 两个API<br>   区别如下：</p>
+<blockquote>
+<p><code>executeGet()</code> 来执行get请求，此方法会解析返回你需要的bean实体，并进行对返回格式的处理，并做异常处理。<br><code>novate.get()</code>不会帮你解析实体，并返回原生的<code>ResponseBody</code>，需要你自己对返回数据解析进行序列化。此方法定制化<br>低，可灵活使用！</p>
+</blockquote>
+<pre><code>
+novate.executeGet(&quot;you url&quot;, parameters, new Novate.ResponseCallBack&lt;NovateResponse&lt;ResultModel&gt;&gt;() {
+
+
+        @Override
+        public void onError(Throwable e) {
+
+        }
+
+        @Override
+        public void onSuccee(NovateResponse&lt;ResultModel&gt; response) {
+            // 这里novate已对ResponseBody进行解析返回，
+        }
+    });
+</code></pre><p>如果你不需要Novate帮你解析返回的数据 则调用<strong>novate.get（）</strong></p>
+<pre><code>
+novate.get(&quot;you Url&quot;, parameters, new BaseSubscriber&lt;ResponseBody&gt;(ExempleActivity.this) {
+       @Override
+       public void onNext(ResponseBody responseBody) {
+           try {
+
+               String jstr = new String(responseBody.bytes());
+
+               Type type = new TypeToken&lt;MovieModel&gt;() {
+               }.getType();
+               // 这里需要对ResponseBody进行解析，novate并不会帮你解析
+               MovieModel response = new Gson().fromJson(jstr, type);
+
+               Toast.makeText(ExempleActivity.this, response.toString(), Toast.LENGTH_SHORT).show();
+
+           } catch (IOException e) {
+               e.printStackTrace();
+           }
+       }
+
+   });
+</code></pre><h1 id="Post"><a href="#Post" class="headerlink" title="Post"></a>Post</h1><p>   Novate提供了<code>novate.post（）</code>和<code>novate.executePost（）</code>两个API</p>
+<p>   区别如下：</p>
+<blockquote>
+<p><code>executePost</code>来执行Post方式请求，此方法对结果解析返回你需要的bean实体，并对返回格式按<code>code</code> ,<code>msg</code> ，<code>data</code>，进行检查，并对错误结果进行处理！默认业务成功码为：0 ，非零走失败方法<br>novate.post()不会帮你解析实体，需要你自己对返回数据解析进行序列化。 此api比较灵活，不会进行格式校验！</p>
+</blockquote>
+<p><code>Get</code>和<code>Post</code>代码用法很相似，</p>
+<p>   <strong>novate.post（）</strong></p>
+<pre><code>
+/**
+     *
+     *
+     * 调用post需要你自己解析数据
+     *
+     * 如果需要解析后返回 则调用novate.executeGet()
+     * 参考 performGet()中的方式
+     */
+    novate.post(&quot;service/getIpInfo.php&quot;, parameters, new BaseSubscriber&lt;ResponseBody&gt;(ExempleActivity.this) {
+        @Override
+        public void onError(Throwable e) {
+
+        }
+
+        @Override
+        public void onNext(ResponseBody responseBody) {
+
+            try {
+                String jstr = new String(responseBody.bytes());
+
+                Type type = new TypeToken&lt;NovateResponse&lt;ResultModel&gt;&gt;() {
+                }.getType();
+
+                NovateResponse&lt;ResultModel&gt; response = new Gson().fromJson(jstr, type);
+                Toast.makeText(ExempleActivity.this, response.getData().toString(), Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    });
+</code></pre><p><strong>novate.executePost（）</strong></p>
+<pre><code>
+novate.executePost(&quot;pathUrl&quot;, parameters, new Novate.ResponseCallBack&lt;NovateResponse&lt;MyModel&gt;&gt;() {
+
+    @Override
+    public void onError(Throwable e) {
+       // todo 
+    }
+
+    @Override
+    public void onSuccee(NovateResponse&lt;ResultModel&gt; response) {
+     // todo 
+    }
+
+});
+</code></pre><p><strong>V1.2.5-bata</strong> 版本提供了直接解析真实数据的功能，对api很灵活的项目，适合使用。 具体姿势：</p>
+<pre><code>
+**novate.executePost（）**
+
+        novate.executePost(&quot;pathUrl&quot;, parameters, new Novate.ResponseCallBack&lt;MyModel&gt;() {
+
+            @Override
+            public void onError(Throwable e) {
+               // todo 
+            }
+
+            @Override
+            public void onSuccee(ResultModel data) {
+             // todo 
+
+           // 
+
+            }
+
+        });
+</code></pre><p>仔细一对比，你会发现V1.2.5-bata除外的版本都是用<code>NovateResponse&lt;MyModel&gt;</code>进行包装下，如果你嫌包装蛮烦，可以选择这个版本开发，但是弊端的成功回调并不包含业务码。</p>
+<p>此版本的其他<code>execute</code>的方法同以上其他<code>get</code>的区别。</p>
+<h1 id="Put"><a href="#Put" class="headerlink" title="Put"></a>Put</h1><p>   put方式则提供了<code>novate.put（）</code>和<code>novate.executePut（）</code>两个API</p>
+<p>   区别和用法参考 上面<code>Get</code>和<code>Put</code></p>
+<h1 id="Delete"><a href="#Delete" class="headerlink" title="Delete"></a>Delete</h1><p>   同样对<code>Delete</code>  提供了<code>novate.delete（）</code>和<code>novate.executeDelete（）</code>两个API</p>
+<p>   区别和用法参考 上面Get和Put的介绍</p>
+<h1 id="BODY"><a href="#BODY" class="headerlink" title="BODY"></a>BODY</h1><p>假设你需要提交body， Novate也提供了<code>novate.body()</code>，需要直接将你bean对象加入即可，因此可以：</p>
+<pre><code>ovate.body(url, uesrBean, new BaseSubscriber&lt;ResponseBody&gt;() {
+        @Override
+        public void onError(Throwable e) {
+
+        }
+
+        @Override
+        public void onNext(ResponseBody responseBody) {
+
+        }
+    });
+</code></pre><p>#FORM#</p>
+<p> 假设你以提交表单，请使用<code>novate.form()</code>，你可以：</p>
+<pre><code>
+novate.form(url, new HashMap&lt;String, Object&gt;(), new BaseSubscriber&lt;ResponseBody&gt;() {
+    @Override
+    public void onError(Throwable e) {
+
+    }
+
+    @Override
+    public void onNext(ResponseBody responseBody) {
+
+    }
+});
+</code></pre><h1 id="JSON"><a href="#JSON" class="headerlink" title="JSON"></a>JSON</h1><p> 假设你需要直接push json 字符串，你可以：</p>
+<pre><code>  novate.json(url, jsonString, new BaseSubscriber&lt;ResponseBody&gt;() {
+    @Override
+    public void onError(Throwable e) {
+
+    }
+
+    @Override
+    public void onNext(ResponseBody responseBody) {
+
+    }
+});
+</code></pre><h1 id="UpLoad"><a href="#UpLoad" class="headerlink" title="UpLoad"></a>UpLoad</h1><p>   当然novate 特提供了可供上传图片的API <code>novate.upload（）</code></p>
+<pre><code>
+RequestBody requestFile =Utils.createFile(file);
+
+novate.upload(url, requestFile, new BaseSubscriber&lt;ResponseBody&gt;{
+
+  @Override
+      public void onNext(ResponseBody responseBody) {
+
+      }
+});
+</code></pre><p>如果是单文件</p>
+<pre><code>
+novate.uploadFlie(url, requestFile, new BaseSubscriber&lt;ResponseBody&gt;{
+
+  @Override
+  public void onNext(ResponseBody responseBody) {
+
+  }
+    });
+</code></pre><p><strong>upLoadFiles</strong>  </p>
+<pre><code>
+
+    Map&lt;String, RequestBody&gt; map = new HashMap&lt;&gt;();
+          maps.put(&quot;file1&quot;, requestFile);
+
+novate.uploadFlies(url, map, new BaseSubscriber&lt;ResponseBody&gt;(ExempleActivity.this) {
+       ......
+    } );
+</code></pre><p>#图文一起</p>
+<p>   同时提交图文：适合用户注册等场景 <code>novate.uploadupload</code></p>
+<p>   <strong>body模式</strong></p>
+<pre><code>
+//构建body 链式语法高逼格哦
+ RequestBody requestBody = new MultipartBody.Builder().setType(MultipartBody.FORM)
+         .addFormDataPart(&quot;name&quot;, &quot;tamic&quot;)
+         .addFormDataPart(&quot;password&quot;, &quot;12345&quot;)
+         .addFormDataPart(&quot;atavr&quot;, file.getName(), RequestBody.create(MediaType.parse(&quot;image/*&quot;), file))
+         .build();
+
+
+ novate.upload(url, requestBody, new BaseSubscriber&lt;ResponseBody&gt;(ExempleActivity.this) {
+     .....
+ });
+</code></pre><p>   <strong>利用part模式</strong></p>
+<pre><code>
+// MultipartBody.Part is used to send also the actual file name
+  MultipartBody.Part body = Utils.createPart(&quot;hello 这是和后端约定好的key&quot;, file);
+  // add 描述
+  String descriptionString = &quot;hello, 这是文件描述&quot;;
+
+  RequestBody description = Utils.createPartFromString(descriptionString);
+  // 执行
+  novate.uploadFlie(url, description, body, new BaseSubscriber&lt;ResponseBody&gt;(ExempleActivity.this) {
+      。。。。。
+  });
+</code></pre><h1 id="DownLoad"><a href="#DownLoad" class="headerlink" title="DownLoad"></a>DownLoad</h1><p>   如果说有上传文件的接口，必定有下载文件的接口，同样novate也提供了下载文件API <code>novate.download（）</code></p>
+<pre><code>
+novate.download(downUrl, new DownLoadCallBack() {
+
+      @Override
+      public void onStart() {
+          super.onStart();
+
+      }
+
+      @Override
+      public void onError(Throwable e) {
+
+      }
+
+      @Override
+      public void onCancel() {
+          super.onCancel();
+
+      }
+
+      @Override
+      public void onProgress(long fileSizeDownloaded) {
+          super.onProgress(fileSizeDownloaded);
+
+      }
+
+      @Override
+      public void onSucess(String path, String name, long fileSize) {
+
+      }
+  });
+</code></pre><p>通常还有同学要定制下载路径和文件名，当然也有API提供：</p>
+<pre><code>
+ public void download(String url, String savePath, String name, DownLoadCallBack callBack) {
+       .......
+}
+</code></pre><p><strong>downLoad  大文件</strong></p>
+<pre><code>
+
+novate.download(downUrl, new DownLoadCallBack() {
+
+   &apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;
+});
+</code></pre><p><strong>downLoad 小文件</strong>   </p>
+<pre><code>
+novate.downloadMin(downUrl, new DownLoadCallBack() {
+
+    &apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;&apos;
+ });
+</code></pre><h1 id="Custom-Api"><a href="#Custom-Api" class="headerlink" title="Custom Api"></a>Custom Api</h1><p> 以上方法默认会处理Novate自带的<code>BaseApiService</code>，如果默认的<em><code>BaseApiService</code></em>无法满足你的需求时，Novate同样支持你自己的<code>ApiService</code>。</p>
+<p>定义一个你自己的APi</p>
+<p> <strong>MyAPI</strong></p>
+<pre><code>
+
+public interface MyAPI {
+
+  @GET(&quot;url&quot;)
+  Observable&lt;MyBean&gt; getdata(@QueryMap Map&lt;String, String&gt; maps);
+
+}
+</code></pre><p> <strong>Execute Call</strong></p>
+<p>   通过novate提供<code>create()</code>实例化你的API</p>
+<pre><code>MyAPI myAPI = novate.create(MyAPI.class);
+</code></pre><p>   通过<code>novate.call()</code>来执行你的接口，你也不用关心，<code>novate</code>内部同样已进行<code>RxJava</code>线程控制。</p>
+<pre><code> novate.call(myAPI.getdata(parameters),
+            new BaseSubscriber&lt;MyBean&gt;(ExempleActivity.this) {
+
+                @Override
+                public void onError(Throwable e) {
+
+                }
+
+                @Override
+                public void onNext(MyBean MyBean) {
+                }
+            });
+
+}
+</code></pre><p>#取消</p>
+<p>  每执行novate.xxx() 给上层返回了一个Subscription，上层可以调用unsubscribe()来进行取消！</p>
+<pre><code>
+if (!subscription.isUnsubscribed()) {
+    subscription.unsubscribe();
+}
+</code></pre><h1 id="感谢"><a href="#感谢" class="headerlink" title="感谢"></a>感谢</h1><p>感谢一直以来提供思路，和测试的朋友，不断提供建议和思路，让我不断完善<code>novate</code>。 有的人看过或者读过后觉得此框架定制化严重，也有的人觉得挺好，所以提供了可配置方案：</p>
+<p>如果你觉得此框架的业务码和错误码定的太死，其实框架已提供定制化方案，比如可以在你的项目中Assets中修改config文件：</p>
+<p>如果想用自带的成功状态码0，不成功为非零的情况，可忽略一下配置。</p>
+<pre><code>
+{
+  &quot;isFormat&quot;: &quot;false&quot;,
+  &quot;sucessCode&quot;: [
+    &quot;1&quot;,
+    &quot;0&quot;,
+    &quot;1001&quot;
+  ],
+  &quot;error&quot;: {
+    &quot;1001&quot;: &quot;网络异常&quot;
+  }
+}
+</code></pre><p>如果不想对结果格式化检查，请将<code>isFormat</code>设置为<code>：false</code></p>
+<p>将修改<code>sucessCode</code>的成功业务吗，请将你的成功的业务码加入到<code>sucessCode</code>节点中。</p>
+<p><strong>错误码</strong></p>
+<p>需要对错误码进行自定义翻译，请配置相关error信息，具体可配置成：</p>
+<pre><code>{
+     &quot;isFormat&quot;: &quot;false&quot;,
+        &quot;sucessCode&quot;: [
+          &quot;1&quot;,
+       &quot;0&quot;,
+        &quot;1001&quot;
+      ],
+      &quot;error&quot;: {
+        &quot;1001&quot;: &quot;网络异常&quot;，
+        &quot;1002&quot;: &quot;加入你的异常信息&quot;
+               }
+ }
+</code></pre><p>#缺陷</p>
+<p> 目前<code>1.X</code>并没有完全运用<code>RxJava2.0</code>的新特性，笔者以开始联合<a href="http://my.csdn.net/jdsjlzx" target="_blank" rel="external">@一叶扁舟</a> 做兼容RxJava2.x的APi的工作,  目前<code>Novate</code>很遗憾无法为你提供压栈，背压式服务！<br> 在连续异步多个api时，诸如指定序列请求网络的场景，大白话就是你要根据上一个api的返回值再执行下一个api的情况，<code>Novate1.x</code>只能是靠开发者在上层的成功回调中执行，如果是<code>1.x</code>是对retrofit的强化，那么<code>novate2.x</code>将是对<code>RxJava</code>的运用强化。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-cc93c3d6791a39dc.jpg" alt="感谢公司设计妹子提供的Logo, 加速标识哦"></p>
+<p>#结束</p>
+<p> 如果你对本框架有无法满足你的需求或有何更好的想法，请及时联系我进行交流，谢谢您的支持！欢迎您的star. Tamic期待更多的技术大牛开车指导！</p>
+<p><strong>GitHub: <a href="https://github.com/Tamicer/Novate" target="_blank" rel="external">https://github.com/Tamicer/Novate</a></strong></p>
+<hr>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
+
+
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2016/08/10/novate10/"
+                    data-title="Novate网络库： Retrofit2.0和RxJava1.x的又一次完美封装。"
+                    data-url="http://tamicer.com/2016/08/10/novate10/"
+                    data-images=""
+                    data-content="
+作者/Tamichttp://www.tamicer.com
+
+背景
+  用过RxJava和... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2017/01/15/retroft011/" data-toggle="tooltip" data-placement="top" title="Retrofit/OkHttp API接口加固技术实践（上）。">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2016/08/01/retrofit010/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2016/08/10/novate10/"
+                        data-title="Novate网络库： Retrofit2.0和RxJava1.x的又一次完美封装。"
+                        data-url="http://tamicer.com/2016/08/10/novate10/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#novate" title="novate">novate</a>
+                        
+                          <a class="tag" href="/tags/#架构" title="架构">架构</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2016/08/10/novate10/";
+    var disqus_url = "http://tamicer.com/2016/08/10/novate10/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

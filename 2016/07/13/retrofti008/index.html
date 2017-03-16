@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Retrofit 2.0 超能实践（八），源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2016/07/13/retrofti008/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#架构" title="架构">架构</a>
+                        
+                    </div>
+                    <h1>Retrofit 2.0 超能实践（八），源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架</h1>
+                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2016-07-13
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <blockquote>
+<p>tamic: /   www.tamicer.com</p>
+</blockquote>
+<hr>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-6d0031e99d614cc6.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="图于文无关.jpg"></p>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>Retrofit用法和介绍的文章实在是多的数不清，也有很多介绍其内部原理的，但是看过之后，还是让很多人云里雾里,   本篇文章旨在通过自我实现一个自定义的Retrofit，来熟悉了解其Retrofit的内部原理。也帮助针对那些项目很稳定，解决迁移API接口带来的难度问题。</p>
+<p>如果对Retrofit最基础的不熟悉的请先阅读Retrofit全介绍：</p>
+<blockquote>
+<p>Retrofit ：<a href="https://futurestud.io/blog" target="_blank" rel="external">https://futurestud.io/blog</a></p>
+</blockquote>
+<p>如果阅读外文吃力的话，建议阅读笔者之前的本系列文章</p>
+<p>#回顾Retrofit<br>Retrofit2.0是SQUARE美国一家移动支付公司最新发布的在Android平台上<code>http</code>访问客户端，具体简单用法列举</p>
+<p> <strong>简单列子</strong></p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment">// 创建ApiService</span></div><div class="line"><span class="keyword">public</span> <span class="keyword">interface</span> ApiService &#123;    </div><div class="line">    @GET(<span class="string">"service/getIpInfo.php"</span>)    <span class="keyword">Call</span>&lt;IpResult&gt; getData(@Query(<span class="string">"ip"</span>) String ip);</div><div class="line">&#125;</div><div class="line">   <span class="comment">// 实例化Retrofit</span></div><div class="line">    Retrofit retrofit = <span class="keyword">new</span> Retrofit.Builder()</div><div class="line">            .client(okHttpClient)</div><div class="line">            .baseUrl(url)</div><div class="line">            .build();</div><div class="line"></div><div class="line">    <span class="comment">// 构架ApiServiceImpl</span></div><div class="line">    ApiService apiService = retrofit.create(ApiService.<span class="keyword">class</span>);</div><div class="line">   </div><div class="line">     <span class="comment">// 执行异步请求</span></div><div class="line">    <span class="keyword">Call</span>&lt;IpResult&gt; <span class="keyword">call</span> = apiService.getData(<span class="string">"21.22.11.33"</span>);</div><div class="line"></div><div class="line">    <span class="keyword">call</span>.enqueue(<span class="keyword">new</span> Callback&lt;IpResult&gt;() &#123;</div><div class="line">        @Override</div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> onResponse(<span class="keyword">Call</span>&lt;IpResult&gt; <span class="keyword">call</span>, Response&lt;IpResult&gt; response) &#123;</div><div class="line"></div><div class="line">        &#125;</div><div class="line"></div><div class="line">        @Override</div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> onFailure(<span class="keyword">Call</span>&lt;IpResult&gt; <span class="keyword">call</span>, Throwable t) &#123;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">    &#125;);</div></pre></td></tr></table></figure>
+<p>代码很简洁，很多人甚是羡慕，想想自己何时才能写出如此优雅的代码，也想弄明白其内部怎么实现的，今天就给大家带来一款Tamic框架，来模仿下Retrofit的实现原理。<br>下文开始之前，不会对Retrofit的原理进行理论分析，其实也没这个必要，推荐一篇其他人写的文章：</p>
+<p>接着本次实现方式不会沿用Retrofit基于的<code>okhttp</code>, 因为<code>okHttp</code>本身实现了已进行了线程管理和回调，会给本次demo实现带来一定弊端，所以我选择用了<code>SynchttpClient</code>来做基础请求端，这样才能显得用零基础实现Retrofit， 本次实现需要涉猎到Java反射，依赖注入，控制反转，代理模式，建造者模式，面向接口编程等，这些技术这里不再重复介绍，下面接着看重点。</p>
+<p>#准备注解类<br>   retrofit采用注解实现API，因此也模仿了准备多个注解接口，比如请求类型（GET），参数（Part），头部(header)等,<br>为了区分我用Tamic的开头用来做前缀先创建一个注解类TGet</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="comment">// 请求方式</span></div><div class="line"> <span class="variable">@Target</span>(ElementType.METHOD)</div><div class="line">public <span class="variable">@interface</span> TGet &#123;</div><div class="line"> <span class="selector-tag">String</span> <span class="selector-tag">value</span>();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>Body 类似于Part</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">  </div><div class="line"><span class="comment">// 参数</span></div><div class="line"><span class="variable">@Retention</span>(RetentionPolicy.RUNTIME)</div><div class="line">  public <span class="variable">@interface</span> TBody &#123;</div><div class="line">  <span class="selector-tag">String</span> <span class="selector-tag">value</span>();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-b073aae624a74549.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="注解类.jpg"><br> 其他注解类没多大技术点，贮备好上图的注解类，方式一样，源码就不在列举。</p>
+<h1 id="准备CallBack"><a href="#准备CallBack" class="headerlink" title="准备CallBack"></a>准备CallBack</h1><p>  此接口类用来回调http请求结果，采用泛型，方便上层注入数据<code>model</code>，动态解析返回实体</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">ICallback</span>&lt;<span class="title">T</span>&gt; </span>&#123;</div><div class="line"></div><div class="line">   <span class="function"><span class="keyword">void</span> <span class="title">success</span><span class="params">(T t)</span></span>;</div><div class="line">   <span class="function"><span class="keyword">void</span> <span class="title">failed</span><span class="params">(Throwable e)</span></span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h1 id="Platform"><a href="#Platform" class="headerlink" title="Platform"></a>Platform</h1><p>  <code>Platform</code>用来调度多个请求线程，</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Platform</span> </span>&#123;</div><div class="line">  <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Platform PLATFORM = findPlatform();</div><div class="line"></div><div class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Platform <span class="title">get</span><span class="params">()</span> </span>&#123;</div><div class="line">     Log.v(TamicHttpClient.TAG, PLATFORM.getClass().toString());</div><div class="line">     <span class="keyword">return</span> PLATFORM;</div><div class="line"> &#125;</div><div class="line"></div><div class="line"> <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> Platform <span class="title">findPlatform</span><span class="params">()</span> </span>&#123;</div><div class="line">     <span class="keyword">try</span> &#123;</div><div class="line">         Class.forName(<span class="string">"android.os.Build"</span>);</div><div class="line">         <span class="keyword">if</span> (Build.VERSION.SDK_INT != <span class="number">0</span>) &#123;</div><div class="line">             <span class="keyword">return</span> <span class="keyword">new</span> Android();</div><div class="line">         &#125;</div><div class="line">     &#125; <span class="keyword">catch</span> (ClassNotFoundException ignored) &#123;</div><div class="line">     &#125;</div><div class="line">     <span class="keyword">return</span> <span class="keyword">new</span> Platform();</div><div class="line"> &#125;</div><div class="line"></div><div class="line"> <span class="function"><span class="keyword">public</span> Executor <span class="title">defaultCallbackExecutor</span><span class="params">()</span> </span>&#123;</div><div class="line">     <span class="keyword">return</span> <span class="keyword">new</span> HandleThreadPool().getExecutor();</div><div class="line"> &#125;</div><div class="line"></div><div class="line"> <span class="function"><span class="keyword">public</span> Object <span class="title">execute</span><span class="params">(Runnable runnable)</span> </span>&#123;</div><div class="line">     defaultCallbackExecutor().execute(runnable);</div><div class="line">     <span class="keyword">return</span> <span class="keyword">null</span>;</div><div class="line"> &#125;</div><div class="line"></div><div class="line"> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Android</span> <span class="keyword">extends</span> <span class="title">Platform</span> </span>&#123;</div><div class="line">     <span class="meta">@Override</span></div><div class="line">     <span class="function"><span class="keyword">public</span> Executor <span class="title">defaultCallbackExecutor</span><span class="params">()</span> </span>&#123;</div><div class="line">         <span class="keyword">return</span> <span class="keyword">new</span> HandleThreadPool().getExecutor();</div><div class="line">     &#125;</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<h1 id="Tamic"><a href="#Tamic" class="headerlink" title="Tamic"></a>Tamic</h1><p>   构建类似Retrofit一样的<code>bulid</code>模式的API工厂，此类主要用反射解析和代理<code>ApiService</code>，用来执行具体网络访问请求，动态解析泛型数据模型，回调服务端返回的请求结果，返回上层便于UI更新。</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">  Tamic(Context context, String baseUrl, AsyncHttpClient client) &#123;</div><div class="line">     <span class="keyword">this</span>.context = context;</div><div class="line">     <span class="keyword">this</span>.baseUrl = baseUrl;</div><div class="line">     <span class="keyword">this</span>.client = client;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line"> * public interface CategoryService &#123;</div><div class="line"> * <span class="doctag">@POST</span>("category/&#123;cat&#125;/")</div><div class="line"> * Call&lt;List&lt;Item&gt;&gt; categoryList(<span class="doctag">@Path</span>("cat") String a, <span class="doctag">@Query</span>("page") int b);</div><div class="line"> * &#125;</div><div class="line"> */</div><div class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">create</span><span class="params">(<span class="keyword">final</span> Class&lt;T&gt; clazz)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> (T) Proxy.newProxyInstance(clazz.getClassLoader(),</div><div class="line">            <span class="keyword">new</span> Class[]&#123;clazz&#125;,</div><div class="line">            <span class="keyword">new</span> InvocationHandler() &#123;</div><div class="line">                <span class="meta">@Override</span></div><div class="line">                <span class="keyword">public</span> <span class="function">Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</div><div class="line"></div><div class="line">                    performeParser(proxy, method, args);</div><div class="line">                    <span class="function"><span class="keyword">return</span> <span class="title">execute</span><span class="params">()</span></span>;</div><div class="line">                &#125;</div><div class="line">            &#125;);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>此是Tamic内部类<code>builder</code>大致图，具体代码可以去github阅读，主要用来构建上层添加<code>baseUrl</code>，超时等接口，实例化AsyncHttpClient等</p>
+<p>   <img src="http://upload-images.jianshu.io/upload_images/2022038-9a333d9123014e4e.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="builder.jpg"></p>
+<h1 id="线程池工厂"><a href="#线程池工厂" class="headerlink" title="线程池工厂"></a>线程池工厂</h1><p>   用来管理和复用线程，避免线程溢出造成内存泄露，不是本次关注的点，略去</p>
+<hr>
+<p> 实现好了自己的Retrofit，接下来我们看看怎样使用，观察下和Retrofit用法有什么区别？</p>
+<h1 id="Tamic用法"><a href="#Tamic用法" class="headerlink" title="Tamic用法"></a>Tamic用法</h1><h2 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h2><figure class="highlight clean"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">  repositories &#123;    jcenter()    </div><div class="line">                   maven &#123; url <span class="string">"https://jitpack.io"</span> &#125;</div><div class="line"></div><div class="line">&#125;</div><div class="line"></div><div class="line">  dependencies &#123;</div><div class="line">     ....</div><div class="line">  compile <span class="string">'com.tamic:tamicLibrary:1.0.2'</span></div><div class="line">     .....</div><div class="line">  </div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+<h2 id="实例化Tamic-（Retrofit）"><a href="#实例化Tamic-（Retrofit）" class="headerlink" title="实例化Tamic （Retrofit）"></a>实例化Tamic （Retrofit）</h2><figure class="highlight pony"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="type">Tamic</span> tamic = <span class="function"><span class="keyword">new</span> <span class="title">Tamic</span>.<span class="title">Builder</span>(<span class="type">MainActivity</span>.this)</span></div><div class="line">           .<span class="title">baseUrl</span>("http://ip.taobao.com/")</div><div class="line">           .<span class="title">connectTimeout</span>(<span class="number">5</span>)</div><div class="line">           .<span class="title">addLog</span>(true)</div><div class="line">           .<span class="title">build</span>();</div></pre></td></tr></table></figure>
+<h2 id="APIService"><a href="#APIService" class="headerlink" title="APIService "></a>APIService </h2><figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="selector-tag">public</span> <span class="selector-tag">interface</span> <span class="selector-tag">ApiService</span> &#123;</div><div class="line"></div><div class="line">  <span class="variable">@TGet</span>(<span class="string">"service/getIpInfo.php"</span>)</div><div class="line">  Call&lt;IpResult&gt; getData(<span class="variable">@TBody</span>(<span class="string">"ip"</span>) String ip,ICallback&lt;IpResult&gt; callBack);</div><div class="line">                  </div><div class="line"> &#125;</div></pre></td></tr></table></figure>
+<h2 id="Create-Service"><a href="#Create-Service" class="headerlink" title="Create Service"></a>Create Service</h2><figure class="highlight ebnf"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">   </div><div class="line"><span class="attribute">ApiService service</span> = tamic.create(ApiService.class);</div></pre></td></tr></table></figure>
+<h2 id="Execute"><a href="#Execute" class="headerlink" title="Execute"></a>Execute</h2><figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="selector-tag">service</span><span class="selector-class">.getData</span>(<span class="string">"21.22.11.33"</span>, new ICallback&lt;IpResult&gt;() &#123;</div><div class="line">      <span class="variable">@Override</span></div><div class="line">      public void success(IpResult ipResult) &#123;</div><div class="line">          <span class="comment">// todo</span></div><div class="line">      &#125;</div><div class="line"></div><div class="line">      <span class="variable">@Override</span></div><div class="line">      public void failed(Throwable e) &#123;</div><div class="line">          <span class="comment">// todo</span></div><div class="line">      &#125;</div><div class="line">  &#125;);</div></pre></td></tr></table></figure>
+<hr>
+<p>#华丽结束</p>
+<p>给下面按钮给个点击事件，用来执行请求，在回调中显示一条<code>Toast</code>,  看看测试结果:</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-af89a281bc6e1279.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="测试结果"></p>
+<p>数据成功请求到，并且被框架自动解析返回<code>JavaBean</code></p>
+<p> 既然功能和Retrofit很相似，和我们的Retrofit几乎一摸一样，我们再看看的工程配置 </p>
+<blockquote>
+<p>compile    ‘com.loopj.android:android-async-http:1.4.9’<br>compile ‘com.alibaba:fastjson:1.2.12’</p>
+</blockquote>
+<p>果不其然，并没有关于<code>Retrofit</code>的任何依赖，说明我们的<strong>Tamic</strong>并无投机取巧。<br>本次实现只关注Retrofit整体了一个流程思想，其他Retrofit的功能其实就通过以上思想来扩展的，设置解析工厂，返回内容格式，文件上传，下载等，本次实现并没有深入模仿，因为Retrofit整个流程思想比较系统，其他Api和普通Get请求一样，稍微改造一下就可以了。<br>与其说是对Retrofit的借鉴，还不如是对Ioc和Aop思想的综合运用。大家也发现本次主要学习依赖注入，和控反转的AOP思想，以及加入代理和接口编程，旨在以后的开发道路上能自我实现一种开发框架，如果感兴趣的同学可以去自我模仿一个<strong>RxJava</strong>.<br>如果你目前项目非常大，网络接口一直以前的httpclient的朋友，可以大但的迁移到Retrofit，只要你稍微做下接口适配，就能很好的让老旧Api接通Retrofit，或者也可以将老Api改造成属于你的<code>Retrofit</code>请求端！领导都无法阻止你用<code>Retrofit</code>的步伐…</p>
+<p>最后感谢淘宝的测试地址:</p>
+<blockquote>
+<p>URL：”<a href="http://ip.taobao.com/service/getIpInfo.php?ip=21.22.11.33" target="_blank" rel="external">http://ip.taobao.com/service/getIpInfo.php?ip=21.22.11.33</a>“;</p>
+</blockquote>
+<p>源码：<br><a href="https://github.com/Tamicer/Tamic_Retrofit" target="_blank" rel="external">https://github.com/Tamicer/Tamic_Retrofit</a></p>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2016/07/13/retrofti008/"
+                    data-title="Retrofit 2.0 超能实践（八），源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架"
+                    data-url="http://tamicer.com/2016/07/13/retrofti008/"
+                    data-images=""
+                    data-content="
+tamic: /   www.tamicer.com
+
+
+
+前言Retrofit用法和介绍的... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2016/08/01/retrofit010/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（九）Rxjava结合Retrofit，如何优雅的取消请求！">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2016/07/12/retrofti007/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（七），Rxjava +Retrofit 你需要掌握的几个经典技巧">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2016/07/13/retrofti008/"
+                        data-title="Retrofit 2.0 超能实践（八），源码解析，玩转IOC和AOP, 徒手实现属于你的Retrofit框架"
+                        data-url="http://tamicer.com/2016/07/13/retrofti008/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#架构" title="架构">架构</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2016/07/13/retrofti008/";
+    var disqus_url = "http://tamicer.com/2016/07/13/retrofti008/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
