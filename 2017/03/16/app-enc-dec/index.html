@@ -13,11 +13,11 @@
 
     <title>
         
-          Retrofit/OkHttp API接口加固技术实践（上） - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          Retrofit/OkHttp API接口加固技术实践（下) - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
-    <link rel="canonical" href="http://tamicer.com/2017/01/15/retroft011/">
+    <link rel="canonical" href="http://tamicer.com/2017/03/16/app-enc-dec/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -176,11 +176,11 @@
                           <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
-                    <h1>Retrofit/OkHttp API接口加固技术实践（上）</h1>
+                    <h1>Retrofit/OkHttp API接口加固技术实践（下)</h1>
                     <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
                     <span class="meta">
                         Posted by Tamic on
-                        2017-01-15
+                        2017-03-16
                     </span>
                 </div>
             </div>
@@ -201,53 +201,64 @@
 
                 <blockquote>
 <p>作者/Tamic<br><a href="http://www.tamicer.com" target="_blank" rel="external">http://www.tamicer.com</a></p>
-<p>写这篇文章，我纠结了很久，到底是属于app安全系列，还是属于Retrofit系列，最终我还是选择了将本篇文章归类到Retrofit下。</p>
 </blockquote>
 <p><img src="http://upload-images.jianshu.io/upload_images/2022038-d3fee6a8b9b0113b.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
-<p>对于retrofit安全相关的刚开始就写了一篇《Retrofit 2.0 超能实践（一），okHttp完美支持Https传输》（<a href="http://blog.csdn.net/sk719887916/article/details/51597816，" target="_blank" rel="external">http://blog.csdn.net/sk719887916/article/details/51597816，</a>  文章介绍了怎么使用Retrofit，并且在遇到okhttps的使用方式，但对于加密我们还是无法了解太多，对于安全性要求很高的接口场景还是无法满足，今天就来介绍下对普通api参数的加密！</p>
-<p> APP基本安全的文章以前撸了一篇<a href="http://www.jianshu.com/p/2767a66968fe" target="_blank" rel="external">App安全（一） Android防止升级过程被劫持和换包</a>，后续没有再继续跟进，今年会加重安全这块的文章。 主要说下支付宝为代表的用的安全策略技术，本篇介绍下API加固的常用技术。常用的模式是加密-认证身份-鉴别权限-解密过程。</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2022038-33755ea9f49cc7da.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="API加固.png"></p>
-<p>Api加固除了本身支持Https，还会额外进行上图中一系列的加密策略，自定义对<code>Resquest/``Response`` Data</code>进行加密，对<code>url</code>加密，甚至对<code>request</code>进行校验等。如果你加入RxJava操作符做一系列的加密流程，那将是锦上添花。解密过程也直接使用<code>RxJava</code> ，<code>map</code>操作符转换解密后返回给业务层，RxJava之前也介绍过好几篇，这里不再安利。</p>
-<p>加固API主要由四种方案：</p>
+<p>上节<a href="https://tamicer.github.io/2017/01/15/retroft011/" target="_blank" rel="external">加固</a>介绍了api单纯的对Post的用对称加密（base64），这种加密方式还是存在一定的风险吗，加密效率高，但是易破解，本节将介绍用非对称加密 来加解密okhttp的数据，我采用RSA加密算法为栗子。</p>
+<h2 id="非对称加密"><a href="#非对称加密" class="headerlink" title="非对称加密"></a>非对称加密</h2><p> 非对称密算法是一种密钥的加密方法。</p>
+<p>  非对称加密算法需要两个密钥：公钥（publickey）和私钥（privatekey）。公钥与私钥是一对存在，如果用公钥对数据进行加密，只有用对应的私钥才能解密；如果用密钥对数据进行加密，那么只有用对应的公钥才能解密。因为加密和解密使用的是两个不同的密钥，所以这种算法叫作非对称加密算法。 非对称加密算法实现机密信息交换的基本过程是：甲方生成一对密钥并将其中的一把作为公用密钥向其它方公开；得到该公用密钥的乙方使用该密钥对机密信息进行加密后再发送给甲方；甲方再用自己保存的另一把专用密钥对加密后的信息进行解密。</p>
+<p>另一方面，甲方可以使用乙方的公钥对机密信息进行签名后再发送给乙方；乙方再用自己的私匙对数据进行验签。<br>甲方只能用其专用密钥解密由其公用密钥加密后的任何信息。 非对称加密算法的保密性比较好，它消除了最终用户交换密钥的需要。<br>非对称密码体制的特点：算法强度复杂、安全性依赖于算法与密钥但是由于其算法复杂，而使得加密解密速度没有对称加密解密的速度快。对称密码体制中只有一种密钥，并且是非公开的，如果要解密就得让对方知道密钥。所以保证其安全性就是保证密钥的安全，而非对称密钥体制有两种密钥，其中一个是公开的，这样就可以不需要像对称密码那样传输对方的密钥了。这样安全性就大了很多。</p>
+<blockquote>
+<p>列如 ：支付宝的加密方式就采用非对称加密方式，支付宝会给客户提供支付宝证书，作为用户验证是否是来自支付宝的数据，防止第三方假冒支付宝，而客户手中持有私钥，用户支付宝发送的数据经过支付宝的公钥进项加密，则支付宝可以采用自己的的私钥进行解密。</p>
+</blockquote>
+<p><strong>工作过程</strong></p>
 <ul>
-<li>使用Https</li>
-<li>URL加密</li>
-<li>参数加密</li>
-<li>加入权限</li>
-<li>时效验证</li>
-<li>数字签名</li>
+<li>1.A要向B发送信息，A和B都要产生一对用于加密</li>
+<li>2.A的私钥保密，A的公钥告诉B；B的私钥保密，B的公钥告诉A。</li>
+<li>3.A要给B发送信息时，A用B的公钥加密信息，因为A知道B的公钥。</li>
+<li>4.A将这个数据发给B（已经用B的公钥加密消息）。</li>
+<li>5.B收到这个数据后后，B用自己的私钥解密A的消息。其他所有收到这个报文的人都无法解密，因为只有B才有B的私钥。</li>
 </ul>
-<p>##Https</p>
-<p> 以前写过一篇文章可以参考 ：<a href="http://blog.csdn.net/sk719887916/article/details/51597816" target="_blank" rel="external">Retrofit 2.0 超能实践（一），完美支持加密Https传输</a></p>
-<p>##URL加密</p>
-<p>只针对普通get请求，不针对<code>post</code>表单提交及<code>ajax</code>方式</p>
-<p>策略：对于暴露在浏览器地址栏中的地址进行加密，如一个属性为<code>name=tamic</code>，</p>
-<p>   假设对tamic加密后为<code>kadfxarf24saa</code>：<br>   假设真实值在这段字符中间，那么我们可以对前三位进行随机，后三位随机，<br>   再对真实的tamic进行加密转换（base64都行），然后再来个倒序，那么剩下的数字我们可以获取当前时间追加，最后再进行md5都行，这样普通的用户无法感知具体路径真实值是什么，甚至一般黑客都无法轻易解析具体内容，服务端拿到具体值的策略也是一样</p>
-<p> 只要按约定的好的算法进行解码就行了。这样不仅能防止恶意程序请求我们的服务端。而且还能对具体的参数地址进行加密。</p>
-<p>##参数加密</p>
-<p>参数加密一般针对表单中的字段和值进行加密，防止中途第三方进行窥探和篡改。一般我们可以用okhttp的<a href="https://github.com/square/okhttp/wiki/Interceptors" target="_blank" rel="external">Interceptor</a> 进行处理。 可以在发动报文前，对参数进行加密转码。</p>
-<p>案列：</p>
-<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="keyword">class</span> EncryptionInterceptor implements Interceptor &#123;</div><div class="line">    </div><div class="line">      <span class="keyword">private</span> static final <span class="built_in">String</span> TAG = EncryptionInterceptor.<span class="keyword">class</span>.getSimpleName();</div><div class="line">    </div><div class="line">      <span class="keyword">private</span> static final boolean DEBUG = <span class="literal">true</span>;</div><div class="line">    </div><div class="line">       @Override</div><div class="line">       <span class="keyword">public</span> <span class="built_in">Response</span> intercept(Chain chain) throws IOException &#123;</div><div class="line">    </div><div class="line">    </div><div class="line">       <span class="built_in">Request</span> <span class="built_in">request</span> = chain.<span class="built_in">request</span>();</div><div class="line">       RequestBody oldBody = <span class="built_in">request</span>.body();</div><div class="line">       Buffer buffer = <span class="keyword">new</span> Buffer();</div><div class="line">       oldBody.writeTo(buffer);</div><div class="line">       <span class="built_in">String</span> strOldBody = buffer.readUtf8();</div><div class="line">       MediaType mediaType = MediaType.parse(<span class="string">"text/plain; charset=utf-8"</span>);</div><div class="line">       <span class="built_in">String</span> strNewBody = CodeMachine.encrypt(strOldBody);</div><div class="line">       RequestBody body = RequestBody.create(mediaType, strNewBody);</div><div class="line">       <span class="built_in">request</span> = <span class="built_in">request</span>.newBuilder().header(<span class="string">"Content-Type"</span>, body.contentType().toString()).header(<span class="string">"Content-Length"</span>, <span class="built_in">String</span>.valueOf(body.contentLength())).method(<span class="built_in">request</span>.method(), body).build();</div><div class="line">       return chain.proceed(<span class="built_in">request</span>);</div><div class="line">  &#125;</div><div class="line">&#125;</div><div class="line">```  </div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line">加密算法客户端自己和服务端约定；code如下：</div></pre></td></tr></table></figure>
-<p>private static String encrypt(String str) {<br>    //your code</p>
-<p>}</p>
-<figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">`add` 到 `OkHttpclient` 即可</div></pre></td></tr></table></figure>
-<p>   client = new OkHttpClient.Builder()<br>         .addNetworkInterceptor(new  EncryptionInterceptor()).build();<br>    retrofit = new Retrofit.Builder().client(client).build();</p>
-<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">服务端代码也是拿到具体参数进行同步的加密算法来进行反解密。</div><div class="line"></div><div class="line"></div><div class="line"><span class="section">加入权限</span></div><div class="line">---</div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"><span class="code"> 权限控制也是对接口加密的一种业务层策略，比如一个电商APP，有商户，有用户，有中间物流商，还有中间服务商，那么同一个获取商品信息的权限不同的，商家有修改商品信息的权限，用户只能浏览查看的功能，物流商可以有指定物流渠道权限，中间服务商可以拥有协调监督功能，如归有涉及假冒，法律的可以强制下架改商品，那么是同样一个`getProductInfo`接口 却又不同的信息，那么这个接口定义的时候，服务端和移动端就已经商讨好了协议，赋予不同角色权限.</span></div></pre></td></tr></table></figure>
-<pre><code> public enum Permission {
-
-  User,
-  Shop,
-  Courier,
-  Platform
-}
-</code></pre><p>```</p>
-<p> 如上展示了四种角色控制，不同角色<code>Server</code>返回的数据<code>Modle</code>也是不同的。 遇到三方恶意攻击，服务端确定并客户端发来的权限并不是我们固定的角色，那么服务端也将视这次请求为无效的。</p>
-<h2 id="时效验证"><a href="#时效验证" class="headerlink" title="时效验证"></a>时效验证</h2><p> 时效验证一般是用来校验API是否过期，业内常用来做订单是否重复的依据之一。比如用户在某个购物网站下单买东西时，就会生成下单的时间毫秒数，服务端拿到这个下单(Request)动作的网络请求，会检验这个时间是否过期，如果时间差值大于规定的值，就可视这个订单被中途篡改过，或者过期，比如一秒内重复从一个客户端发两个请求（Request），服务端（server）拿到时间发现已经存在一个，就不再处理第二个订单信息，提示用户不要重复提交。</p>
-<p> 一般时间值参数，不会单纯的在请求中单一传输，一般采用某种算法把客户端的时间戳 加密成一定字符后，在进行发送到<code>SERVICE</code>.这种策略对于重复恶意刷单，有很好的防御作用。支付宝付款实则也是用的这种策略，时间阀值大约3s左右。</p>
-<h2 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h2><p>每个Request也应该有响应的数字签名，这个签名不同于SSL机制的中的签名，只是<code>Client</code>和server约定的一种自签名方式，额外校验Request数据有没有被篡改过，也可以称之为每个Request有一定的唯一区分符-ID,签名算法可能很复杂，一般依据本地设备ID，<code>UserID</code>, <code>UUID</code>，<code>Token</code>，综合进行计算，本质其实就是加密，附带给<code>Request</code>。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p> 通过以上<code>Retrofit</code>的api加密列子。在客户端<code>api</code>加固中，常用上面这几种综合来实现，做到万无一失，从数据源的加密，到传输过程中加密，到数据源获取到权限的校验，整个过程都是做了防御的，如过需要个三方提供接口 可以参考：<strong>OAuth</strong> 工作原理，那么很多时候我们也要对服务端返回的数据进行校验，后续带来对<code>response</code>反解密一文。</p>
+<p>通俗点可以这么理解：</p>
+<ul>
+<li>浏览器向服务器发出请求，询问对方支持的对称加密算法和非对称加密算法；服务器回应自己支持的算法。</li>
+<li>浏览器选择双方都支持的加密算法，并请求服务器出示自己的证书；服务器回应自己的证书。 </li>
+<li>浏览器随机产生一个用于本次会话的对称加密的钥匙，并使用服务器证书中附带的公钥对该钥匙进行加密后传递给服务器；服务器为本次会话保持</li>
+<li>该对称加密的钥匙。第三方不知道服务器的私钥，即使截获了数据也无法解密。非对称加密让任何浏览器都可以与服务器进行加密会话。</li>
+</ul>
+<p>浏览器使用对称加密的钥匙对请求消息加密后传送给服务器，服务器使用该对称加密的钥匙进行解密；服务器使用对称加密的钥匙对响应消息加密后传送给浏览器，浏览器使用该对称加密的钥匙进行解密。第三方不知道对称加密的钥匙，即使截获了数据也无法解密。对称加密提高了加密速度 </p>
+<h2 id="数字证书"><a href="#数字证书" class="headerlink" title="数字证书"></a>数字证书</h2><p>数字证书就是互联网通讯中标志通讯各方身份信息的一串数字，提供了一种在Internet上验证通信实体身份的方式，数字证书不是数字身份证，而是身份认证机构盖在数字身份证上的一个章或印（或者说加在数字身份证上的一个签名）。它是由权威机构——CA机构，又称为证书授权（Certificate Authority）中心发行的，人们可以在网上用它来识别对方的身份。<br>数字证书绑定了公钥及其持有者的真实身份，它类似于现实生活中的居民身份证，所不同的是数字证书不再是纸质的证照，而是一段含有证书持有者身份信息并经过认证中心审核签发的电子数据，广泛用在电子商务和移动互联网中。。<br>通俗讲就是车管所会给每个车辆进行认证颁发车牌，通过车牌我们可以查到所有车辆和驾驶员的信，二数字证书就辨别唯一身份，支付宝等的数字证书就是公开的，这不是支付宝自己决定，而是由国际组织认证，这样不管是哪个用户首先就可以根据浏览器返回的证书辨别支付宝的真伪。</p>
+<h2 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h2><p>数字签名用来，保证信息传输的完整性、发送者的身份认证、防止交易中的抵赖发生。<br>数字签名是将摘要信息用发送者的私钥加密，与原文一起传送给接收者。接收者只有用发送者的公钥才能解密被加密的摘要信息，然后用HASH函数对收到的原文产生一个摘要信息，与解密的摘要信息对比。如果相同，则说明收到的信息是完整的，在传输过程中没有被修改，否则说明信息被修改过，因此数字签名能够验证信息的完整性。如果中途数据被纂改或者丢失。那么对方就可以根据数字签名来辨别是否是来自对方的第一手信息数据。<br> 数字签名是个加密的过程，数字签名验证是个解密的过程。</p>
+<h2 id="参数加解密"><a href="#参数加解密" class="headerlink" title="参数加解密"></a>参数加解密</h2><p>首先，Android中生成了对称密钥：</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span>  SecretKeySpec <span class="title">generateSymmetric</span>(<span class="params"></span>) </span>&#123;</div><div class="line"></div><div class="line">    <span class="comment">// Set up secret key spec for 128-bit AES encryption and decryption</span></div><div class="line">    SecretKeySpec sks = <span class="literal">null</span>;</div><div class="line">    <span class="keyword">try</span> &#123;</div><div class="line">        SecureRandom sr = SecureRandom.getInstance(<span class="string">"SHA1PRNG"</span>);</div><div class="line">        sr.setSeed(<span class="string">"any data used as random seed"</span>.getBytes());</div><div class="line">        KeyGenerator kg = KeyGenerator.getInstance(<span class="string">"AES"</span>);</div><div class="line">        kg.init(<span class="number">128</span>, sr);</div><div class="line">        sks = <span class="keyword">new</span> SecretKeySpec((kg.generateKey()).getEncoded(), <span class="string">"AES"</span>);</div><div class="line"></div><div class="line">        System.<span class="keyword">out</span>.println(<span class="string">"AES KEY: "</span> + sks);</div><div class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">        Log.e(TAG, <span class="string">"AES secret key spec error"</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> sks;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>然后将SecretKeySpec转换为Base64字符串格式：</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">String</span> ConvertSymmetricKeyToString(SecretKeySpec <span class="built_in">key</span>) &#123;</div><div class="line"></div><div class="line">    <span class="keyword">String</span> symmetric_key = <span class="keyword">null</span>;</div><div class="line"></div><div class="line">    symmetric_key = Base64.encodeToString(<span class="built_in">key</span>.getEncoded(), Base64.DEFAULT);</div><div class="line">    <span class="keyword">return</span> symmetric_key;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>调用函数：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="attribute">SecretKeySpec symmKey</span> = generateSymmetric();</div><div class="line"></div><div class="line"></div><div class="line"><span class="attribute">newSymmetricKeyString</span> = CreateEncryptedXml.ConvertSymmetricKeyToString(symmKey);</div></pre></td></tr></table></figure>
+<p>用SecretKeySpec加密数据：</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="title">private</span> static <span class="type">String</span> encryptDataWithSymmetricKey (<span class="type">SecretKeySpec</span> symmKey, <span class="type">String</span> <span class="class"><span class="keyword">data</span>) throws <span class="type">IOException</span>, <span class="type">NoSuchAlgorithmException</span>, <span class="type">InvalidKeySpecException</span> &#123;</span></div><div class="line"></div><div class="line"></div><div class="line">    // <span class="title">encryption</span></div><div class="line">    <span class="title">byte</span>[] <span class="title">toBeCiphred</span> = <span class="title">data</span>.<span class="title">getBytes</span>("<span class="type">UTF</span>-8");</div><div class="line">    <span class="type">String</span> <span class="title">encryptedData</span> = <span class="title">null</span>;</div><div class="line"></div><div class="line">    <span class="title">try</span> &#123;</div><div class="line">        <span class="type">Cipher</span> <span class="title">c</span> = <span class="type">Cipher</span>.<span class="title">getInstance</span>("<span class="type">AES</span>");</div><div class="line">        <span class="title">c</span>.<span class="title">init</span>(<span class="type">Cipher</span>.<span class="type">ENCRYPT_MODE</span>, <span class="title">symmKey</span>);</div><div class="line">        <span class="title">byte</span>[] <span class="title">encodedBytes</span> = <span class="title">c</span>.<span class="title">doFinal</span>(<span class="title">toBeCiphred</span>);</div><div class="line">        <span class="type">System</span>.<span class="title">out</span>.<span class="title">println</span>("<span class="type">BYTE</span> <span class="type">STRING</span> (<span class="type">ASYMM</span>): " + <span class="title">encodedBytes</span>);</div><div class="line">        <span class="title">encryptedData</span> = <span class="type">Base64</span>.<span class="title">encodeToString</span>(<span class="title">encodedBytes</span>, <span class="type">Base64</span>.<span class="type">DEFAULT</span>);</div><div class="line"></div><div class="line">    &#125; catch (<span class="type">Exception</span> <span class="title">e</span>) &#123;</div><div class="line">        <span class="type">Log</span>.<span class="title">e</span>(<span class="type">TAG</span>, "<span class="type">AES</span> <span class="title">encryption</span> <span class="title">error</span>");</div><div class="line">        <span class="title">throw</span> <span class="title">new</span> <span class="type">RuntimeException(e)</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line"></div><div class="line">    return encryptedData;</div><div class="line">&#125;</div><div class="line"></div><div class="line">  </div><div class="line"> encryptedData = encryptDataWithSymmetricKey(symmKey, text);</div></pre></td></tr></table></figure>
+<p><strong>使用拦截器：</strong></p>
+<p>然后将字符串秘密AES密钥和加密的数据（用这个AES密钥加密）使用okhttp使POST请求。字符串密钥使用的是RSA加密。</p>
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="keyword">class</span> EncryptionInterceptor implements Interceptor &#123;</div><div class="line">    </div><div class="line">       <span class="keyword">private</span> static final <span class="built_in">String</span> TAG =   EncryptionInterceptor.<span class="keyword">class</span>.getSimpleName();</div><div class="line">    </div><div class="line">       <span class="keyword">private</span> static final boolean DEBUG = <span class="literal">true</span>;</div><div class="line">    </div><div class="line">       @Override</div><div class="line">       <span class="keyword">public</span> <span class="built_in">Response</span> intercept(Chain chain) throws IOException &#123;</div><div class="line">    </div><div class="line">    </div><div class="line">       <span class="built_in">Request</span> <span class="built_in">request</span> = chain.<span class="built_in">request</span>();</div><div class="line">       RequestBody oldBody = <span class="built_in">request</span>.body();</div><div class="line">       Buffer buffer = <span class="keyword">new</span> Buffer();</div><div class="line">       oldBody.writeTo(buffer);</div><div class="line">       <span class="built_in">String</span> strOldBody = buffer.readUtf8();</div><div class="line">       MediaType mediaType = MediaType.parse(<span class="string">"text/plain; charset=utf-8"</span>);</div><div class="line">       <span class="built_in">String</span> strNewBody = encryptDataWithSymmetricKey(symmKey, text);</div><div class="line"></div><div class="line">       RequestBody body = RequestBody.create(mediaType, strNewBody);</div><div class="line">       <span class="built_in">request</span> = <span class="built_in">request</span>.newBuilder().header(<span class="string">"Content-Type"</span>, body.contentType().toString()).header(<span class="string">"Content-Length"</span>, <span class="built_in">String</span>.valueOf(body.contentLength())).method(<span class="built_in">request</span>.method(), body).build();</div><div class="line">       return chain.proceed(<span class="built_in">request</span>);</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在服务器端可以解密（从RSA）秘密AES密钥，并得到它的字符串表示。在客户端（Android）和服务器端（server）上是一样的。但是我怎么能使用这个字符串AES密钥解密数据？：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="keyword">String </span>encryptionMethod = <span class="string">"AES-128-CBC"</span><span class="comment">;  </span></div><div class="line"></div><div class="line"> //decryptedAESKey is an <span class="keyword">Android </span>AES SecretKeySpec converted  to <span class="keyword">string</span></div><div class="line"> //in <span class="keyword">Android </span>the <span class="keyword">string </span>key was <span class="keyword">base64_encoded, </span>服务端解密 decode</div><div class="line"></div><div class="line"> <span class="keyword">String </span>secretHash = <span class="keyword">base64Decode(decryptedAESKey);</span></div><div class="line"></div><div class="line"></div><div class="line">// Decrypt</div><div class="line"> <span class="keyword">String </span>decryptedMessage = opensslDecrypt(<span class="keyword">base64Decode(encryptedData), </span> encryptionMethod, secretHash)<span class="comment">;</span></div></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>完整的非对称加密过程</p>
+<p>假如现在 你向支付宝 转账（术语数据信息），为了保证信息传送的保密性、真实性、完整性和不可否认性，需要对传送的信息进行数字加密和签名，其传送过程为：</p>
+<ul>
+<li>1.首先你要确认是否是支付宝的数字证书，如果确认为支付宝身份后，则对方真实可信。可以向对方传送信息，</li>
+<li>2.你准备好要传送的数字信息（明文）计算要转的多少钱，对方支付宝账号等；</li>
+<li>3.你 对数字信息进行哈希运算，得到一个信息摘要（客户端主要职责）；</li>
+<li>4.你 用自己的私钥对信息摘要进行加密得到 你 的数字签名，并将其附在数字信息上；</li>
+<li>5.你 随机产生一个加密密钥，并用此密码对要发送的信息进行加密（密文）；</li>
+<li>6.你用 支付宝的公钥对刚才随机产生的加密密钥进行加密，将加密后的 DES 密钥连同密文一起传送给支付宝；</li>
+<li>7.支付宝收到 你 传送来的密文和加密过的 DES 密钥，先用自己的私钥对加密的 DES 密钥进行解密，得到 你随机产生的加密密钥；</li>
+<li>8.支付宝 然后用随机密钥对收到的密文进行解密，得到明文的数字信息，然后将随机密钥抛弃；</li>
+<li>9.支付宝 用你 的公钥对 你的的数字签名进行解密，得到信息摘要；</li>
+<li>10.支付宝用相同的哈希算法对收到的明文再进行一次哈希运算，得到一个新的信息摘要；</li>
+<li>11.支付宝将收到的信息摘要和新产生的信息摘要进行比较，如果一致，说明收到的信息没有被修改过。</li>
+<li>12 确定收到信息，然后进行向对方进行付款交易，一次非对称密过程结束。在这后面的流程就不属于本次非对称加密的范畴，算支付宝个人的自我流程，也就是循环以上过程。</li>
+</ul>
 <p><strong>阅读推荐</strong></p>
-<p><a href="https://tamicer.github.io/2015/10/10/app-safe1_update" target="_blank" rel="external">App安全（一） Android防止升级过程被劫持和换包</a></p>
+<p><a href="https://tamicer.github.io/2017/01/15/retroft011/" target="_blank" rel="external">Retrofit/OkHttp API接口加固技术实践（上）</a></p>
 <p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
 
 
@@ -262,13 +273,15 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="2017/01/15/retroft011/"
-                    data-title="Retrofit/OkHttp API接口加固技术实践（上）"
-                    data-url="http://tamicer.com/2017/01/15/retroft011/"
+                    data-thread-key="2017/03/16/app-enc-dec/"
+                    data-title="Retrofit/OkHttp API接口加固技术实践（下)"
+                    data-url="http://tamicer.com/2017/03/16/app-enc-dec/"
                     data-images=""
                     data-content="
 作者/Tamichttp://www.tamicer.com
-写这篇文章，我纠结了很久，到底... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+
+
+上节加固介绍了api单纯的... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -286,13 +299,9 @@
 
                 <ul class="pager">
                     
-                        <li class="previous">
-                            <a href="/2017/03/16/app-enc-dec/" data-toggle="tooltip" data-placement="top" title="Retrofit/OkHttp API接口加固技术实践（下)">&larr; Previous Post</a>
-                        </li>
-                    
                     
                         <li class="next">
-                            <a href="/2016/08/10/novate10/" data-toggle="tooltip" data-placement="top" title="Novate网络库： Retrofit2.0和RxJava1.x的又一次完美封装">Next Post &rarr;</a>
+                            <a href="/2017/01/15/retroft011/" data-toggle="tooltip" data-placement="top" title="Retrofit/OkHttp API接口加固技术实践（上）">Next Post &rarr;</a>
                         </li>
                     
                 </ul>
@@ -301,9 +310,9 @@
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="2017/01/15/retroft011/"
-                        data-title="Retrofit/OkHttp API接口加固技术实践（上）"
-                        data-url="http://tamicer.com/2017/01/15/retroft011/" >
+                        data-thread-key="2017/03/16/app-enc-dec/"
+                        data-title="Retrofit/OkHttp API接口加固技术实践（下)"
+                        data-url="http://tamicer.com/2017/03/16/app-enc-dec/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -415,8 +424,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "hexo-theme-huxblog";
-    var disqus_identifier = "http://tamicer.com/2017/01/15/retroft011/";
-    var disqus_url = "http://tamicer.com/2017/01/15/retroft011/";
+    var disqus_identifier = "http://tamicer.com/2017/03/16/app-enc-dec/";
+    var disqus_url = "http://tamicer.com/2017/03/16/app-enc-dec/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
