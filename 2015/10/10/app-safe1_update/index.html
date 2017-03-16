@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          App安全（一） Android防止升级过程被劫持和换包 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2015/10/10/app-safe1_update/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('novate.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Https" title="Https">Https</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                          <a class="tag" href="/tags/#架构" title="架构">架构</a>
+                        
+                    </div>
+                    <h1>App安全（一） Android防止升级过程被劫持和换包</h1>
+                    <h2 class="subheading">安全与加密系列</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2015-10-10
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>APP 安全一直是开发者头痛的事情，越来越多的安全漏洞，使得开发者</p>
+<p>越来越重视app安全，目前app安全主要有由以下几部分</p>
+<h2 id="APP组件安全"><a href="#APP组件安全" class="headerlink" title="APP组件安全"></a>APP组件安全</h2><p>Android 包括四大组件：Activitie、Service、Content Provider、Broadband Receiver，<br>它们每一个都可以通过外面隐式的Intent方式打开，<br>android组件对外开放 就会被其他程序劫持，因此必须在manifest里面声明<br>exported为false，禁止其他程序访问改组件，<br>对于要和外部交互的组件，应当添加一下访问权限的控制， 在有权限后外部程序才可以开启，或者提供特定的action过滤器达到启动目的。<br>还需要要对传递的数据进行安全的校验。不符合规则的一律不处理。</p>
+<h2 id="Webview-安全漏洞"><a href="#Webview-安全漏洞" class="headerlink" title="Webview 安全漏洞"></a>Webview 安全漏洞</h2><hr>
+<p>Android API 4.4以前，谷歌的webview存在安全漏洞，网站可以通过js注入就可以随便拿到客户端的重要信息，<br>甚至轻而易举的调用本地代码进行流氓行为，谷歌后来发现有此漏洞后<br>，在API 4.4以后增加了防御措施，如果用js调用本地代码，开发者必须在代码申明<code>JavascriptInterface</code>，<br>列如在4.0之前我们要使得webView加载js只需如下代码：</p>
+<blockquote>
+<p>mWebView.addJavascriptInterface(new JsToJava(), “myjsfunction”);</p>
+</blockquote>
+<p>4.4之后使用需要在调用Java方法加入@JavascriptInterface注解，<br>如果代码无此申明，那么也就无法使得js生效，也就是说这样就可以避免恶意网页利用js对客户端的进行窃取和攻击。</p>
+<h2 id="APP反编译"><a href="#APP反编译" class="headerlink" title="APP反编译"></a>APP反编译</h2><hr>
+<p>App被反编后，源码暴露，不仅对数据造成隐私泄露，而且对一些接口造成易攻击的潜在风险。<br>我们必须对apk进行源码混淆，并且进行apk加固</p>
+<h2 id="APP二次打包"><a href="#APP二次打包" class="headerlink" title="APP二次打包"></a>APP二次打包</h2><p>即反编译后重新加入恶意的代码逻辑，或置入新病毒重新生成一个新APK文件。<br>二次的目的一般都是是盈利广告和病毒结合，对正版apk进行解包，插入恶意病毒后重新打包并发布，因此伪装性很强。截住app重打包就一定程度上防止了病毒的传播。因此app加固是防止二次打包的重要措施。</p>
+<h2 id="APP进程劫持"><a href="#APP进程劫持" class="headerlink" title="APP进程劫持"></a>APP进程劫持</h2><hr>
+<p>一般我们称为进程注入，也就动态注入技术，hook技术目前主流的进程注入方式，通过对linux进行so注入，达到挂钩远程函数实现监控远程进程的目的。</p>
+<h2 id="APP-DNS劫持"><a href="#APP-DNS劫持" class="headerlink" title="APP DNS劫持"></a>APP DNS劫持</h2><hr>
+<p>DNS劫持俗称抓包。通过对url的二次劫持，修改参数和返回值，进而进行对app访问web数据伪装，实现注入广告和假数据，甚至起到导流用户的作用，严重的可以通过对登录APi的劫持可以获取用户密码，也可以对app升级做劫持，下载病毒apk等目的，解决方法一般用https进行传输数据。</p>
+<h2 id="APP-APi接口验签"><a href="#APP-APi接口验签" class="headerlink" title="APP APi接口验签"></a>APP APi接口验签</h2><hr>
+<p>一般服务端的接口也会被攻击，虽然是服务端安全问题，但还是属于App系统维护体系，如果app后端挂了，app也不叫app了，一般变现为被恶意程序频繁请求某一接口，导致订单等重复注入，验证码被盗刷，虚假用户注册，严重的甚至拖垮app.</p>
+<p><strong>今天先看下APP升级过程被劫持的问题</strong></p>
+<p>我们做app版本升级时一般流程是采用请求升级接口，如果有升级，服务端返回下一个下载地址，下载好Apk后，再点击安装。<br>其实这个过程中有三个地方会被劫持。 请求升级时，下载文件时，安装时。</p>
+<ul>
+<li>升级APi</li>
+</ul>
+<p>升级Api建议用https，防止被恶意程序劫持，结果是恶意返回下载地址，这样就把伪装的apk下载到本地，结果你应该懂的！</p>
+<ul>
+<li><p>下载API:</p>
+<p>如果升级api你做了加固，下载api没做加固，还是徒劳，恶意程序也可以返回恶意文件或者apk，直到被你错误的安装在手机上。</p>
+</li>
+<li><p>安装过程；</p>
+<p>假设你以上两个过程都做了加固，但是在安装apk的时候，本地文件path被错误修改了，仍然可以安装错误的apk，这不仅<br>会对用户体验产生不利，甚至会威胁手机安全。</p>
+</li>
+</ul>
+<h2 id="解决方案："><a href="#解决方案：" class="headerlink" title="#解决方案："></a>#解决方案：</h2><ul>
+<li><p>升级api加入<code>https</code> 这个肯定不用再过多介绍，看了我介绍的<code>retrofit</code> 的https就明白了。</p>
+</li>
+<li><p>下载Api也需加入https，也不用再做介绍，这里着重强调的是需要对服务端返回的文件进行Hash值校验，防止文件被篡改，<br>通过对文件hash值，还要对服务端返回的自定义key的进行校验验签，防止不是自己服务器返回错误的文件</p>
+</li>
+<li><p>安装过程也必须对Apk文件进行包名和签名验证，防止Apk被恶意植入木马，或替换。</p>
+</li>
+</ul>
+<p>假设我的升级bean为;</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> class UpgradeModel &#123;</div><div class="line"></div><div class="line">     <span class="keyword">private</span> <span class="built_in">int</span> code;</div><div class="line">     <span class="keyword">private</span> <span class="keyword">String</span> msg;</div><div class="line"></div><div class="line">     <span class="keyword">private</span> DataBean data;</div><div class="line"></div><div class="line">     <span class="keyword">public</span> <span class="built_in">int</span> getCode() &#123;</div><div class="line">        <span class="keyword">return</span> code;</div><div class="line">     &#125;</div><div class="line"></div><div class="line">     <span class="keyword">public</span> <span class="keyword">void</span> setCode(<span class="built_in">int</span> code) &#123;</div><div class="line">        <span class="keyword">this</span>.code = code;</div><div class="line">     &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">String</span> getMsg() &#123;</div><div class="line">        <span class="keyword">return</span> msg;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">void</span> setMsg(<span class="keyword">String</span> msg) &#123;</div><div class="line">        <span class="keyword">this</span>.msg = msg;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> DataBean getData() &#123;</div><div class="line">        <span class="keyword">return</span> data;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">void</span> setData(DataBean data) &#123;</div><div class="line">        <span class="keyword">this</span>.data = data;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">public</span> <span class="keyword">static</span> class DataBean &#123;</div><div class="line">        <span class="keyword">private</span> <span class="keyword">String</span> description;</div><div class="line">        <span class="keyword">private</span> <span class="keyword">String</span> downUrl;</div><div class="line">        <span class="keyword">private</span> <span class="keyword">String</span> version;</div><div class="line">        <span class="keyword">private</span> <span class="keyword">String</span> hashcod;</div><div class="line">        <span class="keyword">private</span> <span class="keyword">String</span> <span class="built_in">key</span>;</div><div class="line">        <span class="keyword">private</span> <span class="keyword">String</span> isForce;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">String</span> getDescription() &#123;</div><div class="line">            <span class="keyword">return</span> description;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> setDescription(<span class="keyword">String</span> description) &#123;</div><div class="line">            <span class="keyword">this</span>.description = description;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">String</span> getDownUrl() &#123;</div><div class="line">            <span class="keyword">return</span> downUrl;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> setDownUrl(<span class="keyword">String</span> downUrl) &#123;</div><div class="line">            <span class="keyword">this</span>.downUrl = downUrl;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">String</span> getVersion() &#123;</div><div class="line">            <span class="keyword">return</span> version;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> setVersion(<span class="keyword">String</span> version) &#123;</div><div class="line">            <span class="keyword">this</span>.version = version;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">String</span> getHashcod() &#123;</div><div class="line">            <span class="keyword">return</span> hashcod;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> setHashcod(<span class="keyword">String</span> hashcod) &#123;</div><div class="line">            <span class="keyword">this</span>.hashcod = hashcod;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">String</span> getKey() &#123;</div><div class="line">            <span class="keyword">return</span> <span class="built_in">key</span>;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> setKey(<span class="keyword">String</span> <span class="built_in">key</span>) &#123;</div><div class="line">            <span class="keyword">this</span>.<span class="built_in">key</span> = <span class="built_in">key</span>;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">String</span> getIsForce() &#123;</div><div class="line">            <span class="keyword">return</span> isForce;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">public</span> <span class="keyword">void</span> setIsForce(<span class="keyword">String</span> isForce) &#123;</div><div class="line">            <span class="keyword">this</span>.isForce = isForce;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>通过一次请求到服务端数据后，如果有版本更新 我们应该先验证<br>Url和key是不是我们和服务端协商好的Url和key<br><figure class="highlight qml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">UpgradeModel  aResult = xxxx<span class="comment">//解析服务器返回的后数据</span></div><div class="line"></div><div class="line"><span class="keyword">if</span> (aResult != <span class="literal">null</span> &amp;&amp; aResult.getData() != <span class="literal">null</span> ) &#123;</div><div class="line"></div><div class="line">       <span class="built_in">String</span> <span class="built_in">url</span> = aResult.getData().getDownUrl();</div><div class="line"></div><div class="line">       <span class="keyword">if</span> (<span class="built_in">url</span> == <span class="literal">null</span> || !TextUtils.equals(<span class="built_in">url</span>, <span class="string">"这里是你知道的下载地址： 也可以只验证hostUrl"</span>)) &#123;</div><div class="line"></div><div class="line">         <span class="comment">// 如果符合，说明不是目标下载地址，就不去下载</span></div><div class="line"></div><div class="line">       &#125;</div></pre></td></tr></table></figure></p>
+<p>接着我们验证下载url是你自己app的服务器地址，然后再去请求下载Api，这时用DownLoadModel接受请求头 ，看是否符合自己和服务器约定的key和hash之，下载好apk到本地后，继续判断文件的hash和升级api返回的hashcode, 加之key是否是和下载服务器返回的key，如果不一致，就不安装</p>
+<pre><code>File file = DownUtils.getFile(url);
+ // 监测是否要重新下载
+ if (file.exists() &amp;&amp;   TextUtils.equals(aResult.getData().getHashCode(), EncryptUtils.Md5File(file))) {
+ &amp;&amp; TextUtils.equals(aResult.getData().getKey(),   DownLoadModel.getData().getKey())
+
+     // 如果符合，就去安装 不符合重新下载 删除恶意文件
+
+  }
+</code></pre><p>等我们验证了下载文件的地址是我们自己服务器提供的，验证没问题后就只剩安装了。接着还要对apk文件进行包名和签名校验，如果包名和签名不一致，那么就是伪装程序，这个漏洞显而易见！</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line">    <span class="comment">/** installApK</span></div><div class="line">     * @param context</div><div class="line">     * @param path</div><div class="line">     * @param name</div><div class="line">     */</div><div class="line">    public static void <span class="keyword">installApK(Context </span><span class="built_in">context</span>, final String path, final String name ) &#123;</div><div class="line"></div><div class="line">        if (!SafetyUtils.checkFile(path + name, <span class="built_in">context</span>)) &#123;</div><div class="line">            return<span class="comment">;</span></div><div class="line">        &#125;</div><div class="line"></div><div class="line">        if (!SafetyUtils.checkPagakgeName(<span class="built_in">context</span>, path + name)) &#123;</div><div class="line">            Toast.makeText(<span class="built_in">context</span>, <span class="string">"升级包被恶意软件篡改 请重新升级下载安装"</span>, Toast.LENGTH_SHORT ).<span class="keyword">show();</span></div><div class="line">            DLUtils.deleteFile(path + name)<span class="comment">;</span></div><div class="line">            ((Activity)<span class="built_in">context</span>).finish()<span class="comment">;</span></div><div class="line">            return<span class="comment">;</span></div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">switch </span>(SafetyUtils.checkPagakgeSign(<span class="built_in">context</span>, path + name)) &#123;</div><div class="line"></div><div class="line">            case SafetyUtils.SUCCESS:</div><div class="line">                DLUtils.openFile(path + name, <span class="built_in">context</span>)<span class="comment">;</span></div><div class="line">                <span class="keyword">break;</span></div><div class="line"></div><div class="line">            case SafetyUtils.SIGNATURES_INVALIDATE:</div><div class="line"></div><div class="line">                Toast.makeText(<span class="built_in">context</span>, <span class="string">"升级包安全校验失败 请重新升级"</span>, Toast.LENGTH_SHORT ).<span class="keyword">show();</span></div><div class="line">                ((Activity)<span class="built_in">context</span>).finish()<span class="comment">;</span></div><div class="line"></div><div class="line">                <span class="keyword">break;</span></div><div class="line"></div><div class="line">            case SafetyUtils.VERIFY_SIGNATURES_FAIL:</div><div class="line"></div><div class="line">                Toast.makeText(<span class="built_in">context</span>, <span class="string">"升级包为盗版应用 请重新升级"</span>, Toast.LENGTH_SHORT ).<span class="keyword">show();</span></div><div class="line">                ((Activity)<span class="built_in">context</span>).finish()<span class="comment">;</span></div><div class="line">                <span class="keyword">break;</span></div><div class="line"><span class="symbol"></span></div><div class="line">            default:</div><div class="line">                <span class="keyword">break;</span></div><div class="line">        &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>SafetyUtils安全类如下</strong>：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div></pre></td><td class="code"><pre><div class="line"> <span class="keyword">public</span> <span class="keyword">class</span> SafetyUtils &#123;</div><div class="line"></div><div class="line">       <span class="comment">/** install sucess */</span></div><div class="line">       <span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> SUCCESS = <span class="number">0</span>;</div><div class="line">       <span class="comment">/** SIGNATURES_INVALIDATE */</span></div><div class="line">       <span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> SIGNATURES_INVALIDATE = <span class="number">3</span>;</div><div class="line">       <span class="comment">/** SIGNATURES_NOT_SAME */</span></div><div class="line">       <span class="keyword">protected</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> VERIFY_SIGNATURES_FAIL = <span class="number">4</span>;</div><div class="line">       <span class="comment">/** is needcheck */</span></div><div class="line">       <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">boolean</span> NEED_VERIFY_CERT = <span class="keyword">true</span>;</div><div class="line"></div><div class="line">   <span class="comment">/**</span></div><div class="line">    * checkPagakgeSigns.</div><div class="line">    */</div><div class="line">   <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> checkPagakgeSign(Context context, String srcPluginFile) &#123;</div><div class="line"></div><div class="line">       PackageInfo PackageInfo = context.getPackageManager().getPackageArchiveInfo(srcPluginFile, <span class="number">0</span>);</div><div class="line">       <span class="comment">//Signature[] pluginSignatures = PackageInfo.signatures;</span></div><div class="line">       Signature[] pluginSignatures = PackageVerifyer.collectCertificates(srcPluginFile, <span class="keyword">false</span>);</div><div class="line">       <span class="keyword">boolean</span> isDebugable = (<span class="number">0</span> != (context.getApplicationInfo().flags &amp; ApplicationInfo.FLAG_DEBUGGABLE));</div><div class="line">       <span class="keyword">if</span> (pluginSignatures == <span class="keyword">null</span>) &#123;</div><div class="line">           PaLog.e(<span class="string">"签名验证失败"</span>, srcPluginFile);</div><div class="line">           <span class="keyword">new</span> <span class="keyword">File</span>(srcPluginFile).<span class="keyword">delete</span>();</div><div class="line">           <span class="keyword">return</span> SIGNATURES_INVALIDATE;</div><div class="line">       &#125; <span class="keyword">else</span> <span class="keyword">if</span> (NEED_VERIFY_CERT &amp;&amp; !isDebugable) &#123;</div><div class="line">           <span class="comment">//可选步骤，验证APK证书是否和现在程序证书相同。</span></div><div class="line">           Signature[] mainSignatures = <span class="keyword">null</span>;</div><div class="line">           <span class="keyword">try</span> &#123;</div><div class="line">               PackageInfo pkgInfo = context.getPackageManager().getPackageInfo(</div><div class="line">                       context.getPackageName(), PackageManager.GET_SIGNATURES);</div><div class="line">               mainSignatures = pkgInfo.signatures;</div><div class="line">           &#125; <span class="keyword">catch</span> (PackageManager.NameNotFoundException e) &#123;</div><div class="line">               e.printStackTrace();</div><div class="line">           &#125;</div><div class="line">           <span class="keyword">if</span> (!PackageVerifyer.isSignaturesSame(mainSignatures, pluginSignatures)) &#123;</div><div class="line">               PaLog.e(<span class="string">"升级包证书和旧版本证书不一致"</span>, srcPluginFile);</div><div class="line">               <span class="keyword">new</span> <span class="keyword">File</span>(srcPluginFile).<span class="keyword">delete</span>();</div><div class="line">               <span class="keyword">return</span> VERIFY_SIGNATURES_FAIL;</div><div class="line">           &#125;</div><div class="line">       &#125;</div><div class="line">       <span class="keyword">return</span> SUCCESS;</div><div class="line">   &#125;</div><div class="line"></div><div class="line">   <span class="comment">/**</span></div><div class="line">     * checkPagakgeName</div><div class="line">    * @param context</div><div class="line">    * @param srcNewFile</div><div class="line">    * @return</div><div class="line">    */</div><div class="line">   <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> checkPagakgeName (Context context, String srcNewFile) &#123;</div><div class="line">       PackageInfo packageInfo = context.getPackageManager().getPackageArchiveInfo(srcNewFile, PackageManager.GET_ACTIVITIES);</div><div class="line"></div><div class="line">       <span class="keyword">if</span> (packageInfo != <span class="keyword">null</span>) &#123;</div><div class="line"></div><div class="line">          <span class="keyword">return</span> TextUtils.equals(context.getPackageName(), packageInfo.packageName);</div><div class="line">       &#125;</div><div class="line"></div><div class="line">       <span class="keyword">return</span> <span class="keyword">false</span>;</div><div class="line">   &#125;</div><div class="line"></div><div class="line">   <span class="comment">/**</span></div><div class="line">    * checkFile</div><div class="line">    *</div><div class="line">    * @param aPath</div><div class="line">    *            文件路径</div><div class="line">    * @param context</div><div class="line">    *            context</div><div class="line">    */</div><div class="line">   <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> checkFile(String aPath, Context context) &#123;</div><div class="line">       <span class="keyword">File</span> aFile = <span class="keyword">new</span> <span class="keyword">File</span>(aPath);</div><div class="line">       <span class="keyword">if</span> (aFile == <span class="keyword">null</span> || !aFile.exists()) &#123;</div><div class="line">           Toast.makeText(context, <span class="string">"安装包已被恶意软件删除"</span>, Toast.LENGTH_SHORT).show();</div><div class="line">           <span class="keyword">return</span> <span class="keyword">false</span>;</div><div class="line">       &#125;</div><div class="line">       <span class="keyword">if</span>  (context == <span class="keyword">null</span>)  &#123;</div><div class="line">            Toast.makeText(context, <span class="string">"安装包异常"</span>, Toast.LENGTH_SHORT).show();</div><div class="line">           <span class="keyword">return</span> <span class="keyword">false</span>;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="后续"><a href="#后续" class="headerlink" title="后续"></a>后续</h2><p>通过上面的处理和防范，我们对apk升级流程的安全漏洞已经做到很安全细微了，很难被恶意程序轻易劫持，其他剩下的安全问题：服务器验签，js注入，hook注入 下期再接着介绍。</p>
+<p>第一时间获取技术文章请关注微信公众号！</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+<blockquote>
+<p>Tamic : <a href="http://www.jianshu.com/users/3bbb1ddf4fd5/latest_articles" target="_blank" rel="external">http://www.jianshu.com/users/3bbb1ddf4fd5/latest_articles</a><br>gitHub: <a href="https://github.com/NeglectedByBoss" target="_blank" rel="external">https://github.com/NeglectedByBoss</a></p>
+</blockquote>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2015/10/10/app-safe1_update/"
+                    data-title="App安全（一） Android防止升级过程被劫持和换包"
+                    data-url="http://tamicer.com/2015/10/10/app-safe1_update/"
+                    data-images="http://tamicer.com/2015/10/10/app-safe1_update/novate.jpg"
+                    data-content="前言APP 安全一直是开发者头痛的事情，越来越多的安全漏洞，使得开发者
+越来越重视app安全，... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2016/06/07/12/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（一），完美支持加密Https传输">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2015/03/14/This-is-Me/" data-toggle="tooltip" data-placement="top" title="博客终于开通啦！">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2015/10/10/app-safe1_update/"
+                        data-title="App安全（一） Android防止升级过程被劫持和换包"
+                        data-url="http://tamicer.com/2015/10/10/app-safe1_update/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Https" title="Https">Https</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                          <a class="tag" href="/tags/#架构" title="架构">架构</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2015/10/10/app-safe1_update/";
+    var disqus_url = "http://tamicer.com/2015/10/10/app-safe1_update/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
