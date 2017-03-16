@@ -13,7 +13,7 @@
 
     <title>
         
-          Retrofit/OkHttp API接口加固技术实践（下) - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          Retrofit/OkHttp API接口加固技术实践（下） - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
@@ -169,15 +169,13 @@
                         
                           <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
                         
-                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                           <a class="tag" href="/tags/#安全" title="安全">安全</a>
                         
-                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
-                        
                     </div>
-                    <h1>Retrofit/OkHttp API接口加固技术实践（下)</h1>
-                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
+                    <h1>Retrofit/OkHttp API接口加固技术实践（下）</h1>
+                    <h2 class="subheading">安全加密系列文章</h2>
                     <span class="meta">
                         Posted by Tamic on
                         2017-03-16
@@ -204,6 +202,11 @@
 </blockquote>
 <p><img src="http://upload-images.jianshu.io/upload_images/2022038-d3fee6a8b9b0113b.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
 <p>上节<a href="https://tamicer.github.io/2017/01/15/retroft011/" target="_blank" rel="external">加固</a>介绍了api单纯的对Post的用对称加密（base64），这种加密方式还是存在一定的风险吗，加密效率高，但是易破解，本节将介绍用非对称加密 来加解密okhttp的数据，我采用RSA加密算法为栗子。</p>
+<h2 id="对称加密"><a href="#对称加密" class="headerlink" title="对称加密"></a>对称加密</h2><p>对称加密是最传统的加密方式，比上非对称加密，缺少安全性，但是它依旧是用的比较多的加密方法。<br>对称加密采用单密钥加密方式，不论是加密还是解密都是用同一个密钥，即“一把钥匙开一把锁”。对称加密的好处在于操作简单、管理方便、速度快。它的缺点在于密钥在<br>网络传输中容易被窃听，每个密钥只能应用一次，对密钥管理造成了困难。对称加密的实现形式和加密算法的公开性使它依赖于密钥的安全性，而不是算法的安全性。</p>
+<p><strong>对称加密原理以及对称加密算法</strong> </p>
+<p><img src="http://img.blog.csdn.net/20150709224128583?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt=""></p>
+<p>对称加密的核心——通信双方共享一个密钥 通信过程：  A有明文m，使用加密算法E，密钥key，生成密文c=E(key,m); B收到密文c,使用解密算法D，密钥key，得到明文<br>m=D(key,c);    比喻：  对称加密是最直观，也是历史最久远的加密手段，类似于加锁和解锁，只不过钥匙的个数非常多（~~2^100），一个人穷其一生也试不完所有可能的钥匙<br>因此加密密钥能够从解密密钥中推算出来，同时解密密钥也可以从加密密钥中推算出来。而在大多数的对称算法中，加密密钥和解密密钥是相同的，所以也称这种加密算法为秘<br>密密钥算法或单密钥算法。它要求发送方和接收方在安全通信之前，商定一个密钥。对称算法的安全性依赖于密钥，泄漏密钥就意味着任何人都可以对他们发送或接收的消息解<br>密，所以密钥的保密性对通信性至关重要。</p>
+<p>主要有DES算法，3DES算法，TDEA算法，Blowfish算法，RC5算法，IDEA算法。</p>
 <h2 id="非对称加密"><a href="#非对称加密" class="headerlink" title="非对称加密"></a>非对称加密</h2><p> 非对称密算法是一种密钥的加密方法。</p>
 <p>  非对称加密算法需要两个密钥：公钥（publickey）和私钥（privatekey）。公钥与私钥是一对存在，如果用公钥对数据进行加密，只有用对应的私钥才能解密；如果用密钥对数据进行加密，那么只有用对应的公钥才能解密。因为加密和解密使用的是两个不同的密钥，所以这种算法叫作非对称加密算法。 非对称加密算法实现机密信息交换的基本过程是：甲方生成一对密钥并将其中的一把作为公用密钥向其它方公开；得到该公用密钥的乙方使用该密钥对机密信息进行加密后再发送给甲方；甲方再用自己保存的另一把专用密钥对加密后的信息进行解密。</p>
 <p>另一方面，甲方可以使用乙方的公钥对机密信息进行签名后再发送给乙方；乙方再用自己的私匙对数据进行验签。<br>甲方只能用其专用密钥解密由其公用密钥加密后的任何信息。 非对称加密算法的保密性比较好，它消除了最终用户交换密钥的需要。<br>非对称密码体制的特点：算法强度复杂、安全性依赖于算法与密钥但是由于其算法复杂，而使得加密解密速度没有对称加密解密的速度快。对称密码体制中只有一种密钥，并且是非公开的，如果要解密就得让对方知道密钥。所以保证其安全性就是保证密钥的安全，而非对称密钥体制有两种密钥，其中一个是公开的，这样就可以不需要像对称密码那样传输对方的密钥了。这样安全性就大了很多。</p>
@@ -239,7 +242,7 @@
 <p><strong>使用拦截器：</strong></p>
 <p>然后将字符串秘密AES密钥和加密的数据（用这个AES密钥加密）使用okhttp使POST请求。字符串密钥使用的是RSA加密。</p>
 <figure class="highlight vbscript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="keyword">class</span> EncryptionInterceptor implements Interceptor &#123;</div><div class="line">    </div><div class="line">       <span class="keyword">private</span> static final <span class="built_in">String</span> TAG =   EncryptionInterceptor.<span class="keyword">class</span>.getSimpleName();</div><div class="line">    </div><div class="line">       <span class="keyword">private</span> static final boolean DEBUG = <span class="literal">true</span>;</div><div class="line">    </div><div class="line">       @Override</div><div class="line">       <span class="keyword">public</span> <span class="built_in">Response</span> intercept(Chain chain) throws IOException &#123;</div><div class="line">    </div><div class="line">    </div><div class="line">       <span class="built_in">Request</span> <span class="built_in">request</span> = chain.<span class="built_in">request</span>();</div><div class="line">       RequestBody oldBody = <span class="built_in">request</span>.body();</div><div class="line">       Buffer buffer = <span class="keyword">new</span> Buffer();</div><div class="line">       oldBody.writeTo(buffer);</div><div class="line">       <span class="built_in">String</span> strOldBody = buffer.readUtf8();</div><div class="line">       MediaType mediaType = MediaType.parse(<span class="string">"text/plain; charset=utf-8"</span>);</div><div class="line">       <span class="built_in">String</span> strNewBody = encryptDataWithSymmetricKey(symmKey, text);</div><div class="line"></div><div class="line">       RequestBody body = RequestBody.create(mediaType, strNewBody);</div><div class="line">       <span class="built_in">request</span> = <span class="built_in">request</span>.newBuilder().header(<span class="string">"Content-Type"</span>, body.contentType().toString()).header(<span class="string">"Content-Length"</span>, <span class="built_in">String</span>.valueOf(body.contentLength())).method(<span class="built_in">request</span>.method(), body).build();</div><div class="line">       return chain.proceed(<span class="built_in">request</span>);</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>在服务器端可以解密（从RSA）秘密AES密钥，并得到它的字符串表示。在客户端（Android）和服务器端（server）上是一样的。但是我怎么能使用这个字符串AES密钥解密数据？：</p>
+<p>在服务器端可以解密（从RSA）秘密AES密钥，并得到它的字符串表示。在客户端（Android）和服务器端（server）上是一样的。使用这个字符串AES密钥解密数据</p>
 <figure class="highlight armasm"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="keyword">String </span>encryptionMethod = <span class="string">"AES-128-CBC"</span><span class="comment">;  </span></div><div class="line"></div><div class="line"> //decryptedAESKey is an <span class="keyword">Android </span>AES SecretKeySpec converted  to <span class="keyword">string</span></div><div class="line"> //in <span class="keyword">Android </span>the <span class="keyword">string </span>key was <span class="keyword">base64_encoded, </span>服务端解密 decode</div><div class="line"></div><div class="line"> <span class="keyword">String </span>secretHash = <span class="keyword">base64Decode(decryptedAESKey);</span></div><div class="line"></div><div class="line"></div><div class="line">// Decrypt</div><div class="line"> <span class="keyword">String </span>decryptedMessage = opensslDecrypt(<span class="keyword">base64Decode(encryptedData), </span> encryptionMethod, secretHash)<span class="comment">;</span></div></pre></td></tr></table></figure>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>完整的非对称加密过程</p>
 <p>假如现在 你向支付宝 转账（术语数据信息），为了保证信息传送的保密性、真实性、完整性和不可否认性，需要对传送的信息进行数字加密和签名，其传送过程为：</p>
@@ -274,7 +277,7 @@
                 <div class="ds-share"
                     style="text-align: right"
                     data-thread-key="2017/03/16/app-enc-dec/"
-                    data-title="Retrofit/OkHttp API接口加固技术实践（下)"
+                    data-title="Retrofit/OkHttp API接口加固技术实践（下）"
                     data-url="http://tamicer.com/2017/03/16/app-enc-dec/"
                     data-images=""
                     data-content="
@@ -311,7 +314,7 @@
                 <div class="comment">
                     <div class="ds-thread"
                         data-thread-key="2017/03/16/app-enc-dec/"
-                        data-title="Retrofit/OkHttp API接口加固技术实践（下)"
+                        data-title="Retrofit/OkHttp API接口加固技术实践（下）"
                         data-url="http://tamicer.com/2017/03/16/app-enc-dec/" >
                     </div>
                 </div>
@@ -362,11 +365,9 @@
                         
                           <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
                         
-                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                           <a class="tag" href="/tags/#安全" title="安全">安全</a>
-                        
-                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
                 </section>
