@@ -90,14 +90,14 @@
 
                         
                         <li>
-                            <a href="/about/">About</a>
+                            <a href="/archives/">Archives</a>
                         </li>
                         
                     
 
                         
                         <li>
-                            <a href="/archives/">Archives</a>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
@@ -169,9 +169,9 @@
                         
                           <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
                         
-                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
-                        
                           <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
                     <h1>Retrofit/OkHttp API接口加固技术实践（下）</h1>
@@ -201,7 +201,7 @@
 <p>作者/Tamic<br><a href="http://www.tamicer.com" target="_blank" rel="external">http://www.tamicer.com</a></p>
 </blockquote>
 <p><img src="http://upload-images.jianshu.io/upload_images/2022038-d3fee6a8b9b0113b.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
-<p>上节<a href="https://tamicer.github.io/2017/01/15/retroft011/" target="_blank" rel="external">加固</a>介绍了api单纯的对Post的用对称加密（base64），这种加密方式还是存在一定的风险吗，加密效率高，但是易破解，本节将介绍用非对称加密 来加解密okhttp的数据，我采用RSA加密算法为栗子。</p>
+<p>上节<a href="https://tamicer.github.io/2017/01/15/retroft011/" target="_blank" rel="external">加固</a>介绍了APi单纯Post用对称加密（Base64 为列子）加密方式，这种加密方式还是存在一定的风险，加密效率虽高，但易破解，本节将介绍怎么用非对称加密 来加解密okhttp的数据，本文采用RSA加密算法为栗子。</p>
 <h2 id="对称加密"><a href="#对称加密" class="headerlink" title="对称加密"></a>对称加密</h2><p>对称加密是最传统的加密方式，比上非对称加密，缺少安全性，但是它依旧是用的比较多的加密方法。<br>对称加密采用单密钥加密方式，不论是加密还是解密都是用同一个密钥，即“一把钥匙开一把锁”。对称加密的好处在于操作简单、管理方便、速度快。它的缺点在于密钥在<br>网络传输中容易被窃听，每个密钥只能应用一次，对密钥管理造成了困难。对称加密的实现形式和加密算法的公开性使它依赖于密钥的安全性，而不是算法的安全性。</p>
 <p><strong>对称加密原理以及对称加密算法</strong> </p>
 <p><img src="http://img.blog.csdn.net/20150709224128583?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt=""></p>
@@ -284,7 +284,7 @@
 作者/Tamichttp://www.tamicer.com
 
 
-上节加固介绍了api单纯的... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+上节加固介绍了APi单纯P... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -365,9 +365,9 @@
                         
                           <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
                         
-                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
-                        
                           <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
                     </div>
                 </section>
