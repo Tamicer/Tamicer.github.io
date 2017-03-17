@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Android-免Root实现Apk静默安装 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2015/09/22/Android-免Root实现Apk静默安装/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#静默安装" title="静默安装">静默安装</a>
+                        
+                    </div>
+                    <h1>Android-免Root实现Apk静默安装</h1>
+                    <h2 class="subheading">Android 黑科技</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2015-09-22
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <p>　</p>
+<blockquote>
+<p>最近在做apk自我静默更新，在获取内置情况下，或者已root过的手机可以完美实现自我静默安装功能，但是发布到市场的apk非内置（非system apk） 也非root，所以自我静默安装做起来不太靠谱。因此借助辅助去实现了一个apk辅助自动装功能，辅助功能可以参考谷歌官网指南：</p>
+</blockquote>
+<p><a href="https://developer.android.com/reference/android/accessibilityservice/package-summary.html" target="_blank" rel="external">https://developer.android.com/reference/android/accessibilityservice/package-summary.html</a></p>
+<h1 id="Accessibilityservice"><a href="#Accessibilityservice" class="headerlink" title="Accessibilityservice"></a>Accessibilityservice</h1><h1 id="一-简介"><a href="#一-简介" class="headerlink" title="一 简介"></a>一 简介</h1><p><code>accessibilityservice</code>是用户可选服务，<br>AccessibilityService由系统在后台运行,并接收回调函数<code>AccessibilityEvents</code>。此类事件表示一些状态转换的用户界面,<br>例如,界面已经改变, 点击一个按钮,等等。这种服务可以选择请求的能力查询活动窗口的内容。<br>开发一个可访问性服务需要扩展这个类并实现其抽象方法。</p>
+<p>AccessibilityService由<code>AccessibilityServiceInfo</code>来描述。<br>系统通知的<code>AccessibilityService</code>, <code>AccessibilityEvents</code>的节点信息封装在这个类中。</p>
+<h1 id="二-用法"><a href="#二-用法" class="headerlink" title="二 用法"></a>二 用法</h1><h2 id="生命周期"><a href="#生命周期" class="headerlink" title="生命周期"></a>生命周期</h2><p>AccessibilityService的生命周期管理体系和专门的遵循既定的服务生命周期。<br>开始触发一个<code>AccessibilityService</code>完全由用户显式地将服务在设备上设置中辅助功能中打开。这样在系统绑定到一个服务,调用<code>callsonServiceConnected()。</code><br>此方法可以被重载, 客户想要执行post绑定设置。</p>
+<p><code>AccessibilityService</code>停止或者当用户在设备设置关闭后，会调用<code>disableSelf()</code>。</p>
+<h2 id="声明AccessibilityService"><a href="#声明AccessibilityService" class="headerlink" title="声明AccessibilityService"></a>声明AccessibilityService</h2><p>AndroidManifest声明<code>AccessibilityService.xml</code>, 但是它必须做两件事:</p>
+<h2 id="指定意图处理"><a href="#指定意图处理" class="headerlink" title="指定意图处理"></a>指定意图处理</h2><p><code>“Android.accessibilityservice.AccessibilityService</code>”。<br>请求允许<strong>BIND_ACCESSIBILITY_SERVICE</strong>确保只有系统可以绑定到它。</p>
+<p>下面是一个例子声明:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="tag">&lt;<span class="name">service</span> <span class="attr">android:name</span>=<span class="string">".MyAccessibilityService"</span></span></div><div class="line"> <span class="attr">android:permission</span>=<span class="string">"android.permission.BIND_ACCESSIBILITY_SERVICE"</span>&gt;</div><div class="line"> <span class="tag">&lt;<span class="name">intent-filter</span>&gt;</span></div><div class="line"> <span class="tag">&lt;<span class="name">action</span> <span class="attr">android:name</span>=<span class="string">"android.accessibilityservice.AccessibilityService"</span> /&gt;</span></div><div class="line"> <span class="tag">&lt;/<span class="name">intent-filter</span>&gt;</span></div></pre></td></tr></table></figure>
+<h2 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h2><p>AccessibilityService可以配置为接收特定类型的辅助的事件,监听特定的包,给定的时间内得到每种事件,检索窗口内容, 指定一个设置的activity,等等。</p>
+<p>配置一个可访问性服务有两种方法:</p>
+<p>提供元数据条目在清单申报服务。服务声明和一个元数据标记下面:<br><figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="tag">&lt;<span class="name">service</span> <span class="attr">android:name</span>=<span class="string">".MyAccessibilityService"</span>&gt;</span></div><div class="line"> <span class="tag">&lt;<span class="name">intent-filter</span>&gt;</span></div><div class="line"> <span class="tag">&lt;<span class="name">action</span> <span class="attr">android:name</span>=<span class="string">"android.accessibilityservice.AccessibilityService"</span> /&gt;</span></div><div class="line"> <span class="tag">&lt;/<span class="name">intent-filter</span>&gt;</span></div><div class="line"> <span class="tag">&lt;<span class="name">meta-data</span> <span class="attr">android:name</span>=<span class="string">"android.accessibilityservice"</span>  <span class="attr">android:resource</span>=<span class="string">"@xml/accessibilityservice"</span> /&gt;</span></div></pre></td></tr></table></figure></p>
+<p>注意:这个方法设置所有属性。<br>调用<code>setServiceInfo(AccessibilityServiceInfo)</code>。<br>注意:这个方法可以调用任何时间动态更改服务配置。</p>
+<p>注意:这种方法只允许设置动态可配置属性:<code>eventTypes</code>, <code>feedbackType, flags, notificationTimeout, packageNames</code></p>
+<h2 id="检索视图内容"><a href="#检索视图内容" class="headerlink" title="检索视图内容"></a>检索视图内容</h2><p>服务可以指定在其声明, 它可以检索窗口的内容， 返回的为一个AccessibilityWindowInfo对象。<br>注意：申明此功能要求辅助必须声明其通过SERVICE_META_DATA引用的XML资源配置。<br><figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="php"><span class="meta">&lt;?</span>xml version=<span class="string">"1.0"</span> encoding=<span class="string">"utf-8"</span><span class="meta">?&gt;</span></span></div><div class="line"> <span class="tag">&lt;<span class="name">accessibility-service</span></span></div><div class="line">  <span class="attr">xmlns:android</span>=<span class="string">"http://schemas.android.com/apk/res/android"</span></div><div class="line">  <span class="attr">android:accessibilityEventTypes</span>=<span class="string">"typeAllMask"</span></div><div class="line">  <span class="attr">android:accessibilityFeedbackType</span>=<span class="string">"feedbackGeneric"</span></div><div class="line">  <span class="attr">android:accessibilityFlags</span>=<span class="string">"flagDefault"</span></div><div class="line">  <span class="attr">android:canRetrieveWindowContent</span>=<span class="string">"true"</span></div><div class="line">  <span class="attr">android:description</span>=<span class="string">"@string/description_auto_install_accessibility_service"</span></div><div class="line"> <span class="attr">android:notificationTimeout</span>=<span class="string">"100"</span> /&gt;</div></pre></td></tr></table></figure></p>
+<h1 id="三-用法"><a href="#三-用法" class="headerlink" title="三 用法"></a>三 用法</h1><ul>
+<li><p>onServiceConnected()<br>服务连接时，也就是第一次打开时调用，这里我们可以初始化常量和标签等</p>
+</li>
+<li><p>onCreate()<br>服务创建时调用，初始化一些数据</p>
+</li>
+<li>onDestroy()<br> 服务消亡是，或者用户关闭时，调用，这里我们可以去做些业务相关的释放任务，</li>
+<li>onAccessibilityEvent()<br> 监测到内容节点时调用</li>
+<li>disableSelf()<br> 自身关闭时主动调用</li>
+</ul>
+<h1 id="四-实现思路部分"><a href="#四-实现思路部分" class="headerlink" title="四 实现思路部分"></a>四 实现思路部分</h1><p>效果图；</p>
+<p>我们可以指定监测的某个包，这里我为了实现自动安装，因此监测<code>com.android.packageinstaller</code>“包下的<strong>com.android.packageinstaller.InstallerActivity</strong>界面。</p>
+<p>在遍历到需要的安装按钮调用api来实现自动点击功能，微信抢红包是监测微信红白的activity：</p>
+<pre><code>aAccessibilityNodeInfo.performAction(targetAction)
+</code></pre><h1 id="关键部分"><a href="#关键部分" class="headerlink" title="关键部分"></a>关键部分</h1><p>重写processAccessibilityEvent方法， 用来获得系统当前的<code>AccessibilityEvent</code>信息，找出要监测的包名,和监测的view类型以及节点内容<br>如果是安装apk，并且当前界面是是属于安装acitvity，文本信息是“安装”的 ，我们可以帮他执行点击事件。</p>
+<p>代码片段如下：</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">     <span class="keyword">private</span> <span class="function"><span class="keyword">void</span> <span class="title">processAccessibilityEvent</span>   <span class="params">(AccessibilityEvent aAccessibilityEvent)</span> </span>&#123;</div><div class="line">  <span class="keyword">if</span>(aAccessibilityEvent.getSource() != <span class="keyword">null</span>) &#123;</div><div class="line">  String packageName = aAccessibilityEvent.getPackageName().toString();</div><div class="line">  String className = aAccessibilityEvent.getClassName().toString();</div><div class="line">  String nodeText = aAccessibilityEvent.getSource().getText() == <span class="keyword">null</span> ? <span class="string">""</span> : aAccessibilityEvent.getSource().getText().toString().trim();</div><div class="line"></div><div class="line">  <span class="keyword">if</span>(packageName.equals(<span class="string">"com.android.packageinstaller"</span>)) &#123;</div><div class="line">  <span class="keyword">if</span>(className.equalsIgnoreCase(<span class="string">"android.app.AlertDialog"</span>)) &#123;</div><div class="line"> <span class="comment">// handleAlertDialog(aAccessibilityEvent, className, nodeText); //should for uninstall</span></div><div class="line">  Log.e(<span class="string">"test"</span>, <span class="string">"onAccessibilityEvent alert dialog"</span>);</div><div class="line">  <span class="keyword">return</span>;</div><div class="line">  &#125;</div><div class="line"></div><div class="line"></div><div class="line">AccessibilityNodeInfo targetNode = extractNode(aAccessibilityEvent, aClassName,</div><div class="line"> “安装”);</div><div class="line"></div><div class="line"> <span class="keyword">if</span> (targetNode != <span class="keyword">null</span>) &#123;</div><div class="line"></div><div class="line"> <span class="keyword">int</span> targetAction = AccessibilityNodeInfo.ACTION_CLICK;</div><div class="line">  <span class="keyword">if</span> ((aAccessibilityNodeInfo != <span class="keyword">null</span>)  &amp;&amp; aAccessibilityNodeInfo.isEnabled()</div><div class="line">   &amp;&amp; aAccessibilityNodeInfo.isClickable()</div><div class="line">   &amp;&amp; aAccessibilityNodeInfo.performAction(targetAction)) &#123;</div><div class="line">   <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line"></div><div class="line">   &#125;</div><div class="line"></div><div class="line"><span class="keyword">return</span>;</div><div class="line">  &#125;</div><div class="line">  <span class="keyword">return</span>;</div><div class="line">  &#125;</div><div class="line">  &#125;</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+<h2 id="五-后续"><a href="#五-后续" class="headerlink" title="五 后续"></a>五 后续</h2><p>目前用辅助来实现自动装，用户还是能看到系统安装的界面的，我们则在当前界面添加一个window，用来遮盖系统的安装界面，在安装成功后移除目前的window<br>，但是会遇到机型问题，有的机子安装界面的activity，有的是dialog, 况且内容也不一样，有安装，有下一步，有我知道了，有同意，因此后期做兼容时废了很大力气，</p>
+<p>不仅判断机型还要判断rom版本，此项目中几乎覆盖了市场上主流机型，不兼容的请读者自我加入if语言判断，由于首次点击安装按钮时，用户为打开辅助服务，因此<br>我做了是否开启本服务判断，如果未打开则跳到设置页面开启此服务，开启了则直接安装，</p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"> </div><div class="line"> public <span class="keyword">static</span> boolean isAccessibilityOn(Context mContext) &#123;</div><div class="line">    <span class="built_in">int</span> accessibilityEnabled = <span class="number">0</span><span class="comment">;</span></div><div class="line">    final <span class="built_in">String</span> service = mContext.getPackageName() + <span class="string">"/"</span> + TamicInstallService.class.getCanonicalName()<span class="comment">;</span></div><div class="line">    try &#123;</div><div class="line">    accessibilityEnabled = Settings.Secure.getInt(</div><div class="line">    mContext.getApplicationContext().getContentResolver(),</div><div class="line">    android.provider.Settings.Secure.ACCESSIBILITY_ENABLED)<span class="comment">;</span></div><div class="line">    <span class="built_in">Log</span>.v(LOG_TAG, <span class="string">"accessibilityEnabled = "</span> + accessibilityEnabled)<span class="comment">;</span></div><div class="line">    &#125; catch (Settings.SettingNotFoundException e) &#123;</div><div class="line">    <span class="built_in">Log</span>.e(LOG_TAG, <span class="string">"Error finding setting, default accessibility to not found: "</span></div><div class="line">    + e.getMessage())<span class="comment">;</span></div><div class="line">    &#125;</div><div class="line">    TextUtils.SimpleStringSplitter mStringColonSplitter = new TextUtils.SimpleStringSplitter(<span class="string">':'</span>)<span class="comment">;</span></div><div class="line"> </div><div class="line">    <span class="keyword">if</span> (accessibilityEnabled == <span class="number">1</span>) &#123;</div><div class="line">    <span class="built_in">Log</span>.v(LOG_TAG, <span class="string">"***ACCESSIBILITY IS ENABLED*** -"</span>)<span class="comment">;</span></div><div class="line">    <span class="built_in">String</span> settingValue = Settings.Secure.getString(</div><div class="line">    mContext.getApplicationContext().getContentResolver(),</div><div class="line">    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)<span class="comment">;</span></div><div class="line">    <span class="keyword">if</span> (settingValue != <span class="literal">null</span>) &#123;</div><div class="line">    mStringColonSplitter.setString(settingValue)<span class="comment">;</span></div><div class="line">    <span class="keyword">while</span> (mStringColonSplitter.hasNext()) &#123;</div><div class="line">    <span class="built_in">String</span> accessibilityService = mStringColonSplitter.<span class="keyword">next</span>()<span class="comment">;</span></div><div class="line"> </div><div class="line">    <span class="built_in">Log</span>.v(LOG_TAG, <span class="string">" accessibilityService :: "</span> + accessibilityService + <span class="string">" "</span> + service)<span class="comment">;</span></div><div class="line">    <span class="keyword">if</span> (accessibilityService.equalsIgnoreCase(service)) &#123;</div><div class="line">    <span class="built_in">Log</span>.v(LOG_TAG, <span class="string">"We've found the correct setting - accessibility is switched on!"</span>)<span class="comment">;</span></div><div class="line">    <span class="keyword">return</span> <span class="literal">true</span><span class="comment">;</span></div><div class="line">    &#125;</div><div class="line">    &#125;</div><div class="line">    &#125;</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">    <span class="built_in">Log</span>.v(LOG_TAG, <span class="string">"---ACCESSIBILITY IS DISABLED--"</span>)<span class="comment">;</span></div><div class="line">    &#125;</div><div class="line"> </div><div class="line">    <span class="keyword">return</span> <span class="literal">false</span><span class="comment">;</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>Activity代码做了业务判断</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">installButton.setOnClickListener(<span class="keyword">new</span> View.OnClickListener() &#123;</div><div class="line">  <span class="meta">@Override</span></div><div class="line">  <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onClick</span><span class="params">(View view)</span> </span>&#123;</div><div class="line">    <span class="keyword">if</span> (!TamicInstallService.isAccessibilitySettingsOn (MainActivity.<span class="keyword">this</span>)) &#123;</div><div class="line">    <span class="comment">// TODO Auto-generated method stub</span></div><div class="line">    Intent intent = <span class="keyword">new</span> Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);</div><div class="line">     startActivity(intent);</div><div class="line">     <span class="keyword">return</span>;</div><div class="line">  &#125;</div><div class="line">  TamicInstallService.setInvokeType(TamicInstallService.TYPE_INSTALL_APP);</div><div class="line">  TamicWindowManager.makeWatingWiew(MainActivity.<span class="keyword">this</span>, <span class="string">"安装中..."</span>).show();</div><div class="line">  installApk();</div><div class="line"></div><div class="line">  &#125;</div><div class="line">  &#125;);</div></pre></td></tr></table></figure>
+<h1 id="结束语"><a href="#结束语" class="headerlink" title="结束语"></a>结束语</h1><p>通过辅助实现了自动装，<code>root</code>的静默安装请看： Android <code>PackageManager</code>源码浅析以及静默安装实现方式<br>一文</p>
+<p>很多时候我们可以根据用户当前系统的情况分别处理，如果是内置渠道的，直接用静默安装实现，如果非root则申请root权限<br>在root后可以用静默安装，用户拒绝root情况下，可以采用辅助的自动装来实现apk的快速安装，以用来增大apk升级转换率。</p>
+<blockquote>
+<p>如果的需要增量更新的话，可以用插件免安装实现。</p>
+</blockquote>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
+
+
+
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+
+
+                <hr>
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2015/09/22/Android-免Root实现Apk静默安装/"
+                    data-title="Android-免Root实现Apk静默安装"
+                    data-url="http://tamicer.com/2015/09/22/Android-免Root实现Apk静默安装/"
+                    data-images=""
+                    data-content="　
+
+最近在做apk自我静默更新，在获取内置情况下，或者已root过的手机可以完美实现自我静默... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+                </div>
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2015/10/10/app-safe1_update/" data-toggle="tooltip" data-placement="top" title="App安全（一） Android防止升级过程被劫持和换包">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2015/03/14/This-is-Me/" data-toggle="tooltip" data-placement="top" title="博客终于开通啦！">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2015/09/22/Android-免Root实现Apk静默安装/"
+                        data-title="Android-免Root实现Apk静默安装"
+                        data-url="http://tamicer.com/2015/09/22/Android-免Root实现Apk静默安装/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#静默安装" title="静默安装">静默安装</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2015/09/22/Android-免Root实现Apk静默安装/";
+    var disqus_url = "http://tamicer.com/2015/09/22/Android-免Root实现Apk静默安装/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

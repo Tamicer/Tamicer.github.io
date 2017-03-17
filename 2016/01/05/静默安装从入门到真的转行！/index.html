@@ -13,11 +13,11 @@
 
     <title>
         
-          Retrofit 2.0 超能实践（四），实现大文件多线程断点下载 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          静默安装从入门到真的转行 - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
-    <link rel="canonical" href="http://tamicer.com/2016/06/17/retrofit_004/">
+    <link rel="canonical" href="http://tamicer.com/2016/01/05/静默安装从入门到真的转行！/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -167,18 +167,14 @@
                         
                           <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
-                        
-                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
-                        
-                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                          <a class="tag" href="/tags/#静默安装" title="静默安装">静默安装</a>
                         
                     </div>
-                    <h1>Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</h1>
-                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
+                    <h1>静默安装从入门到真的转行</h1>
+                    <h2 class="subheading">Android 黑科技</h2>
                     <span class="meta">
                         Posted by Tamic on
-                        2016-06-17
+                        2016-01-05
                     </span>
                 </div>
             </div>
@@ -197,258 +193,136 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-                <blockquote>
-<p>作者：码小白 （Tamic）<br>www.tamicer.com</p>
+                <h1 id="Android应用管理"><a href="#Android应用管理" class="headerlink" title="Android应用管理"></a>Android应用管理</h1><blockquote>
+<p>Tamic /<a href="http://www.jianshu.com/p/87621511e5b3" target="_blank" rel="external">http://www.jianshu.com/p/87621511e5b3</a></p>
+<p>2016了 本篇成了我的开年之博，距上次做静默安装和辅助服务已经有半年之多，最近一直在做项目中的插件功能，也一直没时间整理平时接触的东西，甚至年终总结，今天就从经常用到的知识来开始2016的道路吧。</p>
 </blockquote>
-<p>通过前几篇系统的介绍和综合运用，忘记介绍文件下载功能了，有朋友问到，目前APP文件下载主要有断点续传，多线程并发下载，多类型下载，今天就介绍下其Retrofit下载文件功能，已结合RxJava。</p>
-<p><strong>Retrofit系列导读：</strong></p>
-<ul>
-<li><p><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
-<ul>
-<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
-</li>
-</ul>
-</li>
-<li><p><a href="http://www.jianshu.com/p/d7734390895e" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></p>
-</li>
-</ul>
-<h1 id="ApiService"><a href="#ApiService" class="headerlink" title="ApiService"></a>ApiService</h1><p> 编写API，执行下载接口功能。</p>
-<pre><code>public interface ApiService {
-  @Streaming
-  @GET
-  Observable&lt;ResponseBody&gt; downloadFile(@Url String   fileUrl);
-}
-</code></pre><p>  url由于是可变的，因此用 <code>@URL</code>  注解符号来进行指定，大文件官方建议用 <code>@Streaming</code>  来进行注解，不然会出现IO异常，小文件可以忽略不注入。如果想进行断点续传的话 可以在此加入header，但不建议直接在api中写死，每个下载的请求大小是不同的，在拦截器加入更为妥善。</p>
-<h1 id="DownLoadManager"><a href="#DownLoadManager" class="headerlink" title="DownLoadManager"></a>DownLoadManager</h1><p>  实现一个下载管理者 来进行文件写入，类型判断等，如果想做完善，可以判断下http的请求头 <code>content-length</code>,  <code>content- type</code>, <code>RANGE</code>  第一个用来判断文件大小，第二个文件类型，第三个是文件从哪儿开始下载，如果对下载来源校验可以加入<code>referer</code>, 不是目标来源的可以不予下载权限。</p>
-<pre><code>public class DownLoadManager {
-
-  private static final String TAG = &quot;DownLoadManager&quot;;
-
- private static String APK_CONTENTTYPE = &quot;application/vnd.android.package-archive&quot;;
-
- private static String PNG_CONTENTTYPE = &quot;image/png&quot;;
-
- private static String JPG_CONTENTTYPE = &quot;image/jpg&quot;;
-
- private static String fileSuffix=&quot;&quot;;
-
- public static boolean  writeResponseBodyToDisk(Context context, ResponseBody body) {
-
-    Log.d(TAG, &quot;contentType:&gt;&gt;&gt;&gt;&quot;+ body.contentType().toString());
-
-    String type = body.contentType().toString();
-
-    if (type.equals(APK_CONTENTTYPE)) {
-
-       fileSuffix = &quot;.apk&quot;;
-    } else if (type.equals(PNG_CONTENTTYPE)) {
-        fileSuffix = &quot;.png&quot;;
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-e5d0385d045262bf.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="图文无关"></p>
+<p>Android的应用管理主要由PMS(PackageManagerService)来负责管理；上层上来由PackageManager来进行管理，通过PM我们可以得到设备上的所有安装包信息，包括未安装和安装过的, 未安装的包信息采用反射和未暴露的API也可以进行深度解析得到我们想要的信息。而应用的的安装和卸载也有PM负责。</p>
+<p>#PMS</p>
+<p>今天我们主要说一下PackageManager，至于PMS来说和上层有Binder进行交互, PMS在实际开发中我们很少直接用到，但是我们上层通过PM来获取的一些基础信息，都需要PMS来调用底层，当通过看源码得知PackageManager沿用了Android面向接口编程的风格，比如<code>viewRoot</code>,<code>WindowManger</code>,<code>ActivityManager</code> 都采用了面向接口编程，这些Mgr为我们提供了一些基础的功能接口，具体都由各自的Service来动态注入Impl,就是我们通常说的热插拔，至于这么写的好处吗 这里稍微说两句，在接触过java编程久的朋友都知道面向接口的可扩展性很强，因为安卓源码也需要升级，谷歌工程师在下一个版本中或许就会新增一些api，那么这样设计的理念也便于源码的维护和升级，我们平时开发中也可以借鉴这种优雅的面向协议编程，当然iOS同样适用。</p>
+<h2 id="PackageManager"><a href="#PackageManager" class="headerlink" title="PackageManager"></a>PackageManager</h2><p> PackageManager 在android.content.pm包下，它主要来负责应用的解析，和APK的安装，卸载和更新，那么我们可以清晰得看到此类的以下方法</p>
+<p>  1）负责安装</p>
+<pre><code>private abstract void installPackage(
+    Uri packageURI, IPackageInstallObserver observer, int flags,）
+</code></pre><p>  2）卸载</p>
+<pre><code>private abstract void deletePackage(
+ String packageName, IPackageDeleteObserver observer, int flags);
+</code></pre><p>安卓系统通过以上api和底层的pms交互进行安装，我们的普通apk无法直接安装的第三方应用的， 因为源码没有开放其方法，源码是私有方法，只有我们发送一条安装意图才可以交友pms来安装apk,具体由系统级别的apk（<strong>包名com.android.packageinstaller</strong>）来进行处理。</p>
+<pre><code>Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setAction(Intent.ACTION_VIEW);
+        intent.setDataAndType(Uri.fromFile(file), &quot;application/vnd.android.package-archive&quot;);
+        context.startActivity(intent);
+</code></pre><p>以上安全限制并非是谷歌的撒手锏，除了用未开放安装的api，在调用此方法前系统也会进行权限动态检查，我们可以看看pm的又一重要方法：</p>
+<p>  <code>public abstract int checkPermission(String permName, String pkgName);</code></p>
+<p> 这就为何证明了普通应用为何没有安装的权限，其内部会对调用此api的进行权限监测，如果是普通应用那么返回int值为1的返回值，在这里我们要和分析下安卓apk的级别内置应用和普通应用</p>
+<blockquote>
+<p>预装程序（即相机，日历和浏览器等）保存在/system/app/中。<br> 用户安装程序（APIDemo，Any.do等）保存在/data/app/中。<br> 当然目前安卓4.4以后内置预装程序的app/下又会新增了pri-app/ 和/app，用来个用户提供卸载内置程序的入口，那么在pri下的apk无法卸载的，除非我们root后才能卸载。</p>
+</blockquote>
+<h1 id="实现静默安装"><a href="#实现静默安装" class="headerlink" title="实现静默安装"></a>实现静默安装</h1><p>通过了解了上面pms的简单工作原理，我们就可以想到静默安装的途径</p>
+<h1 id="一-采用伪造系统PM-PackageManger"><a href="#一-采用伪造系统PM-PackageManger" class="headerlink" title="一 采用伪造系统PM(PackageManger)"></a>一 采用伪造系统PM(PackageManger)</h1><p>   通过伪造自己的Pm实现开放的api，并且采用自己的IPackageInstallObserver，说道这里你估计会不明白此类用来干嘛的。此观察者是用来检测apk是否安装的的回调，那么卸载同样有自己的观者这，此通过aidl和pms进行通讯，我们可以从源码copy一份到自己的项目下面 注意的是包名和路劲必须和源码保持一致。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-3acd72a46e751cb6.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="这里只copy了几个重要的类"></p>
+<p>  伪造安装所需要的observer和PM后 ，我将私有的安装方法改成public，这样在代码里直接掉pm.installPackager()即可，但是又会来到权限的问题，那么怎么做到绕过权限？我通过改checkPermission（）方法，但是没点卵用用，即使我返回0也无法达到绕过权限的问题，那么，今天的静默安装也到此无法达到大家期望的普通静默安装的效果，但是在root后或者app为系统apk的时候，我们是可以做到静默安装的，至于安装成功后你需要显示什么view 我们同样可以在回调中进行处理。<br>  此方法由于谷歌加固Android内核，7.0上已经不能用了！</p>
+<h1 id="二-运行PM命令"><a href="#二-运行PM命令" class="headerlink" title="二 运行PM命令"></a>二 运行PM命令</h1><p> 我们可以直接在拿到系统<code>builder</code>写入pm命令，加入到系统进程中执行install方法进行安装<br> 代码如下：</p>
+<p> final ResultBuilder builder = Result.newBuilder();</p>
+<pre><code>String[] args = {&quot;pm&quot;, &quot;install&quot;, &quot;-r&quot;, getPackageUri(path).getPath()};
+String result = null;
+ProcessBuilder processBuilder = new ProcessBuilder(args);
+Process process= null;
+InputStream errIs = null;
+InputStream inIs = null;
+try{
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    int read=-1;
+    process = processBuilder.start();
+    errIs=process.getErrorStream();
+    while((read = errIs.read()) != -1){
+        baos.write(read);
+    }
+    baos.write(&apos;\n&apos;);
+    inIs=process.getInputStream();
+    while((read=inIs.read())!=-1){
+        baos.write(read);
     }
 
-    // 其他类型同上 自己判断加入.....
+    byte[] data=baos.toByteArray();
+
+    result = new String(data);
+
+} catch (IOException e) {
+    e.printStackTrace();
+    String log = e.toString() + &quot;:&quot; + &quot;file is write ex!&quot;;
+    Log.e(&quot;&quot;, log);
+    builder.setCustomMessage(log);
+}
+</code></pre><p>   当然此方法也不是完美的，也需要root权限或者系统界别的apk</p>
+<h2 id="三-反射方法"><a href="#三-反射方法" class="headerlink" title="三 反射方法"></a>三 反射方法</h2><p>我们也可以采用反射方法，通过java反射原理，反射出PM然后执行insatallPackage()，PM并非直接可以反射，它是需要ActivityTherad进行提供支持，我们通过对系统总线程的反射出PM,接着反射出installPackage方法即可</p>
+<pre><code>Class&lt;?&gt;pmService;
+Class&lt;?&gt; activityTherad;
+Method method;
+
+activityTherad = Class.forName(&quot;android.app.ActivityThread&quot;);
+Class&lt;?&gt; paramTypes[] = getParamTypes(activityTherad, &quot;getPackageManager&quot;);
+method = activityTherad.getMethod(&quot;getPackageManager&quot;, paramTypes);
+Object PackageManagerService = method.invoke(activityTherad);
+pmService = PackageManagerService.getClass();
+Class&lt;?&gt; paramTypes1[] =getParamTypes(pmService, &quot;installPackage&quot;);
+method = pmService.getMethod(&quot;installPackage&quot;, paramTypes1);
+method.invoke(PackageManagerService, getPackageUri(Path), null, 0, null);
+</code></pre><h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>   注意：实现静默安装都需要系统级别权限才能执行，具体是否监测系统给予权限</p>
+<p> <code>&lt;permission android:name=&quot;android.permission.INSTALL_PACKAGES&quot; /&gt;</code></p>
+<p>  其实root也是拥有系统级别权限的一种方式，本质是系统权限才有运行install的权限，</p>
+<p>  我们可以请求用户root （此方式个人感觉真心拿客户当牺牲品，建议pm不要这么做）<br>代码：</p>
+<pre><code>/**
+ * check rootPerssion.
+ * @return
+ */
+private static boolean hasRootPerssion() {
 
 
-    String path = context.getExternalFilesDir(null) + File.separator + System.currentTimeMillis() + fileSuffix;
+    PrintWriter PrintWriter = null;
 
-    Log.d(TAG, &quot;path:&gt;&gt;&gt;&gt;&quot;+ path);
+    Process process = null;
 
     try {
-        // todo change the file location/name according to your needs
-        File futureStudioIconFile = new File(path);
 
-        InputStream inputStream = null;
-        OutputStream outputStream = null;
+        process = Runtime.getRuntime().exec(&quot;su&quot;);
 
-        try {
-            byte[] fileReader = new byte[4096];
+        PrintWriter = new PrintWriter(process.getOutputStream());
 
-            long fileSize = body.contentLength();
-            long fileSizeDownloaded = 0;
+        PrintWriter.flush();
 
-            inputStream = body.byteStream();
-            outputStream = new FileOutputStream(futureStudioIconFile);
+        PrintWriter.close();
 
-            while (true) {
-                int read = inputStream.read(fileReader);
+        int value = process.waitFor();
 
-                if (read == -1) {
-                    break;
-                }
+        return returnResult(value);
 
-                outputStream.write(fileReader, 0, read);
+    } catch (Exception e) {
 
-                fileSizeDownloaded += read;
+        e.printStackTrace();
 
-                Log.d(TAG, &quot;file download: &quot; + fileSizeDownloaded + &quot; of &quot; + fileSize);
-            }
+    } finally {
 
-            outputStream.flush();
-
-
-            return true;
-        } catch (IOException e) {
-            return false;
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-
-            if (outputStream != null) {
-                outputStream.close();
-            }
+        if (process!=null) {
+            process.destroy();
         }
-    } catch (IOException e) {
-        return false;
     }
+
+    return false;
 }
-</code></pre><p>}<br>   上面只是简单的对不同类型文件进行了判断，其他类型参考<code>http</code>协议描述类型自行加入，断点续传目前暂时没实现，基于HttpClinet下载的介绍很多，关键思想是记录一条下载产生后的<code>RANGE</code>   到数据库里，每条下载行对应一条数据，下载ID是区分唯一的主键,  包含<code>filename</code>, <code>fileSize, fileType, downTime, downRange</code>  <code>status</code>基本可满足多线程下载数据要求，在Retrofit结合RXJava后 解决了线程安全问题，实现多线程下载就更so yi z,  这里我不做过多的介绍。</p>
-<p>#调用下载</p>
-<pre><code> OkHttpClient okHttpClient = new OkHttpClient.Builder()
-            .build();
- Retrofit retrofit = new Retrofit.Builder()
-            .client(okHttpClient)
-            .baseUrl(url)
-            .build();
-Api Service apiService = retrofit.create(ApiService.class);
-
-apiService..download(url1,
-                    new Subscriber&lt;ResponseBody&gt;() {
-                        @Override
-                        public void onCompleted() {
-
-                        }
-
-                        @Override
-                        public void onError(Throwable e) {
-
-                        }
-
-                        @Override
-                        public void onNext(ResponseBody responseBody) {
-
-                            if (DownLoadManager.writeResponseBodyToDisk(MainActivity.this, responseBody)) {
-                                Toast.makeText(MainActivity.this, &quot;Download is sucess&quot;, Toast.LENGTH_LONG).show();
-                            }
-
-                        }
-                    });
-        }
-    });
-</code></pre><p>  <strong><em>当</em></strong> 然我们可以在header中加入上次下载的进度大小，就可以实现基本的断点下载了，多线程下载目前业内主要由下面思想实现，我们可以请求到文件总长度的时候，均分三段大小区间，来开启三个新线程去下载，下载完后再以唯一的文件ID，将三段文件以此追加到一个文件就可以了，当然在retrofit结合RxJava，你无需开启新线程，只需订阅一下 Subscriber到IO线程即可，这里注意的是你需要判断最后的文件大小和HashCode来进行验证文件完整性，不然视频文件丢包没多大影响，最多会卡帧，但是apk却无法解析安装了。</p>
-<p>#断点下载</p>
-<p>##apiServiece</p>
-<pre><code>@GET
-@Streaming
-Observable&lt;Response&lt;ResponseBody&gt;&gt; download(@Header(&quot;Range&quot;) String range, @Url String url);
-</code></pre><p>##API</p>
-<p><strong>DownLoadInfos</strong>里面包含<code>name</code>,<code>length</code>, <code>url</code>等，这里不再贴了。</p>
-<p><strong>DownloadType</strong> 里面记录要有<code>stats</code>，<code>lastModify</code>，<code>downloaded</code> ，<code>savepath</code>等, 直接看API</p>
-<pre><code> public Observable&lt;DownloadInfos&gt; download(@NonNull final String url, @NonNull final String saveName,
-   @Nullable final String savePath) {
-return downloadDispatcher(url, saveName, savePath);
-}
+</code></pre><p>所以实现静默安装的前提必须内置或者root，其他情况无法做到静默安装。当然这里我们必须要放弃了，因为面向客户的apk是非系统的，<br>那么是不是我们无法做到除了以上内置的静默安装了呢 其实也未必：</p>
+<p>目前我们可以采用辅助功能（Accessibility）实现自动安装，用来代替用户点击，监控在<code>com.android.packageinstaller</code>包的界面元素来遍历出所需要的按钮文本，来执行安装操作，微信抢红包插件也是利用此原理，但是采用辅助依旧会显示安装界面的，我们可以在原有的系统界面上添加一个view浮层来伪装静默安装功能（下期将带来免root实现静默安装），此种方式也需要用户主动授权。<br>到此静默安装又一次装逼失败，放弃</p>
+<p>除此之外我们也可以采用动态加载来实现一个apk的安装，其实真正意义上并非静默安装，这需要一个apk来做宿主，只是将我们的apk解析出所用的组件信息，保存到本地，再将宿主的上下文直接注入插件apk中，至于插件实现apk免安装的知识有很多方式，也可以单独出个专题介绍一下。到此如归没有宿主apk存在那么当你的apk想无缘无故的安装起来是不可能的，到此你又一次要放弃！</p>
+<p>#疑问</p>
+<p>这里有人还不服，我一定要实现静默安装，为何ＱＱ之类的就能实现，这里解释一下当你的产品庞大到用户不能放弃的时候，那么很多时候你想做什么更笨不是难题，这种大品牌通过和手机厂家做ＯＥＭ定制利益链，或者通过开发白名单的方式进行的非法采集勾当，这里就不想再说太多，你懂得！</p>
+<p>不死进程一样，你终究要放弃！直到改行！</p>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
 
 
 
-
-
-private Observable&lt;DownloadStatus&gt; downloadDispatcher(final String url, final String saveName, final String savePath) {
-    return getDownloadType(url)
-            .flatMap(new Func1&lt;DownloadType, Observable&lt;DownloadStatus&gt;&gt;() {
-                @Override
-                public Observable&lt;DownloadInfos&gt; call(DownloadType type) {
-                    try {
-                        type.prepare();
-                    } catch (IOException | ParseException e) {
-                        return Observable.error(e);
-                    }
-                    try {
-                        return type.start();
-                    } catch (IOException e) {
-                        return Observable.error(e);
-                    }
-                }
-            })
-            .doOnCompleted(new Action0() {
-                @Override
-                public void call() {
-                    mDownloadManager.delete(url);
-                }
-            })
-            .doOnError(new Action1&lt;Throwable&gt;() {
-                @Override
-                public void call(Throwable throwable) {
-
-                    mDownloadManager.delete(url);
-                }
-            })
-            .doOnUnsubscribe(new Action0() {
-                @Override
-                public void call() {
-                    mDownloadManager.delete（url）
-            });
-}
-</code></pre><p>   开始下载：</p>
-<pre><code>@Override
-Observable&lt;DownloadInfos&gt; start() {
-    Log.i(TAG, &quot;Normal download start!!&quot;);
-    return mDownloadHelper.getDownloadApi().download(null, mUrl)
-            .subscribeOn(Schedulers.io())
-            .flatMap(new Func1&lt;Response&lt;ResponseBody&gt;, Observable&lt;DownloadStatus&gt;&gt;() {
-                @Override
-                public Observable&lt;DownloadStatus&gt; call(final Response&lt;ResponseBody&gt; response) {
-                    return normalSave(response);
-                }
-            }).onBackpressureLatest().retry(new Func2&lt;Integer, Throwable, Boolean&gt;() {
-                @Override
-                public Boolean call(Integer integer, Throwable throwable) {
-                    return mDownloadHelper.retry(integer, throwable);
-                }
-            });
-}
-</code></pre><p>##调用</p>
-<pre><code>DownloadAgenti.getInstance(mContext)
-               .observeOn(Schedulers.io())
-               .observeOn(AndroidSchedulers.mainThread())
-               .subscribe(new Subscriber&lt;DownloadInfos&gt;() {
-                   @Override
-                   public void onCompleted() {
-                       // todo
-                   }
-
-                   @Override
-                   public void onError(Throwable e) {
-                      todo
-                   }
-
-                   @Override
-                   public void onNext(final DownloadStatus status) {
-                      todo
-                   }
-               }); 
-</code></pre><p>#总结</p>
-<p>步骤：</p>
-<blockquote>
-<p>请求文件总大小</p>
-<p>根据机型高低，分配多个线程下载</p>
-<p>记录下载进度，大小，类型等到数据库</p>
-<p>同时更新UI和通知栏，提示用户</p>
-<p>下载结束后更新数据库下载数据，追加组合文件</p>
-<p>判断文件大小，检验文件大小</p>
-</blockquote>
-<p>  下载功能是每个应用必须的功能，因此下载还是比较重要的一个模块，好的下载架构 会考虑到设备的CPU大小，网络状态，以及外部sdcard的大小，动态进行性能，流量分配，方便用户更好的体验和使用你的APP.</p>
-<p>  具体可以阅读  - <a href="http://blog.csdn.net/sk719887916/article/details/51958010" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a> 中的写法</p>
-<p><strong>项目github</strong>:<a href="https://github.com/Tamicer/FastDownloader" target="_blank" rel="external">https://github.com/Tamicer/FastDownloader</a></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
 
 
                 <hr>
@@ -458,14 +332,12 @@ Observable&lt;DownloadInfos&gt; start() {
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="2016/06/17/retrofit_004/"
-                    data-title="Retrofit 2.0 超能实践（四），实现大文件多线程断点下载"
-                    data-url="http://tamicer.com/2016/06/17/retrofit_004/"
+                    data-thread-key="2016/01/05/静默安装从入门到真的转行！/"
+                    data-title="静默安装从入门到真的转行"
+                    data-url="http://tamicer.com/2016/01/05/静默安装从入门到真的转行！/"
                     data-images=""
-                    data-content="
-作者：码小白 （Tamic）www.tamicer.com
-
-通过前几篇系统的介绍和综合运用... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    data-content="Android应用管理
+Tamic /http://www.jianshu.com/p/876... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -484,12 +356,12 @@ Observable&lt;DownloadInfos&gt; start() {
                 <ul class="pager">
                     
                         <li class="previous">
-                            <a href="/2016/07/03/retrofit5/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter">&larr; Previous Post</a>
+                            <a href="/2016/06/07/12/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（一）完美支持加密Https传输">&larr; Previous Post</a>
                         </li>
                     
                     
                         <li class="next">
-                            <a href="/2016/06/14/retrofti3/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传">Next Post &rarr;</a>
+                            <a href="/2016/01/05/静默安装从入门到真的转行/" data-toggle="tooltip" data-placement="top" title="Android-免Root实现Apk静默安装">Next Post &rarr;</a>
                         </li>
                     
                 </ul>
@@ -498,9 +370,9 @@ Observable&lt;DownloadInfos&gt; start() {
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="2016/06/17/retrofit_004/"
-                        data-title="Retrofit 2.0 超能实践（四），实现大文件多线程断点下载"
-                        data-url="http://tamicer.com/2016/06/17/retrofit_004/" >
+                        data-thread-key="2016/01/05/静默安装从入门到真的转行！/"
+                        data-title="静默安装从入门到真的转行"
+                        data-url="http://tamicer.com/2016/01/05/静默安装从入门到真的转行！/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -548,11 +420,7 @@ Observable&lt;DownloadInfos&gt; start() {
                        
                           <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
-                        
-                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
-                        
-                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                          <a class="tag" href="/tags/#静默安装" title="静默安装">静默安装</a>
                         
                     </div>
                 </section>
@@ -610,8 +478,8 @@ Observable&lt;DownloadInfos&gt; start() {
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "hexo-theme-huxblog";
-    var disqus_identifier = "http://tamicer.com/2016/06/17/retrofit_004/";
-    var disqus_url = "http://tamicer.com/2016/06/17/retrofit_004/";
+    var disqus_identifier = "http://tamicer.com/2016/01/05/静默安装从入门到真的转行！/";
+    var disqus_url = "http://tamicer.com/2016/01/05/静默安装从入门到真的转行！/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
