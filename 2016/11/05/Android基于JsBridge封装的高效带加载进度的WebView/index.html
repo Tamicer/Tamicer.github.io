@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Android基于JsBridge封装的高效带加载进度的WebView - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2016/11/05/Android基于JsBridge封装的高效带加载进度的WebView/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Js" title="Js">Js</a>
+                        
+                          <a class="tag" href="/tags/#webView" title="webView">webView</a>
+                        
+                          <a class="tag" href="/tags/#优化" title="优化">优化</a>
+                        
+                    </div>
+                    <h1>Android基于JsBridge封装的高效带加载进度的WebView</h1>
+                    <h2 class="subheading">Android 文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2016-11-05
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <p><img src="http://upload-images.jianshu.io/upload_images/2022038-13e9372b197f9ed2.PNG" alt="图片发自简书App"></p>
+<h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>从去年4月项目就一直用起了JsBridge,前面也针对jsBridge使用姿势介绍过一篇入门篇，《<a href="http://www.jianshu.com/p/52071a3d07b4" target="_blank" rel="external">Android JsBridge实战 打造专属你的Hybrid APP</a>》，本篇接着继续深入，通过再次优化封装，大大优化了部分代码，简化上层调用流程，快速部署你的Hybridge APP。</p>
+<p>再进行具体编码前 ，我先进行了一般商业APP对WebView的需求</p>
+<ul>
+<li>可加载本地和云端H5</li>
+<li>拥有cookie持久能力</li>
+<li>添加公共参数</li>
+<li>回退前进功能</li>
+<li>Js与本地navtive交互</li>
+<li>拥有加载默认错误页面能力</li>
+<li>加载网页可展现进度</li>
+</ul>
+<p>好为了满足以上常用功能，大致对webview相关知识进行下普及。</p>
+<p>#WebView </p>
+<p>谷歌提供的系统组件，用来加载和展现html网页，其采用webkit内核驱动，来实现网页浏览功能。</p>
+<p>拥有load() URL和本地html文件</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// 云端</span></div><div class="line"><span class="selector-tag">webView</span><span class="selector-class">.loadUrl</span>(<span class="string">"https://www.baidu.com"</span>); </div><div class="line"><span class="comment">// 本地</span></div><div class="line"><span class="selector-tag">webView</span><span class="selector-class">.loadUrl</span>(<span class="string">"file:///android_asset/demo.html"</span>);</div></pre></td></tr></table></figure>
+<p>#WebViewClient</p>
+<p>WebViewClient主要辅助WebView执行处理各种响应请求事件的，比如：</p>
+<ul>
+<li>onLoadResource</li>
+<li>onPageStart</li>
+<li>onPageFinish</li>
+<li>onReceiveError</li>
+<li>onReceivedHttpAuthRequest</li>
+<li>shouldOverrideUrlLoading</li>
+</ul>
+<p>本次加载失败页面，和拦截加入header头必须用到它，由于android无法拦截h5本身ajax的请求，所以对header同步不是很好，建议大家对于ajax请求采用cookie形式，以防止url参数服务端无法获取的问题。</p>
+<p>加入header 一般直接使用webView.load(url, header)</p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">view</span>.loadUrl(url, <span class="built_in">header</span>);</div></pre></td></tr></table></figure>
+<p>为了方便上层开发者调用，可以将此code加入到<code>WebViewClient</code> 的<code>shouldOverrideUrlLoading</code>中执行<br>姿势那就是这样：<br><figure class="highlight qml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"> public boolean shouldOverrideUrlLoading(WebView view, <span class="built_in">String</span> <span class="built_in">url</span>) &#123;</div><div class="line">   <span class="keyword">if</span>(<span class="keyword">this</span>.onPageHeaders(<span class="built_in">url</span>) != <span class="literal">null</span>) &#123;</div><div class="line">     view.loadUrl(<span class="built_in">url</span>, <span class="keyword">this</span>.onPageHeaders(<span class="built_in">url</span>));</div><div class="line"> &#125;</div><div class="line">   <span class="keyword">return</span> <span class="keyword">super</span>.shouldOverrideUrlLoading(view, <span class="built_in">url</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>错误页面也是复写WebViewClient的<code>onReceivedError（）</code> 来加入自定义的抽象<code>onPageError（）</code>，姿势如下：<br><figure class="highlight arduino"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="keyword">void</span> onReceivedError(WebView view, <span class="keyword">int</span> errorCode, <span class="keyword">String</span> description, <span class="keyword">String</span> failingUrl) &#123;</div><div class="line">    view.loadUrl(<span class="keyword">this</span>.onPageError(failingUrl));</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p><code>onPageHeaders()</code>便是上层抽象出来的接口，方便我们直接加入header，而<code>onPageError（）</code>是方便指定加载错误页面，那么在activity中就是这样了，<br><figure class="highlight typescript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">mProgressBarWebView.setWebViewClient(<span class="keyword">new</span>    CustomWebViewClient(mProgressBarWebView.getWebView()) &#123;</div><div class="line"></div><div class="line">       <span class="meta">@Override</span></div><div class="line">       <span class="keyword">public</span> <span class="built_in">String</span> onPageError(<span class="built_in">String</span> url) &#123;</div><div class="line">           <span class="keyword">return</span> <span class="string">"file:///android_asset/error.html"</span>;</div><div class="line">       &#125;</div><div class="line"></div><div class="line">       <span class="meta">@Override</span></div><div class="line">       <span class="keyword">public</span> Map&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; onPageHeaders(<span class="built_in">String</span> url) &#123;</div><div class="line">           <span class="keyword">return</span> CookieManger.getHeader(getContext());</div><div class="line">       &#125;</div><div class="line">   &#125;);</div></pre></td></tr></table></figure></p>
+<h1 id="WebChromeClient"><a href="#WebChromeClient" class="headerlink" title="WebChromeClient"></a>WebChromeClient</h1><p>主要辅助WebView处理Javascript的对话框、网站Logo、网站title、load进度等处理。</p>
+<ul>
+<li>onCloseWindow(关闭WebView)</li>
+<li>onCreateWindow()</li>
+<li>onJsAlert ()</li>
+<li>onJsPrompt</li>
+<li>onJsConfirm</li>
+<li>onProgressChanged</li>
+<li>onReceivedIcon</li>
+<li>onReceivedTitle</li>
+<li>onShowCustomView</li>
+</ul>
+<p>WebView只是用来处理一些html的页面内容，只用<code>WebViewClient</code>就行了，如果需要更丰富的处理效果，比如JS、进度条等，就要用到<code>WebChromeClient</code>。因为这次功能要用加载进度，不得不说它。</p>
+<p>为了加入顶部的加载进度条，复写<code>WebChromeClient中</code>,<code>onProgressChanged</code>，在这里更改我们加入的ProgressBar的进度，你也可以设置网页标题，甚至可以全屏！</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomWebChromeClient</span> <span class="keyword"><span class="keyword">extends</span> <span class="type">WebChromeClient</span></span> </span>&#123;</div><div class="line"><span class="keyword">private</span> NumberProgressBar mProgressBar;</div><div class="line"></div><div class="line"><span class="keyword">public</span> CustomWebChromeClient(NumberProgressBar progressBar) &#123;</div><div class="line">    <span class="built_in">this</span>.mProgressBar = progressBar;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="keyword">public</span> void onProgressChanged(WebView view, int <span class="keyword">new</span><span class="type">Progress</span>) &#123;</div><div class="line">    <span class="keyword">if</span>(<span class="keyword">new</span><span class="type">Progress</span> &gt;= <span class="number">95</span>) &#123;</div><div class="line">        <span class="built_in">this</span>.mProgressBar.setVisibility(<span class="number">8</span>);</div><div class="line">    &#125; <span class="keyword">else</span> &#123;</div><div class="line">        <span class="keyword">if</span>(<span class="built_in">this</span>.mProgressBar.getVisibility() == <span class="number">8</span>) &#123;</div><div class="line">            <span class="built_in">this</span>.mProgressBar.setVisibility(<span class="number">0</span>);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="built_in">this</span>.mProgressBar.setProgress(<span class="keyword">new</span><span class="type">Progress</span>);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="keyword">super</span>.onProgressChanged(view, <span class="keyword">new</span><span class="type">Progress</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line">   <span class="comment">//获取tittle</span></div><div class="line">    @Override</div><div class="line">    <span class="keyword">public</span> void onReceivedTitle(WebView view, <span class="keyword">String</span> title) &#123;</div><div class="line">        <span class="keyword">super</span>.onReceivedTitle(view, title);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="comment">//全屏</span></div><div class="line">    @Override</div><div class="line">    <span class="keyword">public</span> void onShowCustomView(View view, CustomViewCallback <span class="keyword">callback</span>) &#123;</div><div class="line">        <span class="keyword">super</span>.onShowCustomView(view, <span class="keyword">callback</span>);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>好 准备好了同步Header和进度条之后，就的考虑cookie同步问题</p>
+<h1 id="CookieSync"><a href="#CookieSync" class="headerlink" title="CookieSync"></a>CookieSync</h1><p><strong>CookieManager</strong><br>CookieManager是用来管理Cookie的，主要来管理cookie相关，提供如下API</p>
+<ul>
+<li>setAcceptCookie（）</li>
+<li>setCookie（）</li>
+<li>getCookie(String url);</li>
+<li>removeSessionCookies();</li>
+<li>hasCookies()</li>
+<li>removeAllCookie()</li>
+</ul>
+<p><strong>CookieSyncManager</strong></p>
+<p><code>CookieSyncManagerl</code>继承<code>WebSyncManager</code>，来管理同步cookie相关，主要有以下API</p>
+<ul>
+<li>resetSync()</li>
+<li>stopSync() </li>
+<li>sync()</li>
+<li>syncFromRamToFlash()</li>
+<li>checkInstanceIsAllowed()</li>
+</ul>
+<p>你想问这些api什么意思，请保留点你的童真，不要问这么简单的问题好吗？</p>
+<p>接着我们就可以这样操作来实现cookie同步了，</p>
+<figure class="highlight dart"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"> CookieManager cookieManager = CookieManager.getInstance();</div><div class="line"><span class="comment">// 接受服务器cookie</span></div><div class="line"> cookieManager.setAcceptCookie(<span class="keyword">true</span>);</div><div class="line"> <span class="comment">//移除之前的cookie</span></div><div class="line"> cookieManager.removeSessionCookie();</div><div class="line"> <span class="comment">// 注入cookies</span></div><div class="line"> <span class="built_in">List</span>&lt;<span class="built_in">String</span>&gt; cookies = getCookies(customCookies);</div><div class="line"> <span class="keyword">for</span> (<span class="built_in">String</span> cookie : cookies) &#123;</div><div class="line">     cookieManager.setCookie(uri.getHost(), cookie);</div><div class="line"> &#125;</div><div class="line"> <span class="comment">// 同步cookie</span></div><div class="line"> CookieSyncManager.getInstance().<span class="keyword">sync</span>();</div></pre></td></tr></table></figure>
+<p>这里需要注意棒棒糖以上的会出现无法同步问题那么请这样做</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">   </div><div class="line"><span class="selector-tag">if</span> ( Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.LOLLIPOP) &#123;</div><div class="line">    <span class="selector-tag">cookieManager</span><span class="selector-class">.flush</span>();</div><div class="line">&#125; <span class="selector-tag">else</span> &#123;</div><div class="line">    <span class="selector-tag">CookieSyncManager</span><span class="selector-class">.getInstance</span>()<span class="selector-class">.sync</span>();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>经测试，完美！</p>
+<p>你可能想问？我想自定义像header一样加入一些自定义cookie，行，没问题，继续看！<br><figure class="highlight d"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"> <span class="keyword">public</span> <span class="keyword">static</span> List&lt;String&gt; createCustomCookies() &#123;</div><div class="line">       List&lt;String&gt; cookies = <span class="keyword">new</span> ArrayList&lt;&gt;();</div><div class="line">        cookies.add(“author ” + <span class="string">"= "</span> + <span class="string">"tamic"</span>);</div><div class="line">         cookies.add(“data” + <span class="string">"= "</span> + <span class="string">"2016.8.15"</span>);</div><div class="line">         cookies.add(“key” + <span class="string">"= "</span> + <span class="number">4</span>fdfsfd34dfdfswe<span class="string">r");</span></div><div class="line">         cookies.add(“chanel” + "= <span class="string">" + "</span>简书<span class="string">");</span></div><div class="line">    return cookies;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>很可能会遇到处理缓存问题，设置缓存webView缓存模式！这里在普及下相关姿势！</p>
+<p><strong>缓存模式</strong></p>
+<p>webview缓存模式有5种，具体方式：</p>
+<ul>
+<li>LOAD_CACHE_ONLY:  不使用网络，只读取本地缓存数据</li>
+<li>LOAD_DEFAULT:  根据cache-control决定是否从网络上取数据。</li>
+<li>LOAD_CACHE_NORMAL: API level 17中已经废弃, 从API level 11开始作用同LOAD_DEFAULT模式</li>
+<li>LOAD_NO_CACHE: 不使用缓存，只从网络获取数据.</li>
+<li>LOAD_CACHE_ELSE_NETWORK，只要本地有，无论是否过期，或者no-cache，都使用缓存中的数据。</li>
+</ul>
+<p>www.baidu.com的<code>cache-control</code>为<code>no-cache</code>，在模式<code>LOAD_DEFAULT</code>下，无论如何都会从网络上取数据，如果没有网络，就会出现错误页面；在<code>LOAD_CACHE_ELSE_NETWORK</code>模式下，无论是否有网，只要本地有缓存，都会加载缓存。本地没有缓存时才从网络上获取，<br>这个和Http缓存一致，我不在过多介绍，如果你想自定义缓存策略和时间，可以尝试下，</p>
+<p><strong>清除缓存</strong></p>
+<p>CacheManager来处理<code>webview</code>缓存相关：<br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="function"><span class="title">clearCache</span><span class="params">(boolean)</span></span></div><div class="line"></div><div class="line">CacheManager.<span class="attribute">clear</span></div></pre></td></tr></table></figure></p>
+<p>在4.4以上的此api已经无法使用，也就是说缓存清空涉及安全，需要你自己去实现，就类似picasso, okhttp缓存，一样要开发者自我去实现。<br> 当然也可以这样:<br><figure class="highlight abnf"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">WebView.clearCache(true)<span class="comment">;</span></div></pre></td></tr></table></figure></p>
+<p><strong>清空历史记录</strong><br><figure class="highlight abnf"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">mWebview.clearHistory()<span class="comment">;</span></div></pre></td></tr></table></figure></p>
+<p>需要在<code>onPageFinished()</code>的方法之后调用</p>
+<h1 id="ProgressBarWebView"><a href="#ProgressBarWebView" class="headerlink" title="ProgressBarWebView"></a>ProgressBarWebView</h1><p>学习了上面基础知识，我这里就开始进行自定义的进度条ProgressBarWebView的封装了，这里我直接对BridgeWebView进行扩展。下面是主要部分。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"> <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ProgressBarWebView</span> <span class="keyword">extends</span> <span class="title">LinearLayout</span> </span>&#123;</div><div class="line">   <span class="keyword">static</span> <span class="keyword">final</span> String TAG = ProgressBarWebView.class.getSimpleName();</div><div class="line">   <span class="keyword">private</span> NumberProgressBar mProgressBar;</div><div class="line">    <span class="keyword">private</span> BridgeWebView mWebView;</div><div class="line"></div><div class="line">   <span class="function"><span class="keyword">public</span> <span class="title">ProgressBarWebView</span><span class="params">(Context context)</span> </span>&#123;</div><div class="line">       <span class="keyword">super</span>(context);</div><div class="line">       <span class="keyword">this</span>.init(context, (AttributeSet)<span class="keyword">null</span>);</div><div class="line">   &#125;</div><div class="line"></div><div class="line">   <span class="function"><span class="keyword">public</span> <span class="title">ProgressBarWebView</span><span class="params">(Context context, AttributeSet attrs)</span> </span>&#123;</div><div class="line">      <span class="keyword">super</span>(context, attrs);</div><div class="line">      <span class="keyword">this</span>.init(context, attrs);</div><div class="line">  &#125;</div><div class="line"></div><div class="line"><span class="meta">@TargetApi</span>(<span class="number">11</span>)</div><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">ProgressBarWebView</span><span class="params">(Context context, AttributeSet attrs, <span class="keyword">int</span> defStyleAttr)</span> </span>&#123;</div><div class="line">    <span class="keyword">super</span>(context, attrs, defStyleAttr);</div><div class="line">    <span class="keyword">this</span>.init(context, attrs);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="meta">@TargetApi</span>(<span class="number">21</span>)</div><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">ProgressBarWebView</span><span class="params">(Context context, AttributeSet attrs, <span class="keyword">int</span> defStyleAttr, <span class="keyword">int</span> defStyleRes)</span> </span>&#123;</div><div class="line">    <span class="keyword">super</span>(context, attrs, defStyleAttr, defStyleRes);</div><div class="line">    <span class="keyword">this</span>.init(context, attrs);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>为了使webview能有后退功能！我屏蔽了长按事件，并且对返回键建进行了拦截。</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">mWebView.setOnLongClickListener(<span class="keyword">new</span> OnLongClickListener() &#123;</div><div class="line">       <span class="keyword">public</span> <span class="function"><span class="keyword">boolean</span> <span class="title">onLongClick</span><span class="params">(View v)</span> </span>&#123;</div><div class="line">           <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">       &#125;</div><div class="line">   &#125;);</div><div class="line">   <span class="keyword">this</span>.mWebView.setOnKeyListener(<span class="keyword">new</span> OnKeyListener() &#123;</div><div class="line">       <span class="keyword">public</span> <span class="function"><span class="keyword">boolean</span> <span class="title">onKey</span><span class="params">(View v, <span class="keyword">int</span> keyCode, KeyEvent event)</span> </span>&#123;</div><div class="line">           <span class="keyword">if</span>(event.getAction() == <span class="number">0</span> &amp;&amp; keyCode == <span class="number">4</span> &amp;&amp;      ProgressBarWebView.<span class="keyword">this</span>.mWebView.canGoBack()) &#123;</div><div class="line">               ProgressBarWebView.<span class="keyword">this</span>.mWebView.goBack();</div><div class="line">               <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">           &#125; <span class="keyword">else</span> &#123;</div><div class="line">               <span class="keyword">return</span> <span class="keyword">false</span>;</div><div class="line">           &#125;</div><div class="line">       &#125;</div><div class="line">   &#125;);</div></pre></td></tr></table></figure>
+<p>  如果防止webview代码产生内存泄漏，请及时在activity销毁时，清空webview</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="meta">@Override</span></div><div class="line">  <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onDestroy</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">super</span>.onDestroyView();</div><div class="line">    <span class="keyword">if</span> (mProgressBarWebView.getWebView() != <span class="keyword">null</span>) &#123;</div><div class="line">        mProgressBarWebView.getWebView().destroy();</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>看了构造方法你已明白，里面包含一个BridgeWebView和一个NumberProgressBar 成员属性，<br>接着就是对JsBridge进行封装了</p>
+<p> <strong>Java调用js代码</strong>：</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">registerHandler</span><span class="params">(<span class="keyword">final</span> String handlerName, <span class="keyword">final</span> JsHandler <span class="keyword">handler</span>)</span> </span>&#123;</div><div class="line">     <span class="keyword">this</span>.mWebView.registerHandler(handlerName, <span class="keyword">new</span> BridgeHandler() &#123;</div><div class="line">         <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">handler</span><span class="params">(String data, CallBackFunction function)</span> </span>&#123;</div><div class="line">             <span class="keyword">if</span>(<span class="keyword">handler</span> != <span class="keyword">null</span>) &#123;</div><div class="line">                <span class="keyword">handler</span>.OnHandler(handlerName, data, function);</div><div class="line"></div><div class="line">              <span class="comment">// data实际就是js返回的jsonString数据，本案例为了统一处理，data统一采用&#123;code,msg ，data&#125; 形式，</span></div><div class="line">             &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>js调用Native</strong></p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">callHandler</span><span class="params">(<span class="keyword">final</span> String handlerName, String javaData, <span class="keyword">final</span> JavaCallHandler <span class="keyword">handler</span>)</span> </span>&#123;</div><div class="line">    <span class="keyword">this</span>.mWebView.callHandler(handlerName, javaData, <span class="keyword">new</span> CallBackFunction() &#123;</div><div class="line">        <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">onCallBack</span><span class="params">(String data)</span> </span>&#123;</div><div class="line">            <span class="keyword">if</span>(<span class="keyword">handler</span> != <span class="keyword">null</span>) &#123;</div><div class="line">                <span class="keyword">handler</span>.OnHandler(handlerName, data);</div><div class="line">            &#125;</div><div class="line"></div><div class="line">        &#125;</div><div class="line">    &#125;);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>看可jsBridge的可能问这个<code>JsHandler</code>谁神马。本来在jsBridge源码中没这个东东的， 是为了方便上层调用我自己封装的接口， </p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="keyword">interface</span> JsHandler &#123;</div><div class="line"> <span class="built_in">void</span> OnHandler(<span class="built_in">String</span> var1, <span class="built_in">String</span> var2, CallBackFunction var3);</div></pre></td></tr></table></figure>
+<p>好了 关键的东西已经介绍完，如果对jsBridge可以看看去年我写的一篇对他的介绍：<a href="http://www.jianshu.com/p/52071a3d07b4" target="_blank" rel="external">Android JsBridge实战 打造专属你的Hybrid APP</a>，</p>
+<p>接着使用我们封装好的ProgressBarWebView</p>
+<h1 id="案列使用"><a href="#案列使用" class="headerlink" title="案列使用"></a>案列使用</h1><p>#Dependencies</p>
+<p><strong>Gradle:</strong>  </p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">root：</div><div class="line"></div><div class="line">      <span class="keyword">repositories</span> &#123;</div><div class="line">    maven &#123; url <span class="string">"https://jitpack.io"</span> &#125;</div><div class="line">    jcenter()</div><div class="line">      &#125;</div><div class="line"></div><div class="line">Module:</div><div class="line"></div><div class="line">       <span class="keyword">dependencies</span> &#123;</div><div class="line">       .....</div><div class="line">       <span class="keyword">compile</span> <span class="string">'com.tamic:browse:1.0.0'</span></div><div class="line">    </div><div class="line">       &#125;</div></pre></td></tr></table></figure>
+<p><strong>初始化</strong><br><figure class="highlight subunit"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">Progress</span>BarWebView  mProgressBarWebView = (ProgressBarWebView)    findViewById(R.id.login_progress_webview);</div></pre></td></tr></table></figure></p>
+<p><strong>设置自定义WebViewClient</strong></p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">mProgressBarWebView.setWebViewClient(<span class="keyword">new</span>   CustomWebViewClient(mProgressBarWebView.getWebView()) &#123;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">public</span> <span class="built_in">String</span> onPageError(<span class="built_in">String</span> url) &#123;</div><div class="line">        <span class="comment">//指定网络加载失败时的错误页面</span></div><div class="line">        <span class="keyword">return</span> <span class="string">"file:///android_asset/error.html"</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">public</span> Map&lt;<span class="built_in">String</span>, <span class="built_in">String</span>&gt; onPageHeaders(<span class="built_in">String</span> url) &#123;</div><div class="line"></div><div class="line">        <span class="comment">// 可以加入header</span></div><div class="line"></div><div class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p><strong>加载指定Url</strong></p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">mProgressBarWebView.loadUrl(<span class="string">"file:///android_asset/demo.html"</span>)<span class="comment">;</span></div></pre></td></tr></table></figure>
+<p>当然，也可以支持网络url；</p>
+<p><strong>注册Js回调函数</strong></p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">ArrayList&lt;<span class="keyword">String</span>&gt; mHandlerNames = <span class="keyword">new</span> ArrayList&lt;&gt;();</div><div class="line">mHandlers.<span class="built_in">add</span>(<span class="string">"login"</span>);</div><div class="line">mHandlers.<span class="built_in">add</span>(<span class="string">"callNative"</span>);</div><div class="line">mHandlers.<span class="built_in">add</span>(<span class="string">"callJs"</span>);</div><div class="line">mHandlers.<span class="built_in">add</span>(<span class="string">"open"</span>);</div></pre></td></tr></table></figure>
+<p><strong>回调js的方法</strong></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">    mProgressBarWebView.registerHandlers(mHandlers, <span class="keyword">new</span> JsHandler() &#123;</div><div class="line">    @Override</div><div class="line">    public <span class="keyword">void</span> OnHandler(<span class="built_in">String</span> handlerName, <span class="built_in">String</span> responseData, CallBackFunction <span class="function"><span class="keyword">function</span>) </span>&#123;</div><div class="line"></div><div class="line">        <span class="keyword">if</span> (handlerName.equals(<span class="string">"login"</span>)) &#123;</div><div class="line"></div><div class="line">            Toast.makeText(MainActivity.this, responseData, Toast.LENGTH_SHORT).show();</div><div class="line"></div><div class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (handlerName.equals(<span class="string">"callNative"</span>)) &#123;</div><div class="line"></div><div class="line">            Toast.makeText(MainActivity.this, responseData, Toast.LENGTH_SHORT).show();</div><div class="line"></div><div class="line">            <span class="function"><span class="keyword">function</span>.<span class="title">onCallBack</span>(<span class="params"><span class="string">"我在上海"</span></span>);</span></div><div class="line"></div><div class="line">        &#125; <span class="title">else</span> <span class="title">if</span> (<span class="params">handlerName.equals(<span class="string">"callJs"</span></span>)) &#123;</div><div class="line"></div><div class="line">            Toast.makeText(MainActivity.this, responseData, Toast.LENGTH_SHORT).show();</div><div class="line"></div><div class="line">            <span class="comment">// 想调用你的方法：</span></div><div class="line">            <span class="function"><span class="keyword">function</span>.<span class="title">onCallBack</span>(<span class="params"><span class="string">"好的 这是图片地址 ：xxxxxxx"</span></span>);</span></div><div class="line"></div><div class="line">        &#125; <span class="title">if</span> (<span class="params">handlerName.equals(<span class="string">"open"</span></span>)) &#123;</div><div class="line"></div><div class="line">            mfunction = <span class="function"><span class="keyword">function</span>;</span></div><div class="line"></div><div class="line">            <span class="title">pickFile</span>(<span class="params"></span>);</div><div class="line"></div><div class="line">        &#125;</div><div class="line"></div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>   <strong>Native调用js</strong></p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">mProgressBarWebView.callHandler(<span class="string">"callNative"</span>, <span class="string">"hello H5, 我是java"</span>, <span class="keyword">new</span> JavaCallHandler() &#123;</div><div class="line">    @Override</div><div class="line">    <span class="keyword">public</span> <span class="keyword">void</span> OnHandler(<span class="keyword">String</span> handlerName, <span class="keyword">String</span> jsResponseData) &#123;</div><div class="line">        Toast.makeText(MainActivity.<span class="keyword">this</span>, <span class="string">"h5返回的数据："</span> + jsResponseData, Toast.LENGTH_SHORT).show();</div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p>  <strong>Native发送消息给js</strong></p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">    mProgressBarWebView.send(<span class="string">"哈喽"</span>, new <span class="type">CallBackFunction</span>() &#123;</div><div class="line">        @<span class="type">Override</span></div><div class="line">        public void onCallBack(<span class="type">String</span> <span class="class"><span class="keyword">data</span>) &#123;</span></div><div class="line">            <span class="type">Toast</span>.<span class="title">makeText</span>(<span class="type">MainActivity</span>.<span class="title">this</span>, <span class="title">data</span>, <span class="type">Toast</span>.<span class="type">LENGTH_SHORT</span>).<span class="title">show</span>();</div><div class="line">        &#125;</div><div class="line">    &#125;);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>Xml文件和js代码这里不做介绍，具体看项目案列中源码：</p>
+<p>GtiHub:<a href="https://github.com/NeglectedByBoss/JsWebView" target="_blank" rel="external">https://github.com/NeglectedByBoss/JsWebView</a></p>
+<p>如果喜欢，请star！<br>效果图：<br><img src="http://upload-images.jianshu.io/upload_images/2022038-bf39f1687743777c.jpg" alt="图片发自简书App"></p>
+<p>#结束语</p>
+<p> 这里感谢曾技术经理出身的同事的对相关部分代码的封装，感谢振南同学！</p>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
+
+
+
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+
+
+                <hr>
+
+                
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2016/11/05/Android基于JsBridge封装的高效带加载进度的WebView/"
+                    data-title="Android基于JsBridge封装的高效带加载进度的WebView"
+                    data-url="http://tamicer.com/2016/11/05/Android基于JsBridge封装的高效带加载进度的WebView/"
+                    data-images=""
+                    data-content="
+概述从去年4月项目就一直用起了JsBridge,前面也针对jsBridge使用姿势介绍过一篇... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+
+
+                </div>
+
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2017/01/15/retroft011/" data-toggle="tooltip" data-placement="top" title="Retrofit/OkHttp API接口加固技术实践（上）">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2016/08/10/novate10/" data-toggle="tooltip" data-placement="top" title="Novate网络库： Retrofit2.0和RxJava1.x的又一次完美封装">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2016/11/05/Android基于JsBridge封装的高效带加载进度的WebView/"
+                        data-title="Android基于JsBridge封装的高效带加载进度的WebView"
+                        data-url="http://tamicer.com/2016/11/05/Android基于JsBridge封装的高效带加载进度的WebView/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Js" title="Js">Js</a>
+                        
+                          <a class="tag" href="/tags/#webView" title="webView">webView</a>
+                        
+                          <a class="tag" href="/tags/#优化" title="优化">优化</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2016/11/05/Android基于JsBridge封装的高效带加载进度的WebView/";
+    var disqus_url = "http://tamicer.com/2016/11/05/Android基于JsBridge封装的高效带加载进度的WebView/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

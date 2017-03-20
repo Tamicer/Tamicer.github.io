@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Picaso完美兼容OkHttp3.3，缓存优化两不误 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2016/03/05/Picasso-完美兼容-OkHttp3-3，缓存优化两不误/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#优化" title="优化">优化</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#图片加载" title="图片加载">图片加载</a>
+                        
+                    </div>
+                    <h1>Picaso完美兼容OkHttp3.3，缓存优化两不误</h1>
+                    <h2 class="subheading">Android 黑科技</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2016-03-05
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <p>为何在Fresco，Glide这么强大的背景下，我又想起了当初的Picasso，又为何写这篇文章？是因为最近项目采用了square公司的RxAndroid，Retrfit和OKhttp,  不得不联想到这个公司曾经还有款图片加载Picasso，所以采用了square公司的全家桶来进行项目开发，为了减少开发成本和也防止Apk增大，毕竟一个公司的框架之前兼容性不用担心，那么请让我们回顾一下Picass之路</p>
+<p>首先先让我们看看主流图片加载库</p>
+<ul>
+<li><p>Picasso，Square公司的开源项目 ，和Square的网络库一起能发挥最大作用。占用内存小，自身不带缓存，需依赖OKhttps实现缓存，不支持gif图片</p>
+</li>
+<li><p>Fresco，FB的明星项目，也是2015最火的项目之一，匿名共享缓存等机制保证低端机表现极佳，但是源代码基于C/C++，阅读困难度提升。效率高，sdk库占用包体积比较大</p>
+</li>
+<li><p>Glide，Google员工私人项目，但是Google很多项目在用，占用内存小，减低oom更靠谱，相对Picasso在Gif方面有优势,并自带缓存功能！</p>
+</li>
+</ul>
+<p>我做了一个实验对比 用一个普通listview加载50张图片，并快速滑动列表，下面分别是glide和picasso消耗内存图</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-f31e0571ab7ef30f.JPG" alt="glide"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-8ca98bb7e3de4f61.PNG" alt="Picasso"></p>
+<ul>
+<li><p>分析后得出 一个占用内存大 一个占用cpu资源大, 这种区别是由于picasso只缓存一张大图，每次加载根据imagview的大小裁剪，因此消耗的cpu资源高，glide是分别存储不同尺寸的小图，每次不用计算，因此消耗内存比较多，加载速度相对Picasso也快，但也很耗流量.</p>
+</li>
+<li><p>为了避免OOM, 我毫不犹豫选择了消耗内存较小的picasso, Fresco不用说都是加载速度第一的框架，采用c库 ，我没做集成测试，具体消耗多少cpu资源我无法给出数据，据说业界第一，但是对apk大小要求的项目很可能不太合适，这里对Apk包体积要求不高的项目，Fresco是优先的首选。</p>
+</li>
+</ul>
+<blockquote>
+<p>喜欢glide的朋友可以看看这篇文章 ：<a href="http://mrfu.me/2016/02/27/Glide_Getting_Started/" target="_blank" rel="external">http://mrfu.me/2016/02/27/Glide_Getting_Started/</a></p>
+</blockquote>
+<p>实验测试并做了简单比较后，为何还要继续说Picasso，不是说他有多快多流畅，只是当你使用了square公司其他的开源项目，会发现他们都会依赖okhttp，okhttp的强大不言而喻，一个网络库可以无缝隙的对接Retrofit和Picasso.今天只介绍piacsso相关的，说说picasso（官方：<a href="https://github.com/square/picasso）" target="_blank" rel="external">https://github.com/square/picasso）</a> 的一些常用技巧！</p>
+<h1 id="Picasso"><a href="#Picasso" class="headerlink" title="Picasso"></a>Picasso</h1><hr>
+<p> #使用方式：</p>
+<p>  配置gradle</p>
+<pre><code>dependencies {
+c
+compile &apos;com.squareup.picasso:picasso:2.5.2&apos;
+compile &apos;com.squareup.okhttp3:okhttp:3.3.1&apos;
+compile &apos;com.squareup.okhttp3:logging-interceptor:3.3.1&apos;
+}
+</code></pre><p>据说目前的2.5.3已修复了2.52无法兼容<code>okhttp3</code>的问题，但我还是选择了2.52版本。</p>
+<p>  <strong>基本加载用法</strong></p>
+<pre><code>Picasso.with(getApplication())
+.load(url)
+.into(imageView);
+</code></pre><p>以上用法很简单，加载图片时提供url插入到imageview即可，<code>picasso</code>其他强大功还没有太多的理解的同学请Follow Me!</p>
+<p>#裁剪图片</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">Picasso.with(getApplication()).resize(<span class="built_in">width</span>, <span class="built_in">height</span>);</div></pre></td></tr></table></figure>
+<p>  这句方法会出现bug,误用！</p>
+<p>请用<code>Transformation</code>来进行转义实现：<br><figure class="highlight maxima"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">Picasso.with(getApplication())</div><div class="line"> .<span class="built_in">load</span>(url)</div><div class="line"> .<span class="built_in">transform</span>(<span class="built_in">new</span> PaTransformation(<span class="built_in">width</span>, <span class="built_in">height</span>)).into(imageView);</div></pre></td></tr></table></figure></p>
+<p> Transformation可以拦截到picasoo返回的<code>bitmap</code>，拿着bitmap随心所欲!<br><figure class="highlight processing"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line">   <span class="keyword">public</span> class TamicTransformation implements Transformation &#123;</div><div class="line"></div><div class="line">   <span class="keyword">private</span> <span class="built_in">int</span> <span class="built_in">width</span>;</div><div class="line">   <span class="keyword">private</span> <span class="built_in">int</span> <span class="built_in">height</span>;</div><div class="line">   <span class="keyword">private</span> <span class="keyword">String</span> <span class="built_in">key</span>;</div><div class="line"></div><div class="line">   <span class="keyword">public</span> PaTransformation(<span class="built_in">int</span> <span class="built_in">width</span>, <span class="built_in">int</span> <span class="built_in">height</span>) &#123;</div><div class="line">       <span class="keyword">this</span>(<span class="built_in">width</span>, <span class="built_in">height</span>,  <span class="built_in">width</span> + <span class="string">"*"</span> + <span class="built_in">height</span>);</div><div class="line">   &#125;</div><div class="line"></div><div class="line">   <span class="keyword">public</span> PaTransformation(<span class="built_in">int</span> <span class="built_in">width</span>, <span class="built_in">int</span> <span class="built_in">height</span>, <span class="keyword">String</span> <span class="built_in">key</span>) &#123;</div><div class="line">       <span class="keyword">this</span>.<span class="built_in">width</span> = <span class="built_in">width</span>;</div><div class="line">       <span class="keyword">this</span>.<span class="built_in">height</span> = <span class="built_in">height</span>;</div><div class="line">       <span class="keyword">this</span>.<span class="built_in">key</span> = <span class="built_in">key</span>;</div><div class="line">   &#125;</div><div class="line"></div><div class="line">   @Override</div><div class="line">   <span class="keyword">public</span> Bitmap transform(Bitmap source) &#123;</div><div class="line"></div><div class="line">      略 拿着source进行裁剪缩放即可</div><div class="line"></div><div class="line"></div><div class="line">       <span class="keyword">if</span> (result != source) &#123;</div><div class="line">           <span class="comment">// Same bitmap is returned if sizes are the same</span></div><div class="line">           source.recycle();</div><div class="line">       &#125;</div><div class="line">       <span class="keyword">return</span> result;</div><div class="line">   &#125;</div><div class="line"></div><div class="line">   @Override</div><div class="line">   <span class="keyword">public</span> <span class="keyword">String</span> <span class="built_in">key</span>() &#123;</div><div class="line"></div><div class="line">       <span class="keyword">return</span> <span class="built_in">key</span>;</div><div class="line">   &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>列如处理圆形头像</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="keyword">public</span> class CircleTransformation implements Transformation &#123;   </div><div class="line"> <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="built_in">int</span> STROKE_WIDTH = <span class="number">5</span>;  </div><div class="line">  </div><div class="line"> @Override   </div><div class="line"> <span class="keyword">public</span> Bitmap transform(Bitmap source) &#123;   </div><div class="line">   <span class="built_in">int</span> <span class="built_in">size</span> = Math.<span class="built_in">min</span>(source.getWidth(), source.getHeight());   </div><div class="line">   <span class="built_in">int</span> x = (source.getWidth() - <span class="built_in">size</span>) / <span class="number">2</span>; </div><div class="line">   <span class="built_in">int</span> y = (source.getHeight() - <span class="built_in">size</span>) / <span class="number">2</span>;  </div><div class="line"> </div><div class="line">   Bitmap squaredBitmap = Bitmap.createBitmap(source, x, y, <span class="built_in">size</span>, <span class="built_in">size</span>);  </div><div class="line">   <span class="keyword">if</span> (squaredBitmap != source) &#123; </div><div class="line">        source.recycle();   </div><div class="line">   &#125; </div><div class="line">   Bitmap bitmap = Bitmap.createBitmap(<span class="built_in">size</span>, <span class="built_in">size</span>,source.getConfig()); </div><div class="line">   Canvas canvas = <span class="keyword">new</span> Canvas(bitmap); </div><div class="line">   Paint avatarPaint = <span class="keyword">new</span> Paint();  </div><div class="line">   BitmapShader <span class="built_in">shader</span> = <span class="keyword">new</span> BitmapShader(squaredBitmap, BitmapShader.TileMode.CLAMP, BitmapShader.TileMode.CLAMP);avatarPaint.setShader(<span class="built_in">shader</span>);  </div><div class="line">   </div><div class="line">   Paint outlinePaint = <span class="keyword">new</span> Paint();</div><div class="line">   outlinePaint.setColor(Color.WHITE);</div><div class="line">   outlinePaint.setStyle(Paint.Style.STROKE);</div><div class="line">   outlinePaint.setStrokeWidth(STROKE_WIDTH);</div><div class="line">   outlinePaint.setAntiAlias(<span class="keyword">true</span>);</div><div class="line">   </div><div class="line">   <span class="built_in">float</span> r = <span class="built_in">size</span> / <span class="number">2</span>f;  </div><div class="line">   canvas.drawCircle(r, r, r, avatarPaint); </div><div class="line">   canvas.drawCircle(r, r, r - STROKE_WIDTH / <span class="number">2</span>, outlinePaint);</div><div class="line"> </div><div class="line">   squaredBitmap.recycle();</div><div class="line">   <span class="keyword">return</span> bitmap;  </div><div class="line">  &#125;</div><div class="line"> </div><div class="line">  @Override  </div><div class="line">  <span class="keyword">public</span> <span class="keyword">String</span> <span class="built_in">key</span>() &#123; </div><div class="line">   <span class="keyword">return</span> <span class="string">"circle)"</span>;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>接着设置渲染模式</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">        </div><div class="line"><span class="selector-tag">Picasso</span><span class="selector-class">.with</span>(<span class="selector-tag">getApplication</span>()) <span class="selector-class">.fit</span>()<span class="selector-class">.centerCrop</span>()</div></pre></td></tr></table></figure>
+<h1 id="清空缓存"><a href="#清空缓存" class="headerlink" title="清空缓存"></a>清空缓存</h1><p>新的版本2.52 已经无法直接拿到之前的cache，因此可以用Picasso.invalidate()的实现清楚缓存！</p>
+<p>以前我们可以这样<br><figure class="highlight css"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="selector-tag">Clear</span><span class="selector-class">.clearCache</span>(<span class="selector-tag">Picasso</span><span class="selector-class">.with</span>(<span class="selector-tag">context</span>));</div></pre></td></tr></table></figure></p>
+<p>但现在 不行了</p>
+<p>稍加封装成了这样子:</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">void</span> clearCache(Uri uri, <span class="keyword">File</span> <span class="keyword">file</span>, String path) &#123;</div><div class="line">   </div><div class="line"><span class="keyword">if</span> (!TextUtils.isEmpty(uri.toString())) &#123;</div><div class="line">mPicasso.invalidate(uri);</div><div class="line"><span class="keyword">return</span>;</div><div class="line">&#125;</div><div class="line"><span class="keyword">if</span> (!NullUtils.isNull(<span class="keyword">file</span>)) &#123;</div><div class="line">mPicasso.invalidate(<span class="keyword">file</span>);</div><div class="line"><span class="keyword">return</span>;</div><div class="line">&#125;</div><div class="line"><span class="keyword">if</span> (!TextUtils.isEmpty(path)) &#123;</div><div class="line">mPicasso.invalidate(path);</div><div class="line">&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当然也可以这样！<br><figure class="highlight css"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="selector-tag">Picasso</span><span class="selector-class">.with</span>(<span class="selector-tag">getContext</span>())<span class="selector-class">.load</span>(<span class="selector-tag">Url</span>)<span class="selector-class">.memoryPolicy</span>(<span class="selector-tag">MemoryPolicy</span><span class="selector-class">.NO_CACHE</span>)<span class="selector-class">.into</span>(<span class="selector-tag">image</span>);</div></pre></td></tr></table></figure></p>
+<p>在加载图片时直接不让做缓存！</p>
+<h1 id="加入缓存"><a href="#加入缓存" class="headerlink" title="加入缓存"></a>加入缓存</h1><p>当然2.5.2没做对oKhttp3.3的兼容，因此我们加入自定义的cilent,对okhttp做下缓存定制，请照着下面姿势作</p>
+<p>构建OkHttpClient</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// creat the OkHttpClient.</span></div><div class="line">OkHttpClient client =<span class="keyword">new</span> <span class="type">OkHttpClient</span></div><div class="line">        .Builder()</div><div class="line">        .cache(<span class="keyword">new</span> <span class="type">Cache</span>(<span class="string">"你的缓存路径"</span>, <span class="number">1000</span>*<span class="number">1024</span>))</div><div class="line">        .addInterceptor(<span class="keyword">new</span> <span class="type">CaheInterceptor</span>(context, <span class="literal">null</span>))</div><div class="line">        .addNetworkInterceptor(<span class="keyword">new</span> <span class="type">CaheInterceptor</span>(context, <span class="literal">null</span>))</div><div class="line">        .build();</div></pre></td></tr></table></figure>
+<p>   <strong>拦截器Interceptor</strong></p>
+<p>   拦截器大家都不陌生，尤其是玩过okhttp和retofit的朋友，那肯定是拦截http的拦截请求和响应的.</p>
+<pre><code>public class CaheInterceptor implements Interceptor {
+
+private Context context;
+public CaheInterceptor(@NonNull Context context) {
+    this.context = context;
+}
+
+@Override
+public Response intercept(Chain chain) throws IOException {
+    Request request = chain.request();
+    if (NetworkUtil.isNetworkAvailable(context)) {
+        Response response = chain.proceed(request);
+        // read from cache for 60 s
+        int maxAge = 300;
+        String cacheControl = request.cacheControl().toString();
+        Log.e(&quot;Tamic&quot;, maxAge+ &quot;s load cahe:&quot; + cacheControl);
+        return response.newBuilder()
+                .removeHeader(&quot;Pragma&quot;)
+                .removeHeader(&quot;Cache-Control&quot;)
+                .header(&quot;Cache-Control&quot;, &quot;public, max-age=&quot; + maxAge)
+                .build();
+    } else {
+        Log.e(&quot;Tamic&quot;, &quot; no network load cahe&quot;);
+        request = request.newBuilder()
+                .cacheControl(CacheControl.FORCE_CACHE)
+                .build();
+        Response response = chain.proceed(request);
+        //set cahe times is 3 days
+        int maxStale = 60 * 60 * 24 * 3;
+        return response.newBuilder()
+                .removeHeader(&quot;Pragma&quot;)
+                .removeHeader(&quot;Cache-Control&quot;)
+                .header(&quot;Cache-Control&quot;, &quot;public, only-if-cached, max-stale=&quot; + maxStale)
+                .build();
+    }
+}
+ }
+</code></pre><p><strong>添加到Picasso中</strong></p>
+<figure class="highlight vhdl"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">    // <span class="keyword">Generate</span> the global <span class="keyword">default</span> Picasso instance.</div><div class="line">  Picasso   mPicasso = getPicasso(<span class="keyword">context</span>, <span class="keyword">null</span>);</div><div class="line">    mPicasso.setLoggingEnabled(<span class="literal">true</span>);</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><strong>自定义DownLoader</strong></p>
+<p>  为了兼容okhttp3.31 实现下载器！</p>
+<pre><code>public class ImageDownLoader implements Downloader {
+ OkHttpClient client = null;
+
+public ImageDownLoader(OkHttpClient client) {
+    this.client = client;
+}
+
+@Override
+public Response load(Uri uri, int networkPolicy) throws IOException {
+
+    CacheControl cacheControl = null;
+    if (networkPolicy != 0) {
+        if (NetworkPolicy.isOfflineOnly(networkPolicy)) {
+            cacheControl = CacheControl.FORCE_CACHE;
+        } else {
+            CacheControl.Builder builder = new CacheControl.Builder();
+            if (!NetworkPolicy.shouldReadFromDiskCache(networkPolicy)) {
+                builder.noCache();
+            }
+            if (!NetworkPolicy.shouldWriteToDiskCache(networkPolicy)) {
+                builder.noStore();
+            }
+            cacheControl = builder.build();
+        }
+    }
+
+    Request.Builder builder = new Request.Builder().url(uri.toString());
+    if (cacheControl != null) {
+        builder.cacheControl(cacheControl);
+    }
+
+    okhttp3.Response response = client.newCall(builder.build()).execute();
+    int responseCode = response.code();
+    if (responseCode &gt;= 300) {
+        response.body().close();
+        throw new ResponseException(responseCode + &quot; &quot; + response.message(), networkPolicy,
+                responseCode);
+    }
+
+    boolean fromCache = response.cacheResponse() != null;
+
+    ResponseBody responseBody = response.body();
+    return new Response(responseBody.byteStream(), fromCache, responseBody.contentLength());
+
+}
+
+@Override
+public void shutdown() {
+
+    Cache cache = client.cache();
+    if (cache != null) {
+        try {
+            cache.close();
+        } catch (IOException ignored) {
+        }
+    }
+ }
+}
+</code></pre><p>接着将ImageDownLoader 加入到Picasso</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">    <span class="comment">/**</span></div><div class="line">     * Download Big Image only, Not singleton but shared cache</div><div class="line">     */</div><div class="line">     <span class="keyword">public</span> Picasso getPicasso(Context context) &#123;</div><div class="line">        OkHttpClient client = getProgressBarClient();</div><div class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="type">Picasso</span>.Builder(context)</div><div class="line">                .downloader(<span class="keyword">new</span> <span class="type">ImageDownLoader</span>(client))</div><div class="line">                .build();</div><div class="line">    &#125;</div><div class="line"></div><div class="line"><span class="comment">/**</span></div><div class="line">     * Not singleton</div><div class="line">     */</div><div class="line">    <span class="keyword">private</span>  OkHttpClient getProgressBarClient() &#123;</div><div class="line">        <span class="keyword">return</span> client.<span class="keyword">new</span><span class="type">Builder</span>()</div><div class="line">                .addInterceptor(<span class="keyword">new</span> <span class="type">CaheInterceptor</span>(context))</div><div class="line">                .addNetworkInterceptor(<span class="keyword">new</span> <span class="type">CaheInterceptor</span>(contextr))</div><div class="line">                .build();</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p>这样我们在做图片加载时 就可以：<br><figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="function"><span class="title">getPicasso</span><span class="params">(context)</span> .<span class="title">load</span><span class="params">(Url)</span>.<span class="title">into</span><span class="params">(image)</span></span></div></pre></td></tr></table></figure></p>
+<p>因此用了Picasso我们可以直接将缓存策略用到retrofit上去，其实一箭双雕，大大简化了开发成本！</p>
+<p>#如何支持Https</p>
+<p>   姿势很简单 利用上面构建好的<code>downloader</code>, 设置<code>OkHttp</code>的<code>protocols</code>即可，并构建ssl。</p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">OkHttpClient client = <span class="keyword">new</span> OkHttpClient();</div><div class="line"> client.setHostnameVerifier(<span class="keyword">new</span> HostnameVerifier() &#123;</div><div class="line">     <span class="meta">@Override</span></div><div class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">verify</span><span class="params">(String s, SSLSession sslSession)</span> </span>&#123;</div><div class="line">         <span class="keyword">return</span> <span class="keyword">true</span>;</div><div class="line">     &#125;</div><div class="line"> &#125;);</div><div class="line"> TrustManager[] trustAllCerts = <span class="keyword">new</span> TrustManager[] &#123; <span class="keyword">new</span> X509TrustManager() &#123;</div><div class="line">     <span class="meta">@Override</span></div><div class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">checkClientTrusted</span><span class="params">(</span></span></div><div class="line">             java.security.cert.X509Certificate[] x509Certificates,</div><div class="line">             String s) <span class="keyword">throws</span> java.security.cert.CertificateException &#123;</div><div class="line">     &#125;</div><div class="line"></div><div class="line">     <span class="meta">@Override</span></div><div class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">checkServerTrusted</span><span class="params">(</span></span></div><div class="line">             java.security.cert.X509Certificate[] x509Certificates,</div><div class="line">             String s) <span class="keyword">throws</span> java.security.cert.CertificateException &#123;</div><div class="line">     &#125;</div><div class="line"></div><div class="line">     <span class="meta">@Override</span></div><div class="line">     <span class="keyword">public</span> java.security.cert.X509Certificate[] getAcceptedIssuers() &#123;</div><div class="line">         <span class="keyword">return</span> <span class="keyword">new</span> java.security.cert.X509Certificate[] &#123;&#125;;</div><div class="line">     &#125;</div><div class="line"> &#125; &#125;;</div><div class="line"> <span class="keyword">try</span> &#123;</div><div class="line">     SSLContext sc = SSLContext.getInstance(<span class="string">"TLS"</span>);</div><div class="line">     sc.init(<span class="keyword">null</span>, trustAllCerts, <span class="keyword">new</span> java.security.SecureRandom());</div><div class="line">     client.setSslSocketFactory(sc.getSocketFactory());</div><div class="line"> &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">     e.printStackTrace();</div><div class="line"> &#125;</div><div class="line"></div><div class="line"></div><div class="line">      clent.protocols(Collections.singletonList(Protocol.HTTP_1_1))</div><div class="line">      .build();</div><div class="line">    </div><div class="line"><span class="keyword">final</span> Picasso picasso = <span class="keyword">new</span> Picasso.Builder(<span class="keyword">this</span>)</div><div class="line">      .downloader(<span class="keyword">new</span> ImageDownloader(client))</div><div class="line">      .build();</div><div class="line">    </div><div class="line">Picasso.setSingletonInstance(picasso);</div></pre></td></tr></table></figure>
+<h1 id="优化相关"><a href="#优化相关" class="headerlink" title="优化相关"></a>优化相关</h1><p><strong>优化不缓存策略</strong><br> <figure class="highlight cpp"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">   <span class="function"><span class="keyword">public</span> RequestCreator <span class="title">skipMemoryCache</span><span class="params">(RequestCreator requestCreator)</span> </span>&#123;</div><div class="line">    <span class="keyword">return</span> requestCreator.memoryPolicy(MemoryPolicy.NO_STORE, MemoryPolicy.NO_CACHE)</div><div class="line">            .networkPolicy(NetworkPolicy.NO_STORE, NetworkPolicy.NO_CACHE);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p><strong>降低内存消耗</strong><br> 设置RGB_565编码格式，降低内存消耗<br> <figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="function">RequestCreator <span class="title">cutDownMemory</span><span class="params">(RequestCreator requestCreator)</span> </span>&#123;</div><div class="line">    <span class="function"><span class="keyword">return</span> requestCreator.<span class="title">config</span><span class="params">(Bitmap.Config.RGB_565)</span></span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p><strong>取消加载</strong></p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TamicImageView</span> <span class="keyword">extends</span> <span class="title">ImageView</span>  </span>&#123;</div><div class="line"></div><div class="line"></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">TamicImageView</span><span class="params">(Context context)</span> </span>&#123;</div><div class="line">    <span class="keyword">this</span>(context, <span class="keyword">null</span>, <span class="number">0</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">TamicImageView</span><span class="params">(Context context, AttributeSet attrs)</span> </span>&#123;</div><div class="line">    <span class="keyword">this</span>(context, attrs, <span class="number">0</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">public</span> <span class="title">TamicImageView</span><span class="params">(Context context, AttributeSet attrs, <span class="keyword">int</span> defStyleAttr)</span> </span>&#123;</div><div class="line">    <span class="keyword">super</span>(context, attrs, defStyleAttr);</div><div class="line">  </div><div class="line">&#125;</div><div class="line">   </div><div class="line"><span class="meta">@Override</span></div><div class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onDetachedFromWindow</span><span class="params">()</span> </span>&#123;</div><div class="line">    <span class="keyword">super</span>.onDetachedFromWindow();</div><div class="line">     <span class="comment">// 不可见时释放Bitmap</span></div><div class="line">    setImageDrawable(<span class="keyword">null</span>);</div><div class="line">   <span class="comment">// 暂停加载</span></div><div class="line">   mPicasso.pauseTag(<span class="keyword">this</span>);</div><div class="line"></div><div class="line"> &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>  还有很多api，比如:</p>
+<ul>
+<li><p>requestCreator.tag(tag);设置key</p>
+</li>
+<li><p>requestCreator.error(); 设置加载失败图片</p>
+</li>
+<li><p>mPicasso.pauseTag(); 暂停加载 </p>
+</li>
+<li><p>mPicasso.resumeTag();恢复加载</p>
+</li>
+<li><p>mPicasso.cancelRequest();取消加载</p>
+</li>
+<li><p>requestCreator.priority()优先级 </p>
+</li>
+<li>requestCreator..rotate() 旋转之类</li>
+</ul>
+<p>下面说几个常用的api</p>
+<p>#扩展加载</p>
+<p> 当然还有一个对通知栏加载的api </p>
+<p><strong>通知栏支持</strong></p>
+ <figure class="highlight cs"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">into</span>(RemoteViews remoteViews, <span class="keyword">int</span> viewId, <span class="keyword">int</span> notificationId,Notification notification)</div></pre></td></tr></table></figure>
+<p><strong>widget支持</strong></p>
+ <figure class="highlight cs"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">into</span>(RemoteViews remoteViews, <span class="keyword">int</span> viewId, <span class="keyword">int</span>[] appWidgetIds)</div></pre></td></tr></table></figure>
+<p>第一个是远程视图，第二个view Id 第三个是widget的id数组 </p>
+<h1 id="预加载"><a href="#预加载" class="headerlink" title="预加载"></a>预加载</h1><p><strong>有返回值</strong></p>
+ <figure class="highlight css"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="selector-tag">Picasso</span><span class="selector-class">.with</span>(<span class="selector-tag">context</span>)<span class="selector-class">.load</span>(<span class="selector-tag">url</span>)<span class="selector-class">.get</span>()</div></pre></td></tr></table></figure>
+<p>  此api可以预先加载图片到disk和内存中,并有返回值Bitmap,此api必须同步调用，不能用UI主线程去调用，通常我们可以用在viewpager中预加载后面index的图片，或者提前拿到目标bitmap来进行业务操作，或者一些效果处理。</p>
+<p><strong>无返回值</strong></p>
+ <figure class="highlight css"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="selector-tag">Picasso</span><span class="selector-class">.with</span>(<span class="selector-tag">context</span>)<span class="selector-class">.load</span>(<span class="selector-tag">url</span>)<span class="selector-class">.fetch</span>()</div></pre></td></tr></table></figure>
+<p>也有预加载图片功能，此api可以在主线程调用，主要有callback实现，提供失败和成功函数供上层调用。但无法获取的加载好的图片资源。<br> <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">EmptyCallback</span> <span class="keyword">implements</span> <span class="title">Callback</span> </span>&#123;</div><div class="line"></div><div class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onSuccess</span><span class="params">()</span> </span>&#123;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="meta">@Override</span> <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onError</span><span class="params">()</span> </span>&#123;</div><div class="line">&#125;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>#取消加载</p>
+<ul>
+<li>cancelRequest(ImageView imageView) </li>
+<li>cancelTag(Object obj)</li>
+<li>cancelRequest(Target) </li>
+</ul>
+<p>主要以后上面的三种方式，第一个不明思议，就是取消某个view的加载请求，通常我们在activity死亡时候调用，第三个方法方法是我们取消某个指定的加载action, 譬如一次加载中设置了picasso的 Picasso.with(context).tag()时，就可以用cancelTag（”tag”）取消指定的请求，那么最后一个又是什么，他需要我们加入Tag的包装类 Target来进行回调请求处理。方便开发者上层对取消流程的控制。<br> <figure class="highlight less"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"> <span class="selector-tag">mPicasso</span><span class="selector-class">.cancelRequest</span>(new Target() &#123;</div><div class="line"><span class="variable">@Override</span></div><div class="line">public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom afrom) &#123;</div><div class="line">   </div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="variable">@Override</span></div><div class="line">public void onBitmapFailed(Drawable errorDrawable) &#123;</div><div class="line">   </div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="variable">@Override</span></div><div class="line">public void onPrepareLoad(Drawable placeHolderDrawable) &#123;</div><div class="line">   </div><div class="line">&#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure></p>
+<p>另外还有一个对通知栏图片的取消的接口</p>
+   <figure class="highlight stylus"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> </div><div class="line"><span class="function"><span class="title">cancelRequest</span><span class="params">(RemoteViews remoteViews, int viewId)</span></span></div></pre></td></tr></table></figure>
+<p>通知栏的VIEW大家都非常熟悉，都是用RemoteViews 来进行转换展现的，那么在通知被cancel时我们就可以直接调用这个取消的方法</p>
+<h1 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h1><p>总之虽然picasso 并不是最快的图片加载框架，但是他在基本的加载本地和网络图片基础上，还能很好的提供了让我们自我扩展能力，其扩展性和适应性更强，相信你结合了ohttp+ rxJava + Picasso 后你会发现他确实适合你！<br>如果你爱好glide请看这篇完美的文章：<a href="[http://mrfu.me/2016/02/27/Glide_Getting_Started/](http://mrfu.me/2016/02/27/Glide_Getting_Started/">glide系列教程</a>)</p>
+
+
+                <hr>
+
+                
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2016/03/05/Picasso-完美兼容-OkHttp3-3，缓存优化两不误/"
+                    data-title="Picaso完美兼容OkHttp3.3，缓存优化两不误"
+                    data-url="http://tamicer.com/2016/03/05/Picasso-完美兼容-OkHttp3-3，缓存优化两不误/"
+                    data-images=""
+                    data-content="为何在Fresco，Glide这么强大的背景下，我又想起了当初的Picasso，又为何写这篇文... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+
+
+                </div>
+
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2016/06/05/2016移动新技术预览/" data-toggle="tooltip" data-placement="top" title="2016移动新技术预览">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2016/01/05/静默安装从入门到真的转行/" data-toggle="tooltip" data-placement="top" title="静默安装从入门到真的转行">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2016/03/05/Picasso-完美兼容-OkHttp3-3，缓存优化两不误/"
+                        data-title="Picaso完美兼容OkHttp3.3，缓存优化两不误"
+                        data-url="http://tamicer.com/2016/03/05/Picasso-完美兼容-OkHttp3-3，缓存优化两不误/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#优化" title="优化">优化</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#图片加载" title="图片加载">图片加载</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2016/03/05/Picasso-完美兼容-OkHttp3-3，缓存优化两不误/";
+    var disqus_url = "http://tamicer.com/2016/03/05/Picasso-完美兼容-OkHttp3-3，缓存优化两不误/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

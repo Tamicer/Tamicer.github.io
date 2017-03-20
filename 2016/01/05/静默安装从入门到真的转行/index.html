@@ -13,7 +13,7 @@
 
     <title>
         
-          Android-免Root实现Apk静默安装 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          静默安装从入门到真的转行 - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
@@ -90,7 +90,7 @@
 
                         
                         <li>
-                            <a href="/tags/">Tags</a>
+                            <a href="/about/">About</a>
                         </li>
                         
                     
@@ -104,7 +104,7 @@
 
                         
                         <li>
-                            <a href="/about/">About</a>
+                            <a href="/tags/">Tags</a>
                         </li>
                         
                     
@@ -170,7 +170,7 @@
                           <a class="tag" href="/tags/#静默安装" title="静默安装">静默安装</a>
                         
                     </div>
-                    <h1>Android-免Root实现Apk静默安装</h1>
+                    <h1>静默安装从入门到真的转行</h1>
                     <h2 class="subheading">Android 黑科技</h2>
                     <span class="meta">
                         Posted by Tamic on
@@ -193,11 +193,11 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-                <p><img src="http://upload-images.jianshu.io/upload_images/2022038-e5d0385d045262bf.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="图文无关"></p>
-<h1 id="Android应用管理"><a href="#Android应用管理" class="headerlink" title="Android应用管理"></a>Android应用管理</h1><blockquote>
-<p>Tamic /<a href="http://www.jianshu.com/p/87621511e5b3" target="_blank" rel="external">http://www.jianshu.com/p/87621511e5b3</a></p>
+                <h1 id="Android应用管理"><a href="#Android应用管理" class="headerlink" title="Android应用管理"></a>Android应用管理</h1><blockquote>
+<p>Tamic /<a href="http://www.tamicer.com" target="_blank" rel="external">http://www.tamicer.com</a></p>
 <p>2016了 本篇成了我的开年之博，距上次做静默安装和辅助服务已经有半年之多，最近一直在做项目中的插件功能，也一直没时间整理平时接触的东西，甚至年终总结，今天就从经常用到的知识来开始2016的道路吧。</p>
 </blockquote>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-e5d0385d045262bf.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="图文无关"></p>
 <p>Android的应用管理主要由PMS(PackageManagerService)来负责管理；上层上来由PackageManager来进行管理，通过PM我们可以得到设备上的所有安装包信息，包括未安装和安装过的, 未安装的包信息采用反射和未暴露的API也可以进行深度解析得到我们想要的信息。而应用的的安装和卸载也有PM负责。</p>
 <p>#PMS</p>
 <p>今天我们主要说一下PackageManager，至于PMS来说和上层有Binder进行交互, PMS在实际开发中我们很少直接用到，但是我们上层通过PM来获取的一些基础信息，都需要PMS来调用底层，当通过看源码得知PackageManager沿用了Android面向接口编程的风格，比如<code>viewRoot</code>,<code>WindowManger</code>,<code>ActivityManager</code> 都采用了面向接口编程，这些Mgr为我们提供了一些基础的功能接口，具体都由各自的Service来动态注入Impl,就是我们通常说的热插拔，至于这么写的好处吗 这里稍微说两句，在接触过java编程久的朋友都知道面向接口的可扩展性很强，因为安卓源码也需要升级，谷歌工程师在下一个版本中或许就会新增一些api，那么这样设计的理念也便于源码的维护和升级，我们平时开发中也可以借鉴这种优雅的面向协议编程，当然iOS同样适用。</p>
@@ -316,12 +316,18 @@ private static boolean hasRootPerssion() {
 <p>目前我们可以采用辅助功能（Accessibility）实现自动安装，用来代替用户点击，监控在<code>com.android.packageinstaller</code>包的界面元素来遍历出所需要的按钮文本，来执行安装操作，微信抢红包插件也是利用此原理，但是采用辅助依旧会显示安装界面的，我们可以在原有的系统界面上添加一个view浮层来伪装静默安装功能（下期将带来免root实现静默安装），此种方式也需要用户主动授权。<br>到此静默安装又一次装逼失败，放弃</p>
 <p>除此之外我们也可以采用动态加载来实现一个apk的安装，其实真正意义上并非静默安装，这需要一个apk来做宿主，只是将我们的apk解析出所用的组件信息，保存到本地，再将宿主的上下文直接注入插件apk中，至于插件实现apk免安装的知识有很多方式，也可以单独出个专题介绍一下。到此如归没有宿主apk存在那么当你的apk想无缘无故的安装起来是不可能的，到此你又一次要放弃！</p>
 <p>#疑问</p>
-<p>这里有人还不服，我一定要实现静默安装，为何ＱＱ之类的就能实现，这里解释一下当你的产品庞大到用户不能放弃的时候，那么很多时候你想做什么更笨不是难题，这种大品牌通过和手机厂家做ＯＥＭ定制利益链，或者通过开发白名单的方式进行的非法采集勾当，这里就不想再说太多，你懂得！<br>不死进程一样，你终究要放弃！直到改行！<br>原文：<a href="http://blog.csdn.net/sk719887916/article/details/50314017" target="_blank" rel="external">http://blog.csdn.net/sk719887916/article/details/50314017</a></p>
-<p>第一时间获取技术文章请关注微信公众号！</p>
+<p>这里有人还不服，我一定要实现静默安装，为何ＱＱ之类的就能实现，这里解释一下当你的产品庞大到用户不能放弃的时候，那么很多时候你想做什么更笨不是难题，这种大品牌通过和手机厂家做ＯＥＭ定制利益链，或者通过开发白名单的方式进行的非法采集勾当，这里就不想再说太多，你懂得！</p>
+<p>不死进程一样，你终究要放弃！直到改行！</p>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
+
+
+
 <p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
 
 
                 <hr>
+
+                
 
                 
                 <!-- 多说 Share start -->
@@ -329,12 +335,12 @@ private static boolean hasRootPerssion() {
                 <div class="ds-share"
                     style="text-align: right"
                     data-thread-key="2016/01/05/静默安装从入门到真的转行/"
-                    data-title="Android-免Root实现Apk静默安装"
+                    data-title="静默安装从入门到真的转行"
                     data-url="http://tamicer.com/2016/01/05/静默安装从入门到真的转行/"
                     data-images=""
-                    data-content="
-Android应用管理
-Tamic /http://www.jianshu.com/p/87... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    data-content="Android应用管理
+Tamic /http://www.tamicer.com
+2016了... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -346,14 +352,17 @@ Tamic /http://www.jianshu.com/p/87... | Tamic Developer&quot;s Blog | &quot;博�
                       </div>
                     </div>
                 <hr>
+
+
                 </div>
+
                 <!-- 多说 Share end-->
                 
 
                 <ul class="pager">
                     
                         <li class="previous">
-                            <a href="/2016/01/05/静默安装从入门到真的转行！/" data-toggle="tooltip" data-placement="top" title="静默安装从入门到真的转行">&larr; Previous Post</a>
+                            <a href="/2016/03/05/Picasso-完美兼容-OkHttp3-3，缓存优化两不误/" data-toggle="tooltip" data-placement="top" title="Picaso完美兼容OkHttp3.3，缓存优化两不误">&larr; Previous Post</a>
                         </li>
                     
                     
@@ -368,7 +377,7 @@ Tamic /http://www.jianshu.com/p/87... | Tamic Developer&quot;s Blog | &quot;博�
                 <div class="comment">
                     <div class="ds-thread"
                         data-thread-key="2016/01/05/静默安装从入门到真的转行/"
-                        data-title="Android-免Root实现Apk静默安装"
+                        data-title="静默安装从入门到真的转行"
                         data-url="http://tamicer.com/2016/01/05/静默安装从入门到真的转行/" >
                     </div>
                 </div>
