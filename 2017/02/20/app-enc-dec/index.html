@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Retrofit/OkHttp API接口加固技术实践（下） - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2017/02/20/app-enc-dec/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                    </div>
+                    <h1>Retrofit/OkHttp API接口加固技术实践（下）</h1>
+                    <h2 class="subheading">安全加密系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2017-02-20
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <blockquote>
+<p>作者/Tamic<br><a href="http://www.tamicer.com" target="_blank" rel="external">http://www.tamicer.com</a></p>
+</blockquote>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-d3fee6a8b9b0113b.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<p>上节<a href="https://tamicer.github.io/2017/01/15/retroft011/" target="_blank" rel="external">加固</a>介绍了APi单纯Post用对称加密（Base64 为列子）加密方式，这种加密方式还是存在一定的风险，加密效率虽高，但易破解，本节将介绍怎么用非对称加密 来加解密okhttp的数据，本文采用RSA加密算法为栗子。</p>
+<h2 id="对称加密"><a href="#对称加密" class="headerlink" title="对称加密"></a>对称加密</h2><p>对称加密是最传统的加密方式，比上非对称加密，缺少安全性，但是它依旧是用的比较多的加密方法。<br>对称加密采用单密钥加密方式，不论是加密还是解密都是用同一个密钥，即“一把钥匙开一把锁”。对称加密的好处在于操作简单、管理方便、速度快。它的缺点在于密钥在<br>网络传输中容易被窃听，每个密钥只能应用一次，对密钥管理造成了困难。对称加密的实现形式和加密算法的公开性使它依赖于密钥的安全性，而不是算法的安全性。</p>
+<p><strong>对称加密原理以及对称加密算法</strong> </p>
+<p><img src="http://img.blog.csdn.net/20150709224128583?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt=""></p>
+<p>对称加密的核心——通信双方共享一个密钥 通信过程：  A有明文m，使用加密算法E，密钥key，生成密文c=E(key,m); B收到密文c,使用解密算法D，密钥key，得到明文<br>m=D(key,c);    比喻：  对称加密是最直观，也是历史最久远的加密手段，类似于加锁和解锁，只不过钥匙的个数非常多（~~2^100），一个人穷其一生也试不完所有可能的钥匙<br>因此加密密钥能够从解密密钥中推算出来，同时解密密钥也可以从加密密钥中推算出来。而在大多数的对称算法中，加密密钥和解密密钥是相同的，所以也称这种加密算法为秘<br>密密钥算法或单密钥算法。它要求发送方和接收方在安全通信之前，商定一个密钥。对称算法的安全性依赖于密钥，泄漏密钥就意味着任何人都可以对他们发送或接收的消息解<br>密，所以密钥的保密性对通信性至关重要。</p>
+<p>主要有DES算法，3DES算法，TDEA算法，Blowfish算法，RC5算法，IDEA算法。</p>
+<h2 id="非对称加密"><a href="#非对称加密" class="headerlink" title="非对称加密"></a>非对称加密</h2><p> 非对称密算法是一种密钥的加密方法。</p>
+<p>  非对称加密算法需要两个密钥：公钥（publickey）和私钥（privatekey）。公钥与私钥是一对存在，如果用公钥对数据进行加密，只有用对应的私钥才能解密；如果用密钥对数据进行加密，那么只有用对应的公钥才能解密。因为加密和解密使用的是两个不同的密钥，所以这种算法叫作非对称加密算法。 非对称加密算法实现机密信息交换的基本过程是：甲方生成一对密钥并将其中的一把作为公用密钥向其它方公开；得到该公用密钥的乙方使用该密钥对机密信息进行加密后再发送给甲方；甲方再用自己保存的另一把专用密钥对加密后的信息进行解密。</p>
+<p>另一方面，甲方可以使用乙方的公钥对机密信息进行签名后再发送给乙方；乙方再用自己的私匙对数据进行验签。<br>甲方只能用其专用密钥解密由其公用密钥加密后的任何信息。 非对称加密算法的保密性比较好，它消除了最终用户交换密钥的需要。<br>非对称密码体制的特点：算法强度复杂、安全性依赖于算法与密钥但是由于其算法复杂，而使得加密解密速度没有对称加密解密的速度快。对称密码体制中只有一种密钥，并且是非公开的，如果要解密就得让对方知道密钥。所以保证其安全性就是保证密钥的安全，而非对称密钥体制有两种密钥，其中一个是公开的，这样就可以不需要像对称密码那样传输对方的密钥了。这样安全性就大了很多。</p>
+<blockquote>
+<p>列如 ：支付宝的加密方式就采用非对称加密方式，支付宝会给客户提供支付宝证书，作为用户验证是否是来自支付宝的数据，防止第三方假冒支付宝，而客户手中持有私钥，用户支付宝发送的数据经过支付宝的公钥进项加密，则支付宝可以采用自己的的私钥进行解密。</p>
+</blockquote>
+<p><strong>工作过程</strong></p>
+<ul>
+<li>1.A要向B发送信息，A和B都要产生一对用于加密</li>
+<li>2.A的私钥保密，A的公钥告诉B；B的私钥保密，B的公钥告诉A。</li>
+<li>3.A要给B发送信息时，A用B的公钥加密信息，因为A知道B的公钥。</li>
+<li>4.A将这个数据发给B（已经用B的公钥加密消息）。</li>
+<li>5.B收到这个数据后后，B用自己的私钥解密A的消息。其他所有收到这个报文的人都无法解密，因为只有B才有B的私钥。</li>
+</ul>
+<p>通俗点可以这么理解：</p>
+<ul>
+<li>浏览器向服务器发出请求，询问对方支持的对称加密算法和非对称加密算法；服务器回应自己支持的算法。</li>
+<li>浏览器选择双方都支持的加密算法，并请求服务器出示自己的证书；服务器回应自己的证书。 </li>
+<li>浏览器随机产生一个用于本次会话的对称加密的钥匙，并使用服务器证书中附带的公钥对该钥匙进行加密后传递给服务器；服务器为本次会话保持</li>
+<li>该对称加密的钥匙。第三方不知道服务器的私钥，即使截获了数据也无法解密。非对称加密让任何浏览器都可以与服务器进行加密会话。</li>
+</ul>
+<p>浏览器使用对称加密的钥匙对请求消息加密后传送给服务器，服务器使用该对称加密的钥匙进行解密；服务器使用对称加密的钥匙对响应消息加密后传送给浏览器，浏览器使用该对称加密的钥匙进行解密。第三方不知道对称加密的钥匙，即使截获了数据也无法解密。对称加密提高了加密速度 </p>
+<h2 id="数字证书"><a href="#数字证书" class="headerlink" title="数字证书"></a>数字证书</h2><p>数字证书就是互联网通讯中标志通讯各方身份信息的一串数字，提供了一种在Internet上验证通信实体身份的方式，数字证书不是数字身份证，而是身份认证机构盖在数字身份证上的一个章或印（或者说加在数字身份证上的一个签名）。它是由权威机构——CA机构，又称为证书授权（Certificate Authority）中心发行的，人们可以在网上用它来识别对方的身份。<br>数字证书绑定了公钥及其持有者的真实身份，它类似于现实生活中的居民身份证，所不同的是数字证书不再是纸质的证照，而是一段含有证书持有者身份信息并经过认证中心审核签发的电子数据，广泛用在电子商务和移动互联网中。。<br>通俗讲就是车管所会给每个车辆进行认证颁发车牌，通过车牌我们可以查到所有车辆和驾驶员的信，二数字证书就辨别唯一身份，支付宝等的数字证书就是公开的，这不是支付宝自己决定，而是由国际组织认证，这样不管是哪个用户首先就可以根据浏览器返回的证书辨别支付宝的真伪。</p>
+<h2 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h2><p>数字签名用来，保证信息传输的完整性、发送者的身份认证、防止交易中的抵赖发生。<br>数字签名是将摘要信息用发送者的私钥加密，与原文一起传送给接收者。接收者只有用发送者的公钥才能解密被加密的摘要信息，然后用HASH函数对收到的原文产生一个摘要信息，与解密的摘要信息对比。如果相同，则说明收到的信息是完整的，在传输过程中没有被修改，否则说明信息被修改过，因此数字签名能够验证信息的完整性。如果中途数据被纂改或者丢失。那么对方就可以根据数字签名来辨别是否是来自对方的第一手信息数据。<br> 数字签名是个加密的过程，数字签名验证是个解密的过程。</p>
+<h2 id="参数加解密"><a href="#参数加解密" class="headerlink" title="参数加解密"></a>参数加解密</h2><p>首先，Android中生成了对称密钥：</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span>  SecretKeySpec <span class="title">generateSymmetric</span>(<span class="params"></span>) </span>&#123;</div><div class="line"></div><div class="line">    <span class="comment">// Set up secret key spec for 128-bit AES encryption and decryption</span></div><div class="line">    SecretKeySpec sks = <span class="literal">null</span>;</div><div class="line">    <span class="keyword">try</span> &#123;</div><div class="line">        SecureRandom sr = SecureRandom.getInstance(<span class="string">"SHA1PRNG"</span>);</div><div class="line">        sr.setSeed(<span class="string">"any data used as random seed"</span>.getBytes());</div><div class="line">        KeyGenerator kg = KeyGenerator.getInstance(<span class="string">"AES"</span>);</div><div class="line">        kg.init(<span class="number">128</span>, sr);</div><div class="line">        sks = <span class="keyword">new</span> SecretKeySpec((kg.generateKey()).getEncoded(), <span class="string">"AES"</span>);</div><div class="line"></div><div class="line">        System.<span class="keyword">out</span>.println(<span class="string">"AES KEY: "</span> + sks);</div><div class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">        Log.e(TAG, <span class="string">"AES secret key spec error"</span>);</div><div class="line">    &#125;</div><div class="line">    <span class="keyword">return</span> sks;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>然后将SecretKeySpec转换为Base64字符串格式：</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">String</span> ConvertSymmetricKeyToString(SecretKeySpec <span class="built_in">key</span>) &#123;</div><div class="line"></div><div class="line">    <span class="keyword">String</span> symmetric_key = <span class="keyword">null</span>;</div><div class="line"></div><div class="line">    symmetric_key = Base64.encodeToString(<span class="built_in">key</span>.getEncoded(), Base64.DEFAULT);</div><div class="line">    <span class="keyword">return</span> symmetric_key;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>调用函数：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="attribute">SecretKeySpec symmKey</span> = generateSymmetric();</div><div class="line"></div><div class="line"></div><div class="line"><span class="attribute">newSymmetricKeyString</span> = CreateEncryptedXml.ConvertSymmetricKeyToString(symmKey);</div></pre></td></tr></table></figure>
+<p>用SecretKeySpec加密数据：</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="title">private</span> static <span class="type">String</span> encryptDataWithSymmetricKey (<span class="type">SecretKeySpec</span> symmKey, <span class="type">String</span> <span class="class"><span class="keyword">data</span>) throws <span class="type">IOException</span>, <span class="type">NoSuchAlgorithmException</span>, <span class="type">InvalidKeySpecException</span> &#123;</span></div><div class="line"></div><div class="line"></div><div class="line">    // <span class="title">encryption</span></div><div class="line">    <span class="title">byte</span>[] <span class="title">toBeCiphred</span> = <span class="title">data</span>.<span class="title">getBytes</span>("<span class="type">UTF</span>-8");</div><div class="line">    <span class="type">String</span> <span class="title">encryptedData</span> = <span class="title">null</span>;</div><div class="line"></div><div class="line">    <span class="title">try</span> &#123;</div><div class="line">        <span class="type">Cipher</span> <span class="title">c</span> = <span class="type">Cipher</span>.<span class="title">getInstance</span>("<span class="type">AES</span>");</div><div class="line">        <span class="title">c</span>.<span class="title">init</span>(<span class="type">Cipher</span>.<span class="type">ENCRYPT_MODE</span>, <span class="title">symmKey</span>);</div><div class="line">        <span class="title">byte</span>[] <span class="title">encodedBytes</span> = <span class="title">c</span>.<span class="title">doFinal</span>(<span class="title">toBeCiphred</span>);</div><div class="line">        <span class="type">System</span>.<span class="title">out</span>.<span class="title">println</span>("<span class="type">BYTE</span> <span class="type">STRING</span> (<span class="type">ASYMM</span>): " + <span class="title">encodedBytes</span>);</div><div class="line">        <span class="title">encryptedData</span> = <span class="type">Base64</span>.<span class="title">encodeToString</span>(<span class="title">encodedBytes</span>, <span class="type">Base64</span>.<span class="type">DEFAULT</span>);</div><div class="line"></div><div class="line">    &#125; catch (<span class="type">Exception</span> <span class="title">e</span>) &#123;</div><div class="line">        <span class="type">Log</span>.<span class="title">e</span>(<span class="type">TAG</span>, "<span class="type">AES</span> <span class="title">encryption</span> <span class="title">error</span>");</div><div class="line">        <span class="title">throw</span> <span class="title">new</span> <span class="type">RuntimeException(e)</span>;</div><div class="line">    &#125;</div><div class="line"></div><div class="line"></div><div class="line">    return encryptedData;</div><div class="line">&#125;</div><div class="line"></div><div class="line">  </div><div class="line"> encryptedData = encryptDataWithSymmetricKey(symmKey, text);</div></pre></td></tr></table></figure>
+<p><strong>使用拦截器：</strong></p>
+<p>然后将字符串秘密AES密钥和加密的数据（用这个AES密钥加密）使用okhttp使POST请求。字符串密钥使用的是RSA加密。</p>
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="keyword">class</span> EncryptionInterceptor implements Interceptor &#123;</div><div class="line">    </div><div class="line">       <span class="keyword">private</span> static final <span class="built_in">String</span> TAG =   EncryptionInterceptor.<span class="keyword">class</span>.getSimpleName();</div><div class="line">    </div><div class="line">       <span class="keyword">private</span> static final boolean DEBUG = <span class="literal">true</span>;</div><div class="line">    </div><div class="line">       @Override</div><div class="line">       <span class="keyword">public</span> <span class="built_in">Response</span> intercept(Chain chain) throws IOException &#123;</div><div class="line">    </div><div class="line">    </div><div class="line">       <span class="built_in">Request</span> <span class="built_in">request</span> = chain.<span class="built_in">request</span>();</div><div class="line">       RequestBody oldBody = <span class="built_in">request</span>.body();</div><div class="line">       Buffer buffer = <span class="keyword">new</span> Buffer();</div><div class="line">       oldBody.writeTo(buffer);</div><div class="line">       <span class="built_in">String</span> strOldBody = buffer.readUtf8();</div><div class="line">       MediaType mediaType = MediaType.parse(<span class="string">"text/plain; charset=utf-8"</span>);</div><div class="line">       <span class="built_in">String</span> strNewBody = encryptDataWithSymmetricKey(symmKey, text);</div><div class="line"></div><div class="line">       RequestBody body = RequestBody.create(mediaType, strNewBody);</div><div class="line">       <span class="built_in">request</span> = <span class="built_in">request</span>.newBuilder().header(<span class="string">"Content-Type"</span>, body.contentType().toString()).header(<span class="string">"Content-Length"</span>, <span class="built_in">String</span>.valueOf(body.contentLength())).method(<span class="built_in">request</span>.method(), body).build();</div><div class="line">       return chain.proceed(<span class="built_in">request</span>);</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在服务器端可以解密（从RSA）秘密AES密钥，并得到它的字符串表示。在客户端（Android）和服务器端（server）上是一样的。使用这个字符串AES密钥解密数据</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"> <span class="keyword">String </span>encryptionMethod = <span class="string">"AES-128-CBC"</span><span class="comment">;  </span></div><div class="line"></div><div class="line"> //decryptedAESKey is an <span class="keyword">Android </span>AES SecretKeySpec converted  to <span class="keyword">string</span></div><div class="line"> //in <span class="keyword">Android </span>the <span class="keyword">string </span>key was <span class="keyword">base64_encoded, </span>服务端解密 decode</div><div class="line"></div><div class="line"> <span class="keyword">String </span>secretHash = <span class="keyword">base64Decode(decryptedAESKey);</span></div><div class="line"></div><div class="line"></div><div class="line">// Decrypt</div><div class="line"> <span class="keyword">String </span>decryptedMessage = opensslDecrypt(<span class="keyword">base64Decode(encryptedData), </span> encryptionMethod, secretHash)<span class="comment">;</span></div></pre></td></tr></table></figure>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>完整的非对称加密过程</p>
+<p>假如现在 你向支付宝 转账（术语数据信息），为了保证信息传送的保密性、真实性、完整性和不可否认性，需要对传送的信息进行数字加密和签名，其传送过程为：</p>
+<ul>
+<li>1.首先你要确认是否是支付宝的数字证书，如果确认为支付宝身份后，则对方真实可信。可以向对方传送信息，</li>
+<li>2.你准备好要传送的数字信息（明文）计算要转的多少钱，对方支付宝账号等；</li>
+<li>3.你 对数字信息进行哈希运算，得到一个信息摘要（客户端主要职责）；</li>
+<li>4.你 用自己的私钥对信息摘要进行加密得到 你 的数字签名，并将其附在数字信息上；</li>
+<li>5.你 随机产生一个加密密钥，并用此密码对要发送的信息进行加密（密文）；</li>
+<li>6.你用 支付宝的公钥对刚才随机产生的加密密钥进行加密，将加密后的 DES 密钥连同密文一起传送给支付宝；</li>
+<li>7.支付宝收到 你 传送来的密文和加密过的 DES 密钥，先用自己的私钥对加密的 DES 密钥进行解密，得到 你随机产生的加密密钥；</li>
+<li>8.支付宝 然后用随机密钥对收到的密文进行解密，得到明文的数字信息，然后将随机密钥抛弃；</li>
+<li>9.支付宝 用你 的公钥对 你的的数字签名进行解密，得到信息摘要；</li>
+<li>10.支付宝用相同的哈希算法对收到的明文再进行一次哈希运算，得到一个新的信息摘要；</li>
+<li>11.支付宝将收到的信息摘要和新产生的信息摘要进行比较，如果一致，说明收到的信息没有被修改过。</li>
+<li>12 确定收到信息，然后进行向对方进行付款交易，一次非对称密过程结束。在这后面的流程就不属于本次非对称加密的范畴，算支付宝个人的自我流程，也就是循环以上过程。</li>
+</ul>
+<p><strong>阅读推荐</strong></p>
+<p><a href="https://tamicer.github.io/2017/01/15/retroft011/" target="_blank" rel="external">Retrofit/OkHttp API接口加固技术实践（上）</a></p>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
+
+
+
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+
+
+                <hr>
+
+                
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2017/02/20/app-enc-dec/"
+                    data-title="Retrofit/OkHttp API接口加固技术实践（下）"
+                    data-url="http://tamicer.com/2017/02/20/app-enc-dec/"
+                    data-images=""
+                    data-content="
+作者/Tamichttp://www.tamicer.com
+
+
+上节加固介绍了APi单纯P... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+
+
+                </div>
+
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2017/03/02/safeinfoall/" data-toggle="tooltip" data-placement="top" title="APP安全（二）终端安全全预览">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2017/01/15/retroft011/" data-toggle="tooltip" data-placement="top" title="Retrofit/OkHttp API接口加固技术实践（上）">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2017/02/20/app-enc-dec/"
+                        data-title="Retrofit/OkHttp API接口加固技术实践（下）"
+                        data-url="http://tamicer.com/2017/02/20/app-enc-dec/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2017/02/20/app-enc-dec/";
+    var disqus_url = "http://tamicer.com/2017/02/20/app-enc-dec/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

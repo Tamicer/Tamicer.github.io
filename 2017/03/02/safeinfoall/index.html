@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          APP安全（二）终端安全全预览 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2017/03/02/safeinfoall/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                    </div>
+                    <h1>APP安全（二）终端安全全预览</h1>
+                    <h2 class="subheading">安全系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2017-03-02
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <p>移动端安全越来越重视。谷歌从7.0开始加固了内核，收回众多权限(<a href="https://android-developers.googleblog.com/2016/07/protecting-android-with-more-linux.html" target="_blank" rel="external">见google开发者加固的7.0牛轧糖一文</a>)，甚至私有,废弃敏感API。于此同时 甚至很多公司成立专门的安全子公司或者部门，下文展示了比较著名平台的安全技术BBS/Blog，</p>
+<p>移动端在实践中遇到不少安全漏洞，并在不断实践中逐步解决，涉及交易的业务涉及的更多，<br>因此 安全业务不断融入到ａｐｐ的开发中。本系列将详细介绍移动安全领域的技术问题，Android平台的自我安全管理机制，举例著名平台的安全策略，以及APP实际开发中遇到的安全问题和防御方案，带你领略不一样的移动安全！</p>
+<p>iOS公开漏洞：<a href="https://yq.aliyun.com/articles/68181?spm=5176.100239.0.0.vAmprV" target="_blank" rel="external">2016年iOS公开可利用漏洞总结</a></p>
+<h1>一 安全概述</h1>
+
+
+<p>Android采用的安全功能的同时，并与开发人员和设备使用者（用户）合作，以保持Android平台和生态系统的安全。Android安全模型对于建立一个强大的应用程序和设备的生态系统至关重要，这些应用程序和设备建立在Android平台之上和衍生物上的云服务 ，因此通过其整个开发生命周期，Android已经受到严格的安全计划。</p>
+<h5>Android系统设计是开源的。</h5>
+
+<p>Android应用程序使用先进的硬件和软件，以及本地和提供的数据，通过平台暴露，为消费者带来创新和价值。为了实现这一价值，平台提供了一个应用程序环境，保护用户，数据，应用程序，设备和网络的机密性，完整性和可用性。<br>保护开放平台需要强大的安全架构和严格的安全程序。Android设计具有多层安全性，足够灵活以支持开放平台，同时仍保护平台的所有用户。有关报告安全问题和更新过程的信息，请参阅安全更新和资源。</p>
+<h5>Android是面向开发人员的。</h5>
+
+<p>安全控制旨在减轻开发人员的负担。考虑安全的开发人员可以轻松地使用和依赖灵活的安全控制。不熟悉安全的开发人员将受到系统安全默认值自带的防御。<br>除了提供一个稳定的平台来构建之外，Android还通过多种方式为开发人员提供了额外的支持。谷歌Android安全小组会在应用程式中寻找潜在的安全漏洞，并提供修正这些问题的方法。对于使用Google Play的设备，<strong>Play Services</strong>为关键软件库（例如用于保护应用程序通信的OpenSSL）提供安全更新。Android安全发布了一个测试<strong>SSL（nogotofail</strong>）的工具，帮助开发人员在他们正在开发的任何平台上找到潜在的安全问题。</p>
+<h5>Android面向用户设计的。</h5>
+
+<p>用户可以查看每个应用程序请求的权限，并控制这些权限。此设计包括攻击者会尝试执行常见攻击的预期，例如社交工程攻击，以提示服设备用户安装恶意软件，以及攻击Android上的第三方应用程序。Android旨在减少这些攻击的概率，并在攻击成功的情况下大大限制攻击的影响面。一旦用户手中有设备，Android安全就会继续进行：Android与 合作伙伴和公众合作，为正在继续接收安全更新的任何Android设备提供修补程序。</p>
+<p>Android的安全体系的基础是建立在系统设计的安全，开发者的编程设计，加上用户授权共同来实现的，那么对于开发者来说掌握一定的安全编程意识，了解Android的安全生态是必须的技能之一。</p>
+<h1>二 安全资料</h1>
+
+<blockquote>
+<p>Ｇｏｏｇｌｅ开发者博客： <a href="http://developers.googleblog.cn/" target="_blank" rel="external">http://developers.googleblog.cn/</a><br>ＦａｃｅＢｏｏｋ FCode官网：<a href="https://code.facebook.com/android/" target="_blank" rel="external">https://code.facebook.com/android/</a></p>
+<p>阿里聚安全：<a href="https://yq.aliyun.com/articles?spm=5176.100239.blogcont57088.1.eDGHli" target="_blank" rel="external">https://yq.aliyun.com/articles?spm=5176.100239.blogcont57088.1.eDGHli</a><br>360安全中心：<a href="http://blogs.360.cn/360safe/" target="_blank" rel="external">http://blogs.360.cn/360safe/</a><br>百度安全实验室：<a href="http://xlab.baidu.com/" target="_blank" rel="external">http://xlab.baidu.com/</a><br>腾讯御安全：<a href="http://yaq.qq.com/blog" target="_blank" rel="external">http://yaq.qq.com/blog</a></p>
+</blockquote>
+<h1>三 Android系统安全相关</h1>
+
+<h2>1.Android 系统框架解析</h2>
+
+
+
+<p><img src="./appsafe2/1-1.jpg" alt="系统架构图"><br>     　　　　　　　　　　　　　　　　　　　　　<br>Android为移动设备提供了开源平台和应用程序环境。<br>以下部分和页面介绍了Android平台的安全功能。图1总结了Android软件堆栈的各个级别的安全组件和注意事项。每个组件假设下面的组件已正确固定。除了以root身份运行的少量Android操作系统代码外，Linux内核上的所有代码都受应用程序沙箱的限制。<br>         　　<br>主要的Android平台构建块是：<br>设备硬件：Android运行在各种硬件配置，包括智能手机，平板电脑，手表，汽车，智能电视，OTT游戏盒和机顶盒。Android是与处理器无关的，但它利用一些特定于硬件的安全功能，如<code>ARM eXecute-Never</code>。<br>Android操作系统：核心操作系统构建在<code>Linux</code>内核之上。所有设备资源，如相机功能，GPS数据，蓝牙功能，电话功能，网络连接等都通过操作系统访问。<br>Android应用程序运行时：Android应用程序最常用Java编程语言编写，并在Android运行时（ART）中运行。然而，许多应用程序，包括核心Android服务和应用程序，是本机应用程序或包括本机库。ART和本机应用程序都在同一安全环境中运行，包含在应用程序沙箱中。应用程序获得文件系统的专用部分，可以在其中写入私有数据，包括数据库和原始文件。<br>Android应用扩展了Android核心操作系统。应用程序有两个主要来源：<br>预安装的应用程序：Android包括一组预安装的应用程序，包括电话，电子邮件，日历，网络浏览器和联系人。这些功能既可以作为用户应用程序，也可以提供其他应用程序可以访问的关键设备功能。预安装的应用程序可能是开源Android平台的一部分，或者它们可能由特定设备的设备制造商开发。<br>用户安装的应用程序：Android提供了一个支持任何第三方应用程序的开放式开发环境。Google Play为用户提供了数十万个应用程序。</p>
+<p>详细介绍：<br>Linux 内核层。在 2005 年被 Google 认识之前，Android 是<code>Android Inc.</code> 公司的初创产品。创业公司的特点之一是，他们倾向于最大限度地重复利用已经存在的组件，以减少其产品的时间和成本。 Android 公司选择 Linux 内核作为他们新平台的核心。在 Android 中，Linux 内核负责进程，内存，通信，文件系统管理等。虽然 Android 主要依赖于“<code>vanilla&quot; Linux</code> 内核功能，但是已经做出了系统操作所需的几个自定义更改。其中 Binder（一个驱动程序，提供对 Android 中的自定义 RPC / IPC 机制的支持），Ashmem（替代标准的 Linux 共享内存功能），<strong>Wakelocks</strong>（一种防止系统进入睡眠的机制）是最值得注意的更改[19]。虽然这些变化被证明在移动操作系统中非常有用，但它们仍然在 Linux 内核的主要分支之外。<br>本地用户空间层。通过本地用户空间，我们可了解在 Dalvik 虚拟机之外运行的所有用户空间组件，并且不属于 <code>Linux Kernel</code> 层。这个层的第一个组件是硬件抽象层（HAL），它与 Linux 内核和本地用户空间层之间实际上是模糊的。在 Linux 中，硬件驱动程序嵌入到内核中或作为模块动态加载。虽然 Android 是建立在 Linux 内核之上，它利用了一种非常不同的方法来支持新的硬件。相反，对于每种类型的硬件，Android 定义了一个 API，它由上层使用并用于与这种类型的硬件交互。硬件供应商必须提供一个软件模块，负责实现在 Android 中为这种特定类型的硬件定义的API。因此，此解决方案不再允许 Android 将所有可能的驱动程序嵌入内核，并禁用动态模块加载内核机制。提供此功能的组件在 Android 中称为硬件抽象层。此外，这样的架构解决方案允许硬件供应商选择许可证，在其下分发它们的驱动程序[18,19]。<br>内核通过启动一个名为 <code>init</code> 的用户空间进程来完成其启动。 此过程负责启动 Android 中的所有其他进程和服务，以及在操作系统中执行一些操作。 例如，如果关键服务在 Android 中停止应答，init 进程可以重新启动它。 该进程根据init.rc配置文件执行操作。 工具箱包括基本的二进制文件，在 Android [19]中提供shell工具的功能。<br>Android 还依赖于一些关键的守护进程。 它在系统启动时启动，并在系统工作时保持它们运行。 例如，rild（无线接口层守护进程，负责基带处理器和其他系统之间的通信），<code>servicemanager</code>（一个守护进程，它包含在 Android 中运行的所有<code>Binder</code> 服务的索引），adbd（Android Debug Bridge 守护进程，作为主机和目标设备之间的连接管理器）等。本地用户空间中最后一个组件是本地库。 有两种类型的本地库：来自外部项目的本地库，以及在 Android 自身中开发的本地库。 这些库被动态加载并为 Android 进程提供各种功能[19]。<br>应用程序框架层。 Dalvik 是 Android 的基于寄存器的虚拟机。它允许操作系统执行使用 Java 语言编写的 Android 应用程序。在构建过程中，Java 类被编译成由 Dalvik VM 解释的.dex文件。 Dalvik VM 特别设计为在受限环境中运行。此外，<code>Dalvik VM</code> 提供了与系统其余部分交互的功能，包括本地二进制和库。为了加速进程初始化过程，Android 利用了一个名为<code>Zygote</code>的特定组件。这是一个将所有核心库链接起来的特殊“预热”过程。当新应用程序即将运行时，Android 会从 <code>Zygote</code> 分配一个新进程，并根据已启动的应用程序的规范设置该进程的参数。该解决方案允许操作系统不将链接库复制到新进程中，从而加快应用程序启动操作。在 Android 中使用的 Java 核心库，是从 Apache Harmony 项目借用的。系统服务是 Android 的最重要的部分之一。 Android 提供了许多系统服务，它们提供了基本的移动操作系统功能，供 Android 应用开发人员在其应用中使用。 例如，<code>PackageManagerService</code>负责管理（安装，更新，删除等）操作系统中的 Android 包。 使用 JNI 接口系统服务可以与本地用户空间层的守护进程，工具箱二进制文件和本地库进行交互。 公共 API 到系统服务都是通过 Android 框架库提供的。 应用程序开发人员使用此 API 与系统服务进行交互。<br>Android 应用程序层。 Android 应用程序是在 Android 上运行的软件应用程序，并为用户提供大多数功能。<code>Stock Android</code> 操作系统附带了一些称为系统应用程序的内置应用程序。 这些是作为 AOSP 构建过程的一部分编译的应用程序。 此外，用户可以从许多应用市场安装用户应用，来扩展基本功能并向操作系统引入新的功能。</p>
+<p>可以直接阅读：<a href="http://www.zhauniarovich.com/pubs.html" target="_blank" rel="external">http://www.zhauniarovich.com/pubs.html</a>　对Ａｎｄｒｏｉｄ　Ｆｒａｍｗｏｒｋ介绍的非常详细。</p>
+<p>另外 说一下android系统的启动步骤（图1.2），方面我们对android了加深和理解！</p>
+<br>
+
+<p><img src="./appsafe2/3-1.jpg" alt="图1.2"></p>
+<pre><code>图1.2
+</code></pre><h2>２.Android权限管理</h2>
+
+<p>Android 是一个权限分隔的操作系统，其中每个应用都有其独特的系统标识（Linux 用户 ID 和组 ID）。系统各部分也分隔为不同的标识。Linux 据此将不同的应用以及应用与系统分隔开来(图1.1所示)。其他更详细的安全功能通过“权限”机制提供，此机制会限制特定进程可以执行的具体操作，并且根据 URI 权限授权临时访问特定的数据段。</p>
+<p>   在默认情况下任何应用都没有权限执行对其他应用、操作系统或用户有不利影响的任何操作。这包括读取或写入用户的私有数据（例如联系人或电子邮件）、读取或写入其他应用程序的文件、执行网络访问、使设备保持唤醒状态等。<br>由于每个 Android 应用都是在进程沙盒中运行，因此应用必须显式共享资源和数据。它们的方法是声明需要哪些权限来获取基本沙盒未提供的额外功能。应用以静态方式声明它们需要的权限，然后 Android 系统提示用户同意。<br>应用沙盒不依赖用于开发应用的技术。特别是，Dalvik VM 不是安全边界，任何应用都可运行原生代码（请参阅 Android NDK）。各类应用 — Java、原生和混合 — 以同样的方式放在沙盒中，彼此采用相同程度的安全防护。<br>应用签名<br>所有 APK（.apk 文件）都必须使用证书签名，其私钥（key）由开发者持有。此证书用于识别应用的作者。证书不需要由证书颁发机构签署；Android 应用在理想情况下可以而且通常也是使用自签名证书。证书在 Android 中的作用是识别应用的作者,也就是应用的唯一性。这允许系统授予或拒绝应用对签名级权限的访问，以及授予或拒绝应用获得与另一应用相同的 Linux 身份的请求。</p>
+<h4>系统权限</h4>
+
+
+<p>系统权限则是android系统级提供的一套权限限制机制。<br>由于在进程级实施安全性，因此任何两个软件包的代码通常都不能在同一进程中运行，因为它们需要作为不同的 Linux 用户运行。您可以在每个软件包的 AndroidManifest.xml 的 manifest 标记中使用 sharedUserId 属性，为它们分配相同的用户 ID。这样做以后，出于安全目的，两个软件包将被视为同一个应用，具有相同的用户 ID 和文件权限。请注意，为保持安全性，只有两个签署了相同签名（并且请求相同的 sharedUserId）的应用才被分配同一用户 ID。<br>应用存储的任何数据都会被分配该应用的用户 ID，并且其他软件包通常无法访问这些数据。使用 <code>getSharedPreferences(String, int)</code>、<code>openFileOutput(String, int)</code> 或 <code>openOrCreateDatabase(String, int, SQLiteDatabase.CursorFactory)</code>创建新文件时，可以使用<code>MODE_WORLD_READABLE</code>和/或 <code>MODE_WORLD_WRITEABLE</code>标记允许任何其他软件包读取/写入文件。设置这些标记时，文件仍归您的应用所有，但其全局读取和/或写入权限已适当设置，使任何其他应用都可看见它。<br>读取联系人，短信，调用相机其实都算系统提供权限，系统权限也包括签名范畴，权限有权限组，一般一组权限里面包含很多权限， 这个概念可以参考谷歌API 文档的描述。<br>例如，需要监控传入的短信的应用要指定：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="tag">&lt;<span class="name">manifest</span> <span class="attr">xmlns:android</span>=<span class="string">"http://schemas.android.com/apk/res/android"</span></span></div><div class="line">    <span class="attr">package</span>=<span class="string">"com.android.app.myapp"</span> &gt;</div><div class="line">    <span class="tag">&lt;<span class="name">uses-permission</span> <span class="attr">android:name</span>=<span class="string">"android.permission.RECEIVE_SMS"</span> /&gt;</span></div><div class="line"><span class="tag">&lt;/<span class="name">manifest</span>&gt;</span></div></pre></td></tr></table></figure>
+<pre><code>代码1.0
+</code></pre><h4>应用用户权限</h4>
+
+<p>用户权限则是用户级别上层无法对linux沙箱系统操作，不同应用之间的操作权限，比如访问SD卡，访问其他应用的数据等，下图中就是两个A，B应用互相之间的权限访问，如果A只有对B c数据的操作，那么其他C2，C3是无法有权限操作，那么这种就是用户应用权限，支付宝提供第三方吊起支付就是其中的列子。</p>
+<p><img src="./appsafe2/5-1.jpg" alt="图1.3"></p>
+<h4>API6.0+， Runtime 权限</h4>
+
+<p>从 Android 6.0（API 级别 23）开始，用户开始在应用运行时向其授予权限，而不是在应用安装时授予。此方法可以简化应用安装过程，因为用户在安装或更新应用时不需要授予权限。它还让用户可以对应用的功能进行更多控制；例如，用户可以选择为相机应用提供相机访问权限，而不提供设备位置的访问权限。用户可以随时进入应用的“Settings”屏幕调用权限。</p>
+<p>在所有版本的 Android 中，您的应用都需要在其应用清单中同时声明它需要的正常权限和危险权限，如声明权限（代码1.0）中所述。不过，该声明的影响因系统版本和应用的目标 SDK 级别的不同而有所差异：</p>
+<p>如果设备运行的是 Android 5.1 或更低版本，或者应用的目标 SDK 为 22 或更低：如果您在清单中列出了危险权限，则用户必须在安装应用时授予此权限；如果他们不授予此权限，系统根本不会安装应用。<br>如果设备运行的是 Android 6.0 或更高版本，或者应用的目标 SDK 为 23 或更高：应用必须在清单中列出权限，并且它必须在运行时请求其需要的每项危险权限。用户可以授予或拒绝每项权限，且即使用户拒绝权限请求，应用仍可以继续运行有限的功能。</p>
+<p>注：从 Android 6.0（API 级别 23）开始，用户可以随时从任意应用调用权限，即使应用面向较低的 API 级别也可以调用。无论您的应用面向哪个 API 级别，您都应对应用进行测试，以验证它在缺少需要的权限时行为是否正常。</p>
+<h2>３.Android安全机制</h2>
+
+
+
+<p>   本段将是android安全机制的核心，为何我要单独区分出来介绍，开始我就提到，安全体系的基础是建立在系统设计的安全，开发者的编程设计，加上用户授权共同来实现的。<br>我们该如何理解这句话呢，这是个很头痛的问题。系统设计就是基于linux内核的android系统框架，自带沙箱隔离，进程独立运行空间，这个很好理解。编程设计所谓的基于权限控制层开放给开发者，去限制一些应用层的权限，包括对系统隐私操作，用户数据，其他程序的私有数据等，用户授权也是基于用户考虑的，如果开发者开放了权限，在用户为授权情况，这种操作也是被系统禁止的，因此这三方完成了安卓安全的生态体系闭环。<br>当然还有基于网络协议安全，这是所有互联网系统OS都存在的安全问题，跟Android开放性没必然的关联。</p>
+<p>用户注意安全问题 可参考： Tips for keeping your Android device safe</p>
+<h1> 总结</h1>
+
+
+
+<p>本章介绍了Android安全预览，Android系统构成和权限管理，以及衍生的著名网企的安全讨论。</p>
+<p><strong>参考：</strong></p>
+<blockquote>
+<p>Android开发者指南 :<a href="https://source.android.com/security" target="_blank" rel="external">https://source.android.com/security</a> </p>
+<p> 谷歌开发者博客 :<a href="http://developers.googleblog.cn/" target="_blank" rel="external">http://developers.googleblog.cn/</a> （）</p>
+<p>《安卓内核情景解析》一书</p>
+</blockquote>
+
+
+                <hr>
+
+                
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2017/03/02/safeinfoall/"
+                    data-title="APP安全（二）终端安全全预览"
+                    data-url="http://tamicer.com/2017/03/02/safeinfoall/"
+                    data-images=""
+                    data-content="移动端安全越来越重视。谷歌从7.0开始加固了内核，收回众多权限(见google开发者加固的7.... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+
+
+                </div>
+
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                    
+                        <li class="next">
+                            <a href="/2017/02/20/app-enc-dec/" data-toggle="tooltip" data-placement="top" title="Retrofit/OkHttp API接口加固技术实践（下）">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2017/03/02/safeinfoall/"
+                        data-title="APP安全（二）终端安全全预览"
+                        data-url="http://tamicer.com/2017/03/02/safeinfoall/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2017/03/02/safeinfoall/";
+    var disqus_url = "http://tamicer.com/2017/03/02/safeinfoall/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
