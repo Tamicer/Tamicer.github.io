@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          APP安全（三）Android 安全要点和规范核心详析 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2017/04/20/save-sample/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                    </div>
+                    <h1>APP安全（三）Android 安全要点和规范核心详析</h1>
+                    <h2 class="subheading">安全系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2017-04-20
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <h1>安全要点</h1>
+
+<p>Android 操作系统内置了安全功能，可显著降低应用出现安全问题的频率及其造成的影响。系统经过精心设计，通常情况下只需使用默认的系统和文件权限即可打造自己的应用，而无需费心针对安全性作出艰难决策。<br>下面是一些可以帮助打造安全应用的核心安全功能：<br>Android 应用沙盒，可以将应用数据和代码执行与其他应用分隔开来。<br>应用框架，可以稳健实现常见的安全性功能，例如加密、权限和安全 IPC。<br>ASLR、NX、ProPolice、safe_iop、OpenBSD dlmalloc、OpenBSD calloc 和 Linux mmap_min_addr 等多项技术，可降低与常见内存管理错误相关的风险。<br>加密的文件系统，启用后可保护丢失或被盗设备上的数据。<br>用户授予的权限，可用来限制对系统功能和用户数据的使用。<br>应用定义的权限，可针对各个应用分别控制应用数据。</p>
+<p>不过，谷歌仍建议开发者熟悉一下本文档中所述的<strong> Android 安全性最佳做法</strong>。遵循这些最佳做法，养成常规编码习惯，就可以有效减少因疏忽而引发安全问题的几率，防止对用户产生不利的影响。</p>
+<h1>存储数据</h1>
+
+<p>对于 Android 应用，最常见的安全问题就是其他应用能否访问用户保存在设备上的数据。下面介绍了将数据保存在设备上的三种基本方法：</p>
+<h3>使用内部存储空间</h3>
+
+<p>默认情况下，您在<a href="https://developer.android.com/guide/topics/data/data-storage.html#filesInternal" target="_blank" rel="external">内部存储空间</a>中创建的文件仅供您的应用访问。这项保护措施由 Android 实现，而且这对于大多数应用来说足够了。<br>一般情况下，建议您尽量避免将 <a href="https://developer.android.com/reference/android/content/Context.html#MODE_WORLD_WRITEABLE" target="_blank" rel="external">MODE_WORLD_WRITEABLE</a><br> 或 <a href="https://developer.android.com/reference/android/content/Context.html#MODE_WORLD_READABLE" target="_blank" rel="external">MODE_WORLD_READABLE</a><br> 模式用于 IPC 文件，因为在这两种模式下，系统不提供针对特定应用限制数据访问的功能，也不会对数据格式进行任何控制。如果您想与其他应用进程共享数据，不妨考虑使用<a href="https://developer.android.com/guide/topics/providers/content-providers.html" target="_blank" rel="external">内容提供程序</a>，它可以为其他应用提供读取和写入权限，还能针对各种具体情况授予动态权限。<br>要为敏感数据提供额外的保护，您可以选择使用该应用无法直接访问的密钥来对本地文件进行加密。例如，您可以将密钥存储在 <a href="https://developer.android.com/reference/java/security/KeyStore.html" target="_blank" rel="external">KeyStore</a><br> 中，并使用未存储在相应设备上的用户密码加以保护。不过，如果攻击者获得超级用户权限（ｒｏｏｔ），就可以在用户输入密码时进行监控，数据也就失去了这层保护屏障；但是，这种方式可以保护丢失设备上的数据，而无需进行<a href="http://source.android.com/tech/encryption/index.html" target="_blank" rel="external">文件系统加密</a>。</p>
+<p>###使用外部存储设备<br>在<a href="https://developer.android.com/guide/topics/data/data-storage.html#filesExternal" target="_blank" rel="external">外部存储设备</a>（例如 SD 卡）上创建的文件不受任何读取和写入权限的限制。对于外部存储设备中的内容，不仅用户可以将其移除，而且任何应用都可以对其进行修改，因此最好不要使用外部存储设备来存储敏感信息。<br>就像处理来源不受信任的数据一样，您应对外部存储设备中的数据<a href="https://developer.android.com/training/articles/security-tips.html#InputValidation" target="_blank" rel="external">执行输入验证</a>。强烈建议您不要在动态加载前将可执行文件或类文件存储在外部存储设备中。如果您的应用确实从外部存储设备中检索可执行文件，请在动态加载前对这些文件执行签名和加密验证。</p>
+<p>###使用内容提供者<br><a href="https://developer.android.com/guide/topics/providers/content-providers.html" target="_blank" rel="external">内容提供程序</a>提供结构化存储机制，可以将内容限制为仅供自己的应用访问，也可以将内容导出以供其他应用访问。如果您不打算向其他应用授予访问您的 <a href="https://developer.android.com/reference/android/content/ContentProvider.html" target="_blank" rel="external">ContentProvider</a><br> 的权限，请在应用清单中将其标记为 <a href="https://developer.android.com/guide/topics/manifest/provider-element.html#exported" target="_blank" rel="external">android:exported=false</a><br>；要允许其他应用访问存储的数据，请将 <a href="https://developer.android.com/guide/topics/manifest/provider-element.html#exported" target="_blank" rel="external">android:exported</a><br> 属性设置为 “true”<br>。<br>在创建要导出以供其他应用使用的 <a href="https://developer.android.com/reference/android/content/ContentProvider.html" target="_blank" rel="external">ContentProvider</a><br> 时，您可以在清单中指定允许读取和写入的单一<a href="https://developer.android.com/guide/topics/manifest/provider-element.html#prmsn" target="_blank" rel="external">权限</a>，也可以针对读取和写入操作分别指定权限。我们建议您仅对需要完成相应任务的应用授予权限。请注意，与其移除权限而影响到现有用户，不如以后要使用新功能时再添加权限。<br>如果您要使用内容提供程序仅在自己的应用之间共享数据，最好将 <a href="https://developer.android.com/guide/topics/manifest/permission-element.html#plevel" target="_blank" rel="external">android:protectionLevel
+</a> 属性设置为 “signature”<br> 保护级别。签名权限不需要用户确认，因此，这种方式不仅能提升用户体验，而且在相关应用使用相同的密钥进行<a href="https://developer.android.com/tools/publishing/app-signing.html" target="_blank" rel="external">签名</a>来访问数据时，还能更好地控制对内容提供程序数据的访问。<br>内容提供程序还可以通过以下方式提供更细化的访问权限：声明 <a href="https://developer.android.com/guide/topics/manifest/provider-element.html#gprmsn" target="_blank" rel="external">android:grantUriPermissions
+</a> 属性，并使用用来启动组件的 <a href="https://developer.android.com/reference/android/content/Intent.html" target="_blank" rel="external">Intent</a><br> 对象中的 <a href="https://developer.android.com/reference/android/content/Intent.html#FLAG_GRANT_READ_URI_PERMISSION" target="_blank" rel="external">FLAG_GRANT_READ_URI_PERMISSION</a><br> 和 <a href="https://developer.android.com/reference/android/content/Intent.html#FLAG_GRANT_WRITE_URI_PERMISSION" target="_blank" rel="external">FLAG_GRANT_WRITE_URI_PERMISSION</a><br> 标记。使用 <a href="https://developer.android.com/guide/topics/manifest/grant-uri-permission-element.html" target="_blank" rel="external"><grant-uri-permission element=""></grant-uri-permission></a><br> 还能进一步限制这些权限的范围。<br>访问内容提供程序时，请使用参数化的查询方法（例如 <a href="https://developer.android.com/reference/android/content/ContentProvider.html#query(android.net.Uri, java.lang.String[], java.lang.String, java.lang.String[], java.lang.String" target="_blank" rel="external">query()</a>)<br>、<a href="https://developer.android.com/reference/android/content/ContentProvider.html#update(android.net.Uri, android.content.ContentValues, java.lang.String, java.lang.String[]" target="_blank" rel="external">update()</a>)<br> 和 <a href="https://developer.android.com/reference/android/content/ContentProvider.html#delete(android.net.Uri, java.lang.String, java.lang.String[]" target="_blank" rel="external">delete()</a>)<br>），以免产生来源不受信任的 SQL 注入风险。请注意，如果以组合用户数据的方式构建 selection<br> 参数，然后再将其提交至参数化方法，则使用参数化方法可能不够安全。<br>请不要误以为提供写入权限很安全。设想一下，写入权限允许使用 SQL 语句，这使得攻击者可以通过使用各种 WHERE<br> 子句以及对相关结果进行解析来确认某些数据。例如，如果攻击者想要探查通话记录中是否存在某个特定电话号码，只要该号码已经存在，攻击者就可以通过修改其中的一行来获知。如果内容提供程序数据采用可预测的结构，那么授予写入权限相当于同时提供了读取和写入权限。</p>
+<h1>使用权限</h1>
+
+<p>由于 Android 通过沙盒机制管理各个应用，因此应用必须以明确的方式共享资源和数据。应用会通过声明自己需要的权限来获取基本沙盒未提供的额外功能（包括对相机等设备功能的访问权限），从而实现这一点。</p>
+<p>##请求权限<br>我们建议您尽量减少应用请求的权限。如果不具备对敏感数据的访问权限，就能降低不慎误用这类权限的风险，并可提高用户的采用率，同时让您的应用不那么容易受到攻击者的攻击。一般来说，如果您的应用无需某项权限也能正常运行，就不要请求该权限。<br>如果可以采用不需要任何权限的方式设计应用，建议采用这种方式。例如，与其请求访问设备信息的权限以创建唯一标识符，不如为您的应用创建一个 <a href="https://developer.android.com/reference/java/util/UUID.html" target="_blank" rel="external">GUID</a>（请参阅<a href="https://developer.android.com/training/articles/security-tips.html#UserData" target="_blank" rel="external">处理用户数据</a>的相关部分）。或者，您也可以不将数据存储在外部存储设备（需要请求权限），而将其存储在内部存储空间。<br>除了请求权限之外，您的应用也可以使用 <a href="https://developer.android.com/guide/topics/manifest/permission-element.html" target="_blank" rel="external"><permissions>
+</permissions></a> 来保护对安全性要求较高且会被其他应用访问的 IPC，例如 <a href="https://developer.android.com/reference/android/content/ContentProvider.html" target="_blank" rel="external">ContentProvider</a><br>。一般而言，我们建议您尽量使用访问权限控制，而不使用需要用户确认的权限，因为权限管理对用户来说可能比较复杂。例如，对于同一开发者提供的不同应用之间的 IPC 通信，不妨使用 <a href="https://developer.android.com/guide/topics/manifest/permission-element.html#plevel" target="_blank" rel="external">“signature” 保护级别</a>。<br>请勿泄露受权限保护的数据。当您的应用通过 IPC 传输数据时可能会出现泄漏，不过，只有您的应用拥有特定权限时，才可能发生数据泄漏。应用 IPC 接口的客户端可能没有相同的数据访问权限。要详细了解潜在影响以及这类问题发生的频率，请参阅在 USENIX 上发布的这篇<a href="https://www.usenix.org/legacy/event/sec11/tech/full_papers/Felt.pdf" target="_blank" rel="external">研究论文</a>。</p>
+<p>##创建权限<br>一般来说，您应在满足安全性要求的前提下尽可能少定义权限。对于大多数应用来说，它们很少会创建新权限，因为<a href="https://developer.android.com/reference/android/Manifest.permission.html" target="_blank" rel="external">系统定义的权限</a>就能满足大部分的需求。请视需要使用现有权限执行访问权限检查。<br>如果必须创建新权限，请尽量考虑创建 <a href="https://developer.android.com/guide/topics/manifest/permission-element.html#plevel" target="_blank" rel="external">“signature” 保护级别</a>的权限。“签名”级别权限的内容对用户完全透明开放，而且只有由执行权限检查的应用的开发者签名的应用才可访问这些内容。<br>如果您创建了 <a href="https://developer.android.com/guide/topics/manifest/permission-element.html#plevel" target="_blank" rel="external">“dangerous” 保护级别</a>的权限，则事情就会更加复杂，您需要注意：<br>该权限必须包含一个字符串，向用户清楚明确地说明他们需要做出的安全决策。<br>该权限的字符串必须翻译成多种不同语言。<br>用户可能会因为权限含糊不清或存在风险而选择不安装应用。<br>应用可能会在权限创建程序尚未安装的情况下请求权限。</p>
+<p>这些事情会给开发者带来巨大的非技术性挑战，也让用户感到困惑，因此我们不鼓励使用 “dangerous” 权限级别。</p>
+<h1>使用网络</h1>
+
+
+<p>网络交易涉及传输对用户而言可能比较私密的数据，因此本质上就存在安全风险。用户开始逐渐意识到移动设备存在的隐私泄漏问题，尤其是在通过设备进行网络交易时。因此，请务必对您的应用采取各种最佳做法，以始终确保用户的数据安全。</p>
+<p>###使用 IP 网络<br>Android 网络运行机制与其他 Linux 环境差别不大，关键是确保对敏感数据使用合适的协议，如使用 <a href="https://developer.android.com/reference/javax/net/ssl/HttpsURLConnection.html" target="_blank" rel="external">HttpsURLConnection</a><br> 来保证网络流量安全。我们建议您在服务器支持 HTTPS 的情况下一律使用 HTTPS（而非 HTTP），因为移动设备经常会连接到不安全的网络（如公共 WLAN 热点）。<br>您可以使用 <a href="https://developer.android.com/reference/javax/net/ssl/SSLSocket.html" target="_blank" rel="external">SSLSocket</a><br> 类轻松实现经过身份验证和加密的套接字层通信。考虑到 Android 设备会频繁使用 WLAN 连接到不安全的无线网络，我们强烈建议所有通过网络通信的应用使用安全的网络。<br>我们发现有些应用使用 <a href="http://en.wikipedia.org/wiki/Localhost" target="_blank" rel="external">localhost</a> 网络端口处理敏感的 IPC。我们不建议采用这种方法，因为设备上的其他应用也可以访问这些接口。相反，您应该使用可通过 <a href="https://developer.android.com/reference/android/app/Service.html" target="_blank" rel="external">Service</a><br> 等进行身份验证的 Android IPC 机制。（绑定到 INADDR_ANY 比使用回送功能还要糟糕，因为这样一来，您的应用可能会收到任何位置发来的请求。）<br>此外，还有一个需要再三强调的常见问题就是，切勿相信通过 HTTP 或其他非安全协议下载的数据，包括 <a href="https://developer.android.com/reference/android/webkit/WebView.html" target="_blank" rel="external">WebView</a><br> 中的输入验证以及对通过 HTTP 发出的 intent 的任何响应。</p>
+<p>###使用电话网络<br>短信 协议主要是为用户间通信设计的，并不适合要传输数据的应用。考虑到短信的局限性，因此，想从网络服务器向用户设备上安装的应用发送数据消息时，我们强烈建议您使用 <a href="https://developer.android.com/google/gcm/index.html" target="_blank" rel="external">Google 云消息传递</a> (GCM) 和 IP 网络。<br>请注意，短信在网络上和设备上均未经过加密，也没有经过严格的身份验证。而且，短信的所有接收者都应明白，您的应用收到的短信可能来自恶意用户。因此，切勿使用未经身份验证的短信数据执行敏感命令。还需要注意的是，短信可能包含欺骗性内容，也有可能在网络上传输时被拦截。在 Android 设备上，短信会以广播 intent 的形式传输，因此可能会被其他拥有 <a href="https://developer.android.com/reference/android/Manifest.permission.html#READ_SMS" target="_blank" rel="external">READ_SMS</a><br> 权限的应用读取或捕获。</p>
+<p>#执行输入验证<br>无论应用是在哪种平台上运行，输入验证功能不完善都是影响应用的最常见安全问题。Android 为此提供了平台级对策，可降低应用出现输入验证问题的可能性。如果可行，请尽量使用这些功能。另请注意，选择类型安全的语言通常也有助于降低出现输入验证问题的可能性。<br>如果使用原生代码，那么系统从文件读取、通过网络接收或从 IPC 接收的任何数据都有可能会引发安全问题。最常见的问题包括<a href="http://en.wikipedia.org/wiki/Buffer_overflow" target="_blank" rel="external">缓冲区溢出</a>、<a href="http://en.wikipedia.org/wiki/Double_free#Use_after_free" target="_blank" rel="external">释放后重用</a>和<a href="http://en.wikipedia.org/wiki/Off-by-one_error" target="_blank" rel="external">差一错误</a>。Android 为此提供了多项技术，例如 ASLR 和 DEP ，可以降低这些错误被利用的可能性，但无法解决根本问题。因此，请谨慎管理指针和缓冲区，预防这些漏洞造成破坏。<br>使用基于字符串的动态语言（如 JavaScript 和 SQL）也可能因为转义字符和<a href="http://en.wikipedia.org/wiki/Code_injection" target="_blank" rel="external">脚本注入</a>而出现输入验证问题。<br>如果使用提交到 SQL 数据库或内容提供程序的查询中的数据，也可能出现 SQL 注入问题。最好的预防措施是使用参数化查询（请参阅上文<a href="https://developer.android.com/training/articles/security-tips.html#ContentProviders" target="_blank" rel="external">内容提供程序</a>部分的相关内容）。将权限限制为只读或只写，也可以降低 SQL 注入引发破坏的可能性。<br>如果您无法使用上述安全功能，我们强烈建议您使用结构合理的数据格式，并验证数据是否符合预期的格式。虽然将字符列入黑名单或替换字符是一种有效的策略，但这些技术在实际操作中很容易出错，因此应尽量避免使用。</p>
+<h1>处理用户数据</h1>
+
+<p>通常情况下，确保用户数据安全的最佳做法是尽量避免使用会访问用户敏感数据或个人数据的 API。如果您拥有用户数据的访问权限，并且能够避免存储或传输这些信息，那么就不要存储或传输这些数据。最后，请评估您的应用逻辑能否使用经过哈希算法处理或不可逆的数据格式进行实现。例如，您的应用可能会使用电子邮件地址的哈希值作为主要密钥，以避免传输或存储电子邮件地址。这样可降低在无意之中泄露数据的可能性，还可以降低攻击者尝试利用您的应用搞破坏的可能性。<br>请注意，如果您的应用会访问密码或用户名等个人信息，部分司法辖区可能会要求您提供隐私权政策，以说明您如何使用或存储这类数据。因此，遵循安全最佳做法（即尽可能减少对用户数据的访问）也有助于简化合规工作。<br>此外，您还应考虑自己的应用是否会在无意之中将个人信息泄露给其他方，如广告使用的第三方组件或应用使用的第三方服务。如果不知道某个组件或服务为什么需要个人信息，就不要提供个人信息。通常，减少您的应用对个人信息的访问，可以降低引发这方面问题的可能性。<br>如果必须访问敏感数据，请判断这些信息是必须传输至服务器，还是可以在客户端上执行相应操作。建议您在客户端上运行所有需要使用敏感数据的代码，以避免传输用户数据。<br>此外，请务必不要使用权限过于宽松的 IPC、完全没有写入限制的文件或网络套接字，避免在无意之中将用户数据泄露给设备上的其他应用。这属于一种造成受权限保护的数据遭泄露的特殊情况，我们已在<a href="https://developer.android.com/training/articles/security-tips.html#RequestingPermissions" target="_blank" rel="external">请求权限</a>部分讨论过。<br>如果需要 GUI ，请创建一个较长的具有唯一性的编号并加以存储。请勿使用可能与个人信息关联的电话标识符，如电话号码或 IMEI。有关此主题的详情，请参阅 <a href="http://android-developers.blogspot.com/2011/03/identifying-app-installations.html" target="_blank" rel="external">Android 开发者博客</a>。<br>向设备上的日志写入内容时，请务必谨慎小心。在 Android 中，日志是共享资源，拥有 <a href="https://developer.android.com/reference/android/Manifest.permission.html#READ_LOGS" target="_blank" rel="external">READ_LOGS</a><br> 权限的所有应用均可访问。即使电话日志数据是临时数据并会在重新启动时清空，不当记录用户信息也可能在无意之中将用户数据泄露给其他应用。</p>
+<h1>使用 WebView</h1>
+
+
+<p>由于 <a href="https://developer.android.com/reference/android/webkit/WebView.html" target="_blank" rel="external">WebView</a><br> 使用的网络内容可能包含 HTML 和 JavaScript，当的使用可能引入常见的网络安全问题，例如<a href="http://en.wikipedia.org/wiki/Cross_site_scripting" target="_blank" rel="external">跨站脚本攻击</a>（JavaScript 注入）。Android 内置了多种机制，可将 <a href="https://developer.android.com/reference/android/webkit/WebView.html" target="_blank" rel="external">WebView</a><br> 的功能限制为您应用所需的最低功能，以缩小这些潜在问题的影响范围。<br>如果您的应用不直接使用 <a href="https://developer.android.com/reference/android/webkit/WebView.html" target="_blank" rel="external">WebView</a><br> 中的 JavaScript，请<em>勿</em>调用 <a href="https://developer.android.com/reference/android/webkit/WebSettings.html#setJavaScriptEnabled(boolean" target="_blank" rel="external">setJavaScriptEnabled()</a>)<br>。部分示例代码会使用这种方法，不过您可能需要在实际应用时根据具体情况进行调整。因此，如果不需要使用这种调用方法，请将其移除。默认情况下，<a href="https://developer.android.com/reference/android/webkit/WebView.html" target="_blank" rel="external">WebView</a><br> 不会执行 JavaScript，因此不可能出现跨站脚本攻击这样的安全问题。<br><a href="https://developer.android.com/reference/android/webkit/WebView.html#addJavascriptInterface(java.lang.Object, java.lang.String" target="_blank" rel="external">addJavaScriptInterface()</a>)<br> 允许 JavaScript 调用正常情况下是为 Android 应用预留的操作，因此在使用时请格外小心。如果要使用，请仅将 <a href="https://developer.android.com/reference/android/webkit/WebView.html#addJavascriptInterface(java.lang.Object, java.lang.String" target="_blank" rel="external">addJavaScriptInterface()</a>)<br> 用于所有输入内容都可信的网页。如果您接受不受信任的输入内容，那么不受信任的 JavaScript 可能会调用您应用中的 Android 方法。一般情况下，我们建议您仅将 <a href="https://developer.android.com/reference/android/webkit/WebView.html#addJavascriptInterface(java.lang.Object, java.lang.String" target="_blank" rel="external">addJavaScriptInterface()</a>)<br> 用于应用 APK 内含的 JavaScript。<br>如果您的应用通过 <a href="https://developer.android.com/reference/android/webkit/WebView.html" target="_blank" rel="external">WebView</a><br> 访问敏感数据，您可能需要使用 <a href="https://developer.android.com/reference/android/webkit/WebView.html#clearCache(boolean" target="_blank" rel="external">clearCache()</a>)<br> 方法来删除本地存储的所有文件。您也可以使用服务器端标头（例如 no-cache<br>）来指示应用不应缓存特定内容。<br>在 Android 4.4（API 级别 19）之前平台上运行的设备使用的 <a href="https://developer.android.com/reference/android/webkit/package-summary.html" target="_blank" rel="external">webkit</a><br> 版本存在多个安全问题。如果您的应用在这些设备上运行，解决方法是确认 <a href="https://developer.android.com/reference/android/webkit/WebView.html" target="_blank" rel="external">WebView</a><br>对象只显示值得信任的内容。还应使用可更新的安全 <a href="https://developer.android.com/reference/java/security/Provider.html" target="_blank" rel="external">Provider</a><br> 对象确保您的应用在 SSL 中不会暴露给潜在的漏洞，如<a href="https://developer.android.com/training/articles/security-gms-provider.html" target="_blank" rel="external">更新您的安全提供程序以防范 SSL 攻击</a>中所述。如果您的应用必须从开放网络渲染内容，请考虑提供您自己的渲染程序，以便使用最新的安全补丁程序保持其处于最新状态。</p>
+<p>##处理凭据<br>一般情况下，我们建议您尽量降低要求用户凭据的频率；这样会让钓鱼攻击显得比较可疑，从而能够降低其成功率。作为替代方法，您可以使用授权令牌并根据需要刷新。<br>请尽量避免将用户名和密码存储在设备上。您可以使用用户提供的用户名和密码进行初始身份验证，然后使用针对特定服务的短时效授权令牌。<br>可供多个应用访问的服务应使用 <a href="https://developer.android.com/reference/android/accounts/AccountManager.html" target="_blank" rel="external">AccountManager</a><br> 进行访问。如果可行，请使用 <a href="https://developer.android.com/reference/android/accounts/AccountManager.html" target="_blank" rel="external">AccountManager</a><br> 类来调用基于云的服务；此外，请勿将密码存储在设备上。<br>使用 <a href="https://developer.android.com/reference/android/accounts/AccountManager.html" target="_blank" rel="external">AccountManager</a><br> 检索 <a href="https://developer.android.com/reference/android/accounts/Account.html" target="_blank" rel="external">Account</a><br> 后，请先确认 <a href="https://developer.android.com/reference/android/accounts/Account.html#CREATOR" target="_blank" rel="external">CREATOR</a><br> 再传送凭据，以免无意中将凭据传送给错误的应用。<br>如果凭据仅供您创建的应用使用，那么您可以使用 <a href="https://developer.android.com/reference/android/content/pm/PackageManager.html#checkSignatures(int, int" target="_blank" rel="external">checkSignature()</a>)<br> 验证访问 <a href="https://developer.android.com/reference/android/accounts/AccountManager.html" target="_blank" rel="external">AccountManager</a><br> 的应用。另外，如果只有一个应用使用该凭据，那么您可以使用 <a href="https://developer.android.com/reference/java/security/KeyStore.html" target="_blank" rel="external">KeyStore</a><br> 存储凭据。</p>
+<h1>使用加密</h1>
+
+<p>Android 不仅提供数据隔离机制、支持完整文件系统加密并提供安全通信通道，还提供大量使用加密来保护数据的算法。<br>一般情况下，请尝试根据您的具体情况使用已经实现的最高级别的框架。如果您需要从某个已知位置安全地检索文件，使用简单的 HTTPS URI 即可满足需要，无需具备加密知识。如果您需要一个安全通道，不妨考虑使用 <a href="https://developer.android.com/reference/javax/net/ssl/HttpsURLConnection.html" target="_blank" rel="external">HttpsURLConnection</a><br> 或 <a href="https://developer.android.com/reference/javax/net/ssl/SSLSocket.html" target="_blank" rel="external">SSLSocket</a><br>，而无需自行编写协议。<br>如果您需要实现自己的协议，我们强烈建议您<em>不要</em>实现自己的加密算法。请使用现有加密算法，例如 <a href="https://developer.android.com/reference/javax/crypto/Cipher.html" target="_blank" rel="external">Cipher</a><br> 类中提供的 AES 或 RSA 实现中的算法。<br>使用安全随机数生成器 <a href="https://developer.android.com/reference/java/security/SecureRandom.html" target="_blank" rel="external">SecureRandom</a><br> 初始化任意加密密钥 <a href="https://developer.android.com/reference/javax/crypto/KeyGenerator.html" target="_blank" rel="external">KeyGenerator</a><br>。如果使用的密钥不是安全随机数生成器生成的，那么会显著降低算法的强度，容易导致出现离线攻击。<br>如果您需要存储密钥以供重复使用，请使用 <a href="https://developer.android.com/reference/java/security/KeyStore.html" target="_blank" rel="external">KeyStore</a><br> 等可以长期存储和检索加密密钥的机制。</p>
+<h1>使用进程间通信</h1>
+
+<p>部分应用会尝试使用传统 Linux 技术（如网络套接字和共享文件）来实现 IPC。强烈建议您改为使用 Android 针对 IPC 提供的系统功能，例如使用 <a href="https://developer.android.com/reference/android/app/Service.html" target="_blank" rel="external">Service</a><br> 的 <a href="https://developer.android.com/reference/android/content/Intent.html" target="_blank" rel="external">Intent</a><br>、<a href="https://developer.android.com/reference/android/os/Binder.html" target="_blank" rel="external">Binder</a><br> 或 <a href="https://developer.android.com/reference/android/os/Messenger.html" target="_blank" rel="external">Messenger</a><br>，以及 <a href="https://developer.android.com/reference/android/content/BroadcastReceiver.html" target="_blank" rel="external">BroadcastReceiver</a><br>。Android IPC 机制让您验证连接至 IPC 的应用的身份，并为每种 IPC 机制设置安全策略。<br>许多安全元素在各种 IPC 机制之间是共享的。如果您的 IPC 机制并不打算让其他应用使用，请在该组件的清单元素（例如 <a href="https://developer.android.com/guide/topics/manifest/service-element.html#exported" target="_blank" rel="external"><service>
+</service></a> 元素）中将 android:exported<br> 属性设置为 “false”<br>。对于同一 UID 中包含多项进程的应用，这种做法非常有用；当您在以后的开发过程中决定不以 IPC 的形式提供功能但又不想重新编写代码时，这样做也会有所助益。<br>如果您的 IPC 预期供其他应用访问，您可以使用 <a href="https://developer.android.com/guide/topics/manifest/permission-element.html" target="_blank" rel="external"><permission>
+</permission></a> 元素应用安全策略。如果 IPC 是在您自己的不同应用（以同一密钥登录）之间使用，建议您在 <a href="https://developer.android.com/guide/topics/manifest/permission-element.html#plevel" target="_blank" rel="external">android:protectionLevel
+</a> 中使用 “signature”<br> 级别权限。</p>
+<p>###使用 Intent<br>Intent 是 Android 中异步 IPC 的首选机制。根据您的应用要求，您可能会对特定的应用组件使用 <a href="https://developer.android.com/reference/android/content/Context.html#sendBroadcast(android.content.Intent" target="_blank" rel="external">sendBroadcast()</a>)<br>、<a href="https://developer.android.com/reference/android/content/Context.html#sendOrderedBroadcast(android.content.Intent, java.lang.String" target="_blank" rel="external">sendOrderedBroadcast()</a>)<br> 或显式 intent。<br>请注意，排序后的广播可能会被接收者“占用”，因此它们可能不会传递到所有应用。如果您要发送必须传递到特定接收者的 intent，那么必须使用以 nameintent 声明接收者的显式 intent。<br>Intent 的发送器会验证接收者是否有权通过方法调用来指定非空权限。只有具有该权限的应用才会收到 intent。如果广播 intent 中的数据属于敏感数据，则不妨考虑应用相应权限，以确保恶意应用在没有相应权限的情况下无法注册以接收这些消息。在这些情况下，您还可以考虑直接调用接收器，而不是发起广播。<br><strong>注</strong>：请勿将 intent 过滤条件视为安全功能 - 组件可通过显式 intent 调用，但不一定拥有符合 intent 过滤条件的数据。您需要在 intent 接收器中执行输入验证，以确认 intent 的格式正确无误，可用于调用的接收器、服务或 Activity。</p>
+<p>###使用服务<br><a href="https://developer.android.com/reference/android/app/Service.html" target="_blank" rel="external">Service</a><br> 通常用于提供其他应用要使用的功能。每个服务类在其清单文件中都必须有相应的 <a href="https://developer.android.com/guide/topics/manifest/service-element.html" target="_blank" rel="external"><service>
+</service></a> 声明。<br>默认情况下，服务不会被导出，而且无法由任何其他应用调用。不过，如果您将任何 intent 过滤条件添加到服务声明中，那么默认就会导出该服务。最好是明确声明 <a href="https://developer.android.com/guide/topics/manifest/service-element.html#exported" target="_blank" rel="external">android:exported
+</a> 属性，以确保其行为符合您的需要。您也可以使用 <a href="https://developer.android.com/guide/topics/manifest/service-element.html#prmsn" target="_blank" rel="external">android:permission
+</a> 属性来保护服务。这样一来，其他应用只有在自己的清单中声明相应的 <a href="https://developer.android.com/guide/topics/manifest/uses-permission-element.html" target="_blank" rel="external"><uses-permission></uses-permission></a><br>元素，才能启动、停止或绑定到服务。<br>服务可以先调用 <a href="https://developer.android.com/reference/android/content/Context.html#checkCallingPermission(java.lang.String" target="_blank" rel="external">checkCallingPermission()</a>)<br>，然后再实现该调用，从而保护针对该服务、拥有相应权限的各个 IPC 调用。通常情况下，我们建议您在清单中使用声明式权限，因为这些权限不容易被忽略。</p>
+<p>下图代码块处理了怎么处理遇ｉｎｔｅｎｔ时，加入自定义权限的列子。</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">&lt;service </div><div class="line">  android:<span class="attr">description="string</span> resource<span class="string">" </span></div><div class="line">   android:directBootAware=["<span class="literal">true</span><span class="string">" | "</span><span class="literal">false</span><span class="string">"] </span></div><div class="line">   android:enabled=["<span class="literal">true</span><span class="string">" | "</span><span class="literal">false</span><span class="string">"] </span></div><div class="line">   android:exported=["<span class="literal">true</span><span class="string">" | "</span><span class="literal">false</span><span class="string">"]</span></div><div class="line">   android:icon="drawable resource<span class="string">" </span></div><div class="line">   android:isolatedProcess=["<span class="literal">true</span><span class="string">" | "</span><span class="literal">false</span><span class="string">"] </span></div><div class="line">   android:label="string resource<span class="string">" </span></div><div class="line">  android:name="string<span class="string">" android:permission="</span>ｃｏｍ．tamic. ｈａｎｄｌｅｓｅｒｖｉｃｅ<span class="string">" android:process="</span>string<span class="string">" &gt;</span></div><div class="line"> . . .</div><div class="line"> &lt;/service&gt;</div></pre></td></tr></table></figure>
+<p>###使用 Binder 和 Messenger 接口<br>使用 <a href="https://developer.android.com/reference/android/os/Binder.html" target="_blank" rel="external">Binder</a><br> 或 <a href="https://developer.android.com/reference/android/os/Messenger.html" target="_blank" rel="external">Messenger</a><br> 是 Android 中 RPC 式 IPC 的首选机制。它们提供了定义完善的接口，可让端点互相进行身份验证（如果需要）。<br>我们强烈建议您在设计接口时，采取无需针对接口进行特定权限检查的方式。应用清单中并未声明 <a href="https://developer.android.com/reference/android/os/Binder.html" target="_blank" rel="external">Binder</a><br> 和 <a href="https://developer.android.com/reference/android/os/Messenger.html" target="_blank" rel="external">Messenger</a><br> 对象，因此您无法向这些对象直接应用声明式权限。一般情况下，如果您在 <a href="https://developer.android.com/reference/android/app/Service.html" target="_blank" rel="external">Service</a><br> 或 <a href="https://developer.android.com/reference/android/app/Activity.html" target="_blank" rel="external">Activity</a><br> 中实现了这些对象，那么它们会继承 Service 或 Activity 的应用清单中声明的权限。如果您要创建一个需要身份验证和/或访问控件的接口，则这些控件必须以代码的形式明确添加到 <a href="https://developer.android.com/reference/android/os/Binder.html" target="_blank" rel="external">Binder</a><br> 或 <a href="https://developer.android.com/reference/android/os/Messenger.html" target="_blank" rel="external">Messenger</a><br> 接口中。<br>如果您提供的接口确实需要访问控件，请使用 <a href="https://developer.android.com/reference/android/content/Context.html#checkCallingPermission(java.lang.String" target="_blank" rel="external">checkCallingPermission()</a>)<br> 验证调用者是否具备所需权限。在代表调用者访问服务前，请务必执行此操作，因为您应用的身份会传递到其他接口。如果您调用的是 <a href="https://developer.android.com/reference/android/app/Service.html" target="_blank" rel="external">Service</a><br> 提供的接口，在没有访问指定服务的权限的情况下，<a href="https://developer.android.com/reference/android/content/Context.html#bindService(android.content.Intent, android.content.ServiceConnection, int" target="_blank" rel="external">bindService()</a>)<br> 调用可能会失败。如果您调用的是自己的应用提供的本地接口，不妨使用 <a href="https://developer.android.com/reference/android/os/Binder.html#clearCallingIdentity(" target="_blank" rel="external">clearCallingIdentity()</a>)<br> 来确保满足内部安全检查的要求。<br>如需了解有关通过服务执行 IPC 的详细信息，请参阅<a href="https://developer.android.com/guide/components/bound-services.html" target="_blank" rel="external">绑定服务</a>。</p>
+<p>###使用广播接收器<br><a href="https://developer.android.com/reference/android/content/BroadcastReceiver.html" target="_blank" rel="external">BroadcastReceiver</a><br> 会处理 <a href="https://developer.android.com/reference/android/content/Intent.html" target="_blank" rel="external">Intent</a><br> 发起的异步请求。<br>默认情况下，接收器会被导出，而且可以由任何其他应用调用。如果您的 <a href="https://developer.android.com/reference/android/content/BroadcastReceiver.html" target="_blank" rel="external">BroadcastReceiver</a><br> 预期供其他应用使用，您可能需要使用应用清单中的 <a href="https://developer.android.com/guide/topics/manifest/receiver-element.html" target="_blank" rel="external"><receiver></receiver></a><br> 元素向接收器应用安全权限。这样可防止没有相应权限的应用向 <a href="https://developer.android.com/reference/android/content/BroadcastReceiver.html" target="_blank" rel="external">BroadcastReceiver</a><br> 发送 intent。<br>同样可以设置权限：<br><figure class="highlight nix"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">&lt;Receiver　android:<span class="attr">description="string</span> resource<span class="string">" android:directBootAware=["</span><span class="literal">true</span><span class="string">" | "</span><span class="literal">false</span><span class="string">"] </span></div><div class="line">android:enabled=["<span class="literal">true</span><span class="string">" | "</span><span class="literal">false</span><span class="string">"] android:exported=["</span><span class="literal">true</span><span class="string">" | "</span><span class="literal">false</span><span class="string">"] </span></div><div class="line">android:permission="ｃｏｍ．timic．test<span class="string">"</span></div><div class="line"> android:process="string<span class="string">" &gt;</span></div><div class="line"> . . .&lt;/Receiver&gt;</div></pre></td></tr></table></figure></p>
+<p>##动态加载代码<br>我们强烈建议您不要从应用 APK 外部加载代码。这样做不仅会明显加大应用因代码注入或代码篡改产生问题的可能性，还会增加版本管理和应用测试的难度。这最终会导致无法验证应用的行为，因此，某些环境中可能会禁止采用此做法。<br>如果您的应用会动态加载代码，您务必谨记，运行动态加载的代码需要拥有与应用 APK 相同的安全权限。用户是因为您才决定安装您的应用的，因此他们希望您提供的是在您的应用内运行的代码，包括动态加载的代码。<br>与动态加载代码相关的主要安全风险与这样的代码需要来自可验证的来源有关。如果这些模块已直接纳入您的 APK 中，那么其他应用就无法对其进行修改；无论代码是原生库代码还是使用 <a href="https://developer.android.com/reference/dalvik/system/DexClassLoader.html" target="_blank" rel="external">DexClassLoader</a><br> 加载的类，均是如此。我们见过很多应用尝试从不安全的位置（例如，通过未加密的协议从网络上进行下载）或任何人都可写入内容的位置（如外部存储设备）加载代码的例子；对于前一种位置，网络上的用户将可以修改正在传输的内容，对于后一种位置，用户设备上的其他应用将可以修改设备上的内容。</p>
+<h1>虚拟机中的安全性</h1>
+
+
+<p>Dalvik 是 Android 的运行时虚拟机 (VM)。虽然 Dalvik 是专为 Android 而设计的，但是其他虚拟机中遇到的很多安全代码问题在 Android 中也会出现。一般情况下，您无需担心有关虚拟机的安全问题。您的应用在安全的沙盒环境中运行，因此系统中的其他进程无法访问您的代码或隐私数据。<br>如果希望深入了解虚拟机安全性，建议您研读有关这方面的一些现有文献。下面是两种比较受欢迎的资源：</p>
+<p><a href="http://www.securingjava.com/toc.html" target="_blank" rel="external">http://www.securingjava.com/toc.html</a><br><a href="https://www.owasp.org/index.php/Java_Security_Resources" target="_blank" rel="external">https://www.owasp.org/index.php/Java_Security_Resources</a></p>
+<p>本文将重点说明 Android 特有或不同于其他虚拟机环境的方面。对于熟悉在其他环境中进行虚拟机编程的开发者，需要注意为 Android 编写应用的两大不同之处：<br>有些虚拟机（例如 JVM 或 .net 运行时）会充当安全边界，将代码与基本操作系统功能分隔开来。在 Android 上，Dalvik 虚拟机不起安全边界的作用 — 应用沙盒是在操作系统级别进行实现的，因此 Dalvik 可与同一应用中的原生代码进行互操作，没有安全限制。<br>鉴于移动设备上的存储空间有限，开发者一般希望开发模块化应用并使用动态类加载。这样做时，请同时考虑您检索应用逻辑的来源以及您在本地存储应用逻辑的位置。请勿使用从未经验证的来源（如不安全的网络来源或外部存储设备）加载的动态类，因为这类代码可能遭到篡改，从而执行某些恶意操作。</p>
+<h1>原生代码中的安全性</h1>
+
+
+<p>一般情况下，我们鼓励开发者使用 Android SDK 来开发应用，而不要使用 <a href="https://developer.android.com/tools/sdk/ndk/index.html" target="_blank" rel="external">Android NDK</a> 编写原生代码。通过原生代码开发的应用比较复杂、可移植性较差，并且很可能会出现常见的内存损坏错误，如缓冲区溢出。<br>Android 使用 Linux 内核构建而成。如果您要使用原生代码，熟悉一下 Linux 开发安全最佳做法会非常有用。本文中没有介绍 Linux 安全做法，不过您可以查阅非常受欢迎的《Secure Programming for Linux and Unix HOWTO》，网址为 <a href="http://www.dwheeler.com/secure-programs" target="_blank" rel="external">http://www.dwheeler.com/secure-programs</a>。<br>Android 与大多数 Linux 环境之间的一个重要区别在于应用沙盒。在 Android 上，所有应用都在应用沙盒中运行，包括那些采用原生代码编写的应用。对于熟悉 Linux 的开发者而言，其本质完全可以汇总成一句话：每个应用都被赋予唯一的 UID 和非常有限的权限。这样就很好理解了。此外，即使您使用的是原生代码，也最好熟悉各种应用权限。</p>
+<blockquote>
+<p>本文原文出自谷歌安全博客，原文为英文文档，建议可以去亲自阅读下，每个人翻译后的意义理解就不一样！</p>
+</blockquote>
+<p><strong>推荐：</strong><br>更多要点请阅读  <a href="https://www.securecoding.cert.org/confluence/pages/viewpage.action?pageId=111509535" target="_blank" rel="external">安全具体编码实践  </a> ， 一定要仔细读，虽然是英文，相比代码不会陌生吧！</p>
+<p style="text-align:center;"><br>     <a>第一时间获资讯请关注微信公众号！ </a><br></p>
+
+
+
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+
+
+                <hr>
+
+                
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2017/04/20/save-sample/"
+                    data-title="APP安全（三）Android 安全要点和规范核心详析"
+                    data-url="http://tamicer.com/2017/04/20/save-sample/"
+                    data-images=""
+                    data-content="安全要点
+
+Android 操作系统内置了安全功能，可显著降低应用出现安全问题的频率及其造成的... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+
+
+                </div>
+
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                    
+                        <li class="next">
+                            <a href="/2017/03/02/safeinfoall/" data-toggle="tooltip" data-placement="top" title="APP安全（二）终端安全全预览">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2017/04/20/save-sample/"
+                        data-title="APP安全（三）Android 安全要点和规范核心详析"
+                        data-url="http://tamicer.com/2017/04/20/save-sample/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2017/04/20/save-sample/";
+    var disqus_url = "http://tamicer.com/2017/04/20/save-sample/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
