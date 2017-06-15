@@ -86,12 +86,12 @@
                     
 
                         
-                    
-
-                        
                         <li>
                             <a href="/archives/">Archives</a>
                         </li>
+                        
+                    
+
                         
                     
 
@@ -253,8 +253,21 @@
 <pre><code>
 dependencies {
  .....
-   compile &apos;com.tamic.novate:novate:1.2.8&apos;
+   compile &apos;com.tamic.novate:novate:1.5.0&apos;
 }
+</code></pre><p>Snapshots of the development version are available in Sonatype’s snapshots repository.</p>
+<p>Retrofit requires at minimum Java 7 or Android 2.3.</p>
+<p>Laster vension: <a href="https://bintray.com/neglectedbyboss/maven/Novate" target="_blank" rel="external">https://bintray.com/neglectedbyboss/maven/Novate</a>  最新版本点击去查询</p>
+<p><strong>加入权限</strong></p>
+<pre><code>&lt;uses-permission android:name=&quot;android.permission.INTERNET&quot; /&gt;
+&lt;uses-permission android:name=&quot;android.permission.ACCESS_WIFI_STATE&quot; /&gt;
+&lt;uses-permission android:name=&quot;android.permission.READ_PHONE_STATE&quot; /&gt;
+&lt;uses-permission android:name=&quot;android.permission.ACCESS_NETWORK_STATE&quot; /&gt;
+&lt;uses-permission android:name=&quot;android.permission.READ_EXTERNAL_STORAGE&quot; /&gt;
+&lt;uses-permission android:name=&quot;android.permission.WRITE_EXTERNAL_STORAGE&quot; /&gt;
+&lt;uses-permission android:name=&quot;android.permission.MOUNT_UNMOUNT_FILESYSTEMS&quot;/&gt;
+</code></pre><p><strong>混淆</strong>   </p>
+<pre><code>-keep class com.tamic.novate.** {*;}
 </code></pre><p>基本构建:</p>
 <pre><code>Novate novate = new Novate.Builder(this)
            .baseUrl(baseUrl)
