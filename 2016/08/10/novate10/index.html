@@ -86,6 +86,16 @@
                     
 
                         
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
                         <li>
                             <a href="/archives/">Archives</a>
                         </li>
@@ -93,18 +103,8 @@
                     
 
                         
-                    
-
-                        
                         <li>
                             <a href="/tags/">Tags</a>
-                        </li>
-                        
-                    
-
-                        
-                        <li>
-                            <a href="/about/">About</a>
                         </li>
                         
                     
@@ -167,13 +167,13 @@
                         
                           <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
-                        
-                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
-                        
                           <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
                           <a class="tag" href="/tags/#架构" title="架构">架构</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
                         
                           <a class="tag" href="/tags/#novate" title="novate">novate</a>
                         
@@ -316,12 +316,38 @@ observable.subscribeOn(Schedulers.io())
                .unsubscribeOn(Schedulers.io())
                .observeOn(AndroidSchedulers.mainThread());
 </code></pre><p>内部统一已进行线程控制，所有请求都采用以上线程形式，无需你手动添加。</p>
+<h1 id="RxAPi"><a href="#RxAPi" class="headerlink" title="RxAPi"></a>RxAPi</h1><p>RxGet为例子：多种方式供你选择</p>
+<p><strong>String</strong></p>
+<pre><code>novate.rxGet(&quot;path or url&quot;, parameters, new RxStringCallback() {
+
+
+ });
+</code></pre><p><strong>Bean</strong></p>
+<pre><code>novate.rxGet(&quot;path or url&quot;, parameters, new RxResultCallback&lt;ResultModel&gt;() {
+
+
+
+   });
+</code></pre><p><strong>List</strong></p>
+<pre><code>novate.rxGet(&quot;path or url&quot;, parameters, new RxListCallback&lt;List&lt;ResultModel&gt;&gt;() {
+
+
+      ....
+
+   });
+</code></pre><p><strong>File</strong></p>
+<pre><code>novate.rxGet(&quot;path or url&quot;, null, new RxFileCallBack(filePath, &quot;name.jpg&quot;) {
+
+
+
+   });
+</code></pre><p>其他方式RxApi同样的用法</p>
 <h1 id="Get"><a href="#Get" class="headerlink" title="Get"></a>Get</h1><p>   提供了<code>novate.executeGet（）</code>和<code>novate.get（）</code> 两个API<br>   区别如下：</p>
 <blockquote>
 <p><code>executeGet()</code> 来执行get请求，此方法会解析返回你需要的bean实体，并进行对返回格式的处理，并做异常处理。<br><code>novate.get()</code>不会帮你解析实体，并返回原生的<code>ResponseBody</code>，需要你自己对返回数据解析进行序列化。此方法定制化<br>低，可灵活使用！</p>
 </blockquote>
 <pre><code>
-novate.executeGet(&quot;you url&quot;, parameters, new Novate.ResponseCallBack&lt;NovateResponse&lt;ResultModel&gt;&gt;() {
+novate.executeGet(&quot;you url&quot;, parameters, new Novate.ResponseCallBack&lt;ResultModel&gt;() {
 
 
         @Override
@@ -330,7 +356,7 @@ novate.executeGet(&quot;you url&quot;, parameters, new Novate.ResponseCallBack&l
         }
 
         @Override
-        public void onSuccee(NovateResponse&lt;ResultModel&gt; response) {
+        public void onSuccee(ResultModel response) {
             // 这里novate已对ResponseBody进行解析返回，
         }
     });
@@ -774,13 +800,13 @@ if (!subscription.isUnsubscribed()) {
                        
                           <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
-                        
-                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
-                        
                           <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
                         
+                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
+                        
                           <a class="tag" href="/tags/#架构" title="架构">架构</a>
+                        
+                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
                         
                           <a class="tag" href="/tags/#novate" title="novate">novate</a>
                         
