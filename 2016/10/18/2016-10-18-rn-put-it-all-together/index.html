@@ -13,11 +13,11 @@
 
     <title>
         
-          Retrofit 2.0 超能实践（四），实现大文件多线程断点下载 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          React Native 项目实战 - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
-    <link rel="canonical" href="http://tamicer.com/2016/06/17/retrofit_004/">
+    <link rel="canonical" href="http://tamicer.com/2016/10/18/2016-10-18-rn-put-it-all-together/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -167,18 +167,14 @@
                         
                           <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
-                        
-                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
-                        
-                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                          <a class="tag" href="/tags/#ReactNative" title="ReactNative">ReactNative</a>
                         
                     </div>
-                    <h1>Retrofit 2.0 超能实践（四），实现大文件多线程断点下载</h1>
-                    <h2 class="subheading">RxJava+Retrofit 系列文章</h2>
+                    <h1>React Native 项目实战</h1>
+                    <h2 class="subheading"></h2>
                     <span class="meta">
                         Posted by Tamic on
-                        2016-06-17
+                        2016-10-18
                     </span>
                 </div>
             </div>
@@ -198,257 +194,95 @@
                 post-container">
 
                 <blockquote>
-<p>作者：码小白 （Tamic）<br>www.tamicer.com</p>
+<p>文/tamic<br>地址：<a href="http://blog.csdn.net/sk719887916/article/details/52195428" target="_blank" rel="external">http://blog.csdn.net/sk719887916/article/details/52195428</a></p>
 </blockquote>
-<p>通过前几篇系统的介绍和综合运用，忘记介绍文件下载功能了，有朋友问到，目前APP文件下载主要有断点续传，多线程并发下载，多类型下载，今天就介绍下其Retrofit下载文件功能，已结合RxJava。</p>
-<p><strong>Retrofit系列导读：</strong></p>
-<ul>
-<li><p><a href="http://www.jianshu.com/p/16994e49e2f6" target="_blank" rel="external">Retrofit 2.0(一) 超能实践，完美支持Https传输</a></p>
-<ul>
-<li><p><a href="http://www.jianshu.com/p/1a5f14b63f47" target="_blank" rel="external">Retrofit2.0（二） 完美同步Cookie实现免登录</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/acfefb0a204f" target="_blank" rel="external">Retrofit 2.0 超能实践（三），轻松实现文件/图片上传</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/582e0a4a4ee9" target="_blank" rel="external">Retrofit 2.0 超能实践（四），完成大文件断点下载</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/29c2a9ac5abf" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/17305f991ed8" target="_blank" rel="external">玩转IOC，教你徒手实现自定义的Retrofit框架</a></p>
-</li>
-<li><p><a href="http://www.jianshu.com/p/b1979c25634f" target="_blank" rel="external">Rxjava和Retrofit 需要掌握的几个实用技巧,缓存问题和统一对有无网络处理问题</a></p>
-</li>
-</ul>
-</li>
-<li><p><a href="http://www.jianshu.com/p/d7734390895e" target="_blank" rel="external">Novate：对Retrofit2.0的又一次完美改进加强！（九）</a></p>
-</li>
-</ul>
-<h1 id="ApiService"><a href="#ApiService" class="headerlink" title="ApiService"></a>ApiService</h1><p> 编写API，执行下载接口功能。</p>
-<pre><code>public interface ApiService {
-  @Streaming
-  @GET
-  Observable&lt;ResponseBody&gt; downloadFile(@Url String   fileUrl);
+<p>本文以 Twitter 工程师 Bonnie Eisenman 撰写的 Learning React Native 一书的第九章内容为蓝本，总结了 React Native 项目实践的一些经验。</p>
+<a id="more"></a>
+<h2 id="项目组织结构"><a href="#项目组织结构" class="headerlink" title="项目组织结构"></a>项目组织结构</h2><p>所有的新增文件均放在项目根目录下的 src 里，主要有包含各页面的 components 子目录、数据模型的 data 子目录、负责数据存取的 stores 子目录、公共样式定义 styles 子目录、存放资源图片等的 resources 子目录等。</p>
+<p><img src="https://c2.staticflickr.com/6/5781/30365572286_b0c35d2176_o.png =226x" alt="RN Project Structure"></p>
+<p>index.ios.js 是 Native 应用的入口，该文件尽量简洁，指向 RN 项目里负责页面跳转的主文件 components/Zebreto.js。</p>
+<h2 id="案例项目简介"><a href="#案例项目简介" class="headerlink" title="案例项目简介"></a>案例项目简介</h2><p>作者提供的示例项目包含三个页面，包含多副牌（Deck）的列表页、为选中的某副牌增加一张卡牌（Card）的页面、为某张卡牌选择答案（Review）的页面。</p>
+<p>在列表页点击 Create Deck 按钮，按钮上方出现输入框，填写内容作为 Deck 的名称。点击 Deck 右侧按钮则进入增加卡牌页面，点击 Deck 左侧则进入 Review 的页面。</p>
+<h2 id="构建基础组件"><a href="#构建基础组件" class="headerlink" title="构建基础组件"></a>构建基础组件</h2><h3 id="公共样式"><a href="#公共样式" class="headerlink" title="公共样式"></a>公共样式</h3><p>全局的颜色、字号等，可以在 js 里直接定义字典数据结构，然后 exports 以供外界访问。比如：</p>
+<pre><code> js
+ var palette = {
+ pink: &apos;#FDA6CD&apos;
+ };
+
+module.exports = palette;
+</code></pre><p>所以，像平安好房的应用可以参照上述结构定义 pa_orange 等色值。值得注意的是，我们也可以在一个 js 文件里定义多个字典，然后 exports 时将他们包含在花括号中即可。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="built_in">module</span>.exports = &#123;fonts, color&#125;;</div></pre></td></tr></table></figure>
+<p>在使用上述结构时，就需要这么 import 了：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> &#123; fonts, color &#125; <span class="keyword">from</span> <span class="string">'&lt;PATH-OF-FILE&gt;'</span>;</div></pre></td></tr></table></figure>
+<h3 id="公共组件"><a href="#公共组件" class="headerlink" title="公共组件"></a>公共组件</h3><p>我们不直接用 Text 组件，而是包装成 HeadingText 和 NormalText 供项目里的不同页面使用。同样的，为了代码重用与使用便捷，我们封装 Button、Input、LabeldInput 等组件。</p>
+<p>其中 Button 组件构建在 TouchableOpacity 基础之上，支持 func 类型的属性以在点击时调用使用方的方法，也支持 View.propTypes.style 类型的属性以方便定制其样式等。</p>
+<p>需要注意的是，为了让 Button 组件能包含其他子组件，我们使用了一个 object 类型的属性，然后在 render 时输出 children 即可。</p>
+<p>HeadingText 和 NormalText 建立在 Text 组件之上，自定义样式是通过 Text.propTypes.style 类型的属性支持的。注意此处类型不同于前面 Button 使用过的样式类型。</p>
+<p>Input 组件建立在 TextInput 之上，LabeledInput 组合了 Input 和 NormalText 两个组件，体现了复用的理念。</p>
+<h2 id="页面开发"><a href="#页面开发" class="headerlink" title="页面开发"></a>页面开发</h2><h3 id="Deck-列表页"><a href="#Deck-列表页" class="headerlink" title="Deck 列表页"></a>Deck 列表页</h3><h4 id="数据建模"><a href="#数据建模" class="headerlink" title="数据建模"></a>数据建模</h4><p>在 React Native 项目试点过程中，尚不熟悉 JavaScript 的类相关语法。当时都是用的字典:[</p>
+<pre><code>js
+class Deck {
+ constructor() {
 }
-</code></pre><p>  url由于是可变的，因此用 <code>@URL</code>  注解符号来进行指定，大文件官方建议用 <code>@Streaming</code>  来进行注解，不然会出现IO异常，小文件可以忽略不注入。如果想进行断点续传的话 可以在此加入header，但不建议直接在api中写死，每个下载的请求大小是不同的，在拦截器加入更为妥善。</p>
-<h1 id="DownLoadManager"><a href="#DownLoadManager" class="headerlink" title="DownLoadManager"></a>DownLoadManager</h1><p>  实现一个下载管理者 来进行文件写入，类型判断等，如果想做完善，可以判断下http的请求头 <code>content-length</code>,  <code>content- type</code>, <code>RANGE</code>  第一个用来判断文件大小，第二个文件类型，第三个是文件从哪儿开始下载，如果对下载来源校验可以加入<code>referer</code>, 不是目标来源的可以不予下载权限。</p>
-<pre><code>public class DownLoadManager {
-
-  private static final String TAG = &quot;DownLoadManager&quot;;
-
- private static String APK_CONTENTTYPE = &quot;application/vnd.android.package-archive&quot;;
-
- private static String PNG_CONTENTTYPE = &quot;image/png&quot;;
-
- private static String JPG_CONTENTTYPE = &quot;image/jpg&quot;;
-
- private static String fileSuffix=&quot;&quot;;
-
- public static boolean  writeResponseBodyToDisk(Context context, ResponseBody body) {
-
-    Log.d(TAG, &quot;contentType:&gt;&gt;&gt;&gt;&quot;+ body.contentType().toString());
-
-    String type = body.contentType().toString();
-
-    if (type.equals(APK_CONTENTTYPE)) {
-
-       fileSuffix = &quot;.apk&quot;;
-    } else if (type.equals(PNG_CONTENTTYPE)) {
-        fileSuffix = &quot;.png&quot;;
-    }
-
-    // 其他类型同上 自己判断加入.....
-
-
-    String path = context.getExternalFilesDir(null) + File.separator + System.currentTimeMillis() + fileSuffix;
-
-    Log.d(TAG, &quot;path:&gt;&gt;&gt;&gt;&quot;+ path);
-
-    try {
-        // todo change the file location/name according to your needs
-        File futureStudioIconFile = new File(path);
-
-        InputStream inputStream = null;
-        OutputStream outputStream = null;
-
-        try {
-            byte[] fileReader = new byte[4096];
-
-            long fileSize = body.contentLength();
-            long fileSizeDownloaded = 0;
-
-            inputStream = body.byteStream();
-            outputStream = new FileOutputStream(futureStudioIconFile);
-
-            while (true) {
-                int read = inputStream.read(fileReader);
-
-                if (read == -1) {
-                    break;
-                }
-
-                outputStream.write(fileReader, 0, read);
-
-                fileSizeDownloaded += read;
-
-                Log.d(TAG, &quot;file download: &quot; + fileSizeDownloaded + &quot; of &quot; + fileSize);
-            }
-
-            outputStream.flush();
-
-
-            return true;
-        } catch (IOException e) {
-            return false;
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-
-            if (outputStream != null) {
-                outputStream.close();
-            }
-        }
-    } catch (IOException e) {
-        return false;
-    }
-}
-</code></pre><p>}<br>   上面只是简单的对不同类型文件进行了判断，其他类型参考<code>http</code>协议描述类型自行加入，断点续传目前暂时没实现，基于HttpClinet下载的介绍很多，关键思想是记录一条下载产生后的<code>RANGE</code>   到数据库里，每条下载行对应一条数据，下载ID是区分唯一的主键,  包含<code>filename</code>, <code>fileSize, fileType, downTime, downRange</code>  <code>status</code>基本可满足多线程下载数据要求，在Retrofit结合RXJava后 解决了线程安全问题，实现多线程下载就更so yi z,  这里我不做过多的介绍。</p>
-<p>#调用下载</p>
-<pre><code> OkHttpClient okHttpClient = new OkHttpClient.Builder()
-            .build();
- Retrofit retrofit = new Retrofit.Builder()
-            .client(okHttpClient)
-            .baseUrl(url)
-            .build();
-Api Service apiService = retrofit.create(ApiService.class);
-
-apiService..download(url1,
-                    new Subscriber&lt;ResponseBody&gt;() {
-                        @Override
-                        public void onCompleted() {
-
-                        }
-
-                        @Override
-                        public void onError(Throwable e) {
-
-                        }
-
-                        @Override
-                        public void onNext(ResponseBody responseBody) {
-
-                            if (DownLoadManager.writeResponseBodyToDisk(MainActivity.this, responseBody)) {
-                                Toast.makeText(MainActivity.this, &quot;Download is sucess&quot;, Toast.LENGTH_LONG).show();
-                            }
-
-                        }
-                    });
-        }
-    });
-</code></pre><p>  <strong><em>当</em></strong> 然我们可以在header中加入上次下载的进度大小，就可以实现基本的断点下载了，多线程下载目前业内主要由下面思想实现，我们可以请求到文件总长度的时候，均分三段大小区间，来开启三个新线程去下载，下载完后再以唯一的文件ID，将三段文件以此追加到一个文件就可以了，当然在retrofit结合RxJava，你无需开启新线程，只需订阅一下 Subscriber到IO线程即可，这里注意的是你需要判断最后的文件大小和HashCode来进行验证文件完整性，不然视频文件丢包没多大影响，最多会卡帧，但是apk却无法解析安装了。</p>
-<p>#断点下载</p>
-<p>##apiServiece</p>
-<pre><code>@GET
-@Streaming
-Observable&lt;Response&lt;ResponseBody&gt;&gt; download(@Header(&quot;Range&quot;) String range, @Url String url);
-</code></pre><p>##API</p>
-<p><strong>DownLoadInfos</strong>里面包含<code>name</code>,<code>length</code>, <code>url</code>等，这里不再贴了。</p>
-<p><strong>DownloadType</strong> 里面记录要有<code>stats</code>，<code>lastModify</code>，<code>downloaded</code> ，<code>savepath</code>等, 直接看API</p>
-<pre><code> public Observable&lt;DownloadInfos&gt; download(@NonNull final String url, @NonNull final String saveName,
-   @Nullable final String savePath) {
-return downloadDispatcher(url, saveName, savePath);
 }
 
+module.exports = Deck;
+</code></pre><p>数据在本地使用 <code>AsyncStorage</code>存取，所有的存取方法均封装在 <code>DeckStore.js</code>里。</p>
+<h4 id="Reflux-架构"><a href="#Reflux-架构" class="headerlink" title="Reflux 架构"></a>Reflux 架构</h4><p>作者使用 Reflux 架构实现数据的单项流动，主要的两个概念便是 Store 和 Action 了。</p>
+<p>用户在 View 上操作，触发 Action，示例 View 的事件响应代码如下：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">DeckActions.createDeck(deck)</div></pre></td></tr></table></figure></p>
+<p><strong>而 createDeck 是在 actions.js 里定义的：</strong><br><figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">export</span> <span class="keyword">var</span> DeckActions = Reflux.createActions([</div><div class="line">  <span class="string">'createDeck'</span></div><div class="line">]);</div></pre></td></tr></table></figure></p>
+<p><strong>Store 的 init 方法里监听 Action：</strong></p>
+<pre><code>js
+var decksStore = Reflux.createStore({
+ init() {
+  this._decks = [];
+  // ...
+  this.listenTo(DeckActions.createDeck, this.createDeck);
+ // ...
+},
 
+// ...
 
+createDeck(deck) {
+  this._decks.push(deck);
 
-
-private Observable&lt;DownloadStatus&gt; downloadDispatcher(final String url, final String saveName, final String savePath) {
-    return getDownloadType(url)
-            .flatMap(new Func1&lt;DownloadType, Observable&lt;DownloadStatus&gt;&gt;() {
-                @Override
-                public Observable&lt;DownloadInfos&gt; call(DownloadType type) {
-                    try {
-                        type.prepare();
-                    } catch (IOException | ParseException e) {
-                        return Observable.error(e);
-                    }
-                    try {
-                        return type.start();
-                    } catch (IOException e) {
-                        return Observable.error(e);
-                    }
-                }
-            })
-            .doOnCompleted(new Action0() {
-                @Override
-                public void call() {
-                    mDownloadManager.delete(url);
-                }
-            })
-            .doOnError(new Action1&lt;Throwable&gt;() {
-                @Override
-                public void call(Throwable throwable) {
-
-                    mDownloadManager.delete(url);
-                }
-            })
-            .doOnUnsubscribe(new Action0() {
-                @Override
-                public void call() {
-                    mDownloadManager.delete（url）
-            });
+  this.emit();
 }
-</code></pre><p>   开始下载：</p>
-<pre><code>@Override
-Observable&lt;DownloadInfos&gt; start() {
-    Log.i(TAG, &quot;Normal download start!!&quot;);
-    return mDownloadHelper.getDownloadApi().download(null, mUrl)
-            .subscribeOn(Schedulers.io())
-            .flatMap(new Func1&lt;Response&lt;ResponseBody&gt;, Observable&lt;DownloadStatus&gt;&gt;() {
-                @Override
-                public Observable&lt;DownloadStatus&gt; call(final Response&lt;ResponseBody&gt; response) {
-                    return normalSave(response);
-                }
-            }).onBackpressureLatest().retry(new Func2&lt;Integer, Throwable, Boolean&gt;() {
-                @Override
-                public Boolean call(Integer integer, Throwable throwable) {
-                    return mDownloadHelper.retry(integer, throwable);
-                }
-            });
-}
-</code></pre><p>##调用</p>
-<pre><code>DownloadAgenti.getInstance(mContext)
-               .observeOn(Schedulers.io())
-               .observeOn(AndroidSchedulers.mainThread())
-               .subscribe(new Subscriber&lt;DownloadInfos&gt;() {
-                   @Override
-                   public void onCompleted() {
-                       // todo
-                   }
 
-                   @Override
-                   public void onError(Throwable e) {
-                      todo
-                   }
+// ...
 
-                   @Override
-                   public void onNext(final DownloadStatus status) {
-                      todo
-                   }
-               }); 
-</code></pre><p>#总结</p>
-<p>步骤：</p>
+ emit() {
+  // ...
+   this.trigger(this._decks);
+ },
+ });
+
+module.exports = decksStore;
+</code></pre><p>这样在 createDeck 这一 action 触发后，Store 变回执行 createDeck 方法以更新 Store 中的数据，再通过 emit 方法通知出去。</p>
+<p>View 里面监听 DeckStore 的消息，将通知携带来的数据模型存在 state 里以触发 render 方法的执行（更新 UI）。</p>
+<p><img src="https://c2.staticflickr.com/6/5816/29772102074_b8ec9b3328_o.png =328x" alt="Reflux Architecture"></p>
+<h4 id="页面组装"><a href="#页面组装" class="headerlink" title="页面组装"></a>页面组装</h4><p>src/components/Decks/index.js 是该页面的主文件，会包含一些子组件以完成整个页面的渲染。</p>
+<p>在 index.js 的 render 方法里，将这一段代码封装在一个独立的工具方法，然后在 render 里面引用其返回的 UI 结构。</p>
+<p>   `js<br>  _getDecks() {<br>    if (!this.state.decks) {<br>      return null;<br>    }</p>
+<pre><code>return this.state.decks.map((deck) =&gt; {
+  return (
+    &lt;Deck deck={deck} .../&gt;
+  );
+});
+},
+</code></pre><p>使用高阶函数 map 根据每个 deck 数据对象生成对应的 Deck 标签，作为数据返回。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">render() &#123;</div><div class="line">  <span class="keyword">return</span> (</div><div class="line">    <span class="xml"><span class="tag">&lt;<span class="name">View</span>&gt;</span></span></div><div class="line">      &#123;this._getDecks()&#125;</div><div class="line">      <span class="tag">&lt;<span class="name">DeckCreation</span> <span class="attr">...</span>/&gt;</span></div><div class="line">    <span class="tag">&lt;/<span class="name">View</span>&gt;</span></div><div class="line">  );</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>输入 Deck 名时比正常情况下多一行输入框，所以在 DeckCreation.js 中根据一个 state 变量分别返回不同的两个子组件：EnterDeck 和 CreateDeckButton。前者由公共组件 Input 和 CreateDeckButton 组合而成。CreateDeckButton 由公共组件 Button 和 NormalText 组合而成。</p>
+<p>详细代码不在本文中提供，以思路为重。</p>
+<h3 id="Card-新建页"><a href="#Card-新建页" class="headerlink" title="Card 新建页"></a>Card 新建页</h3><p>整体过程类似于 Decks 页面的构建。主要就是在 View 触发 CardActions.createCard 这一 Action，在 Card 的 Store 中监听以更新数据集合。</p>
+<h3 id="Review-交互页"><a href="#Review-交互页" class="headerlink" title="Review 交互页"></a>Review 交互页</h3><p>本页面有两种场景，若存在尚未 Review 过的 Card 则显示可选择答案的 Review 页面，否则显示 Review 结果（正确率）。所以 <em>src/components/Review/index.js</em> 里分两种情况返回 UI 结构。</p>
+<p>选择答案的 UI 结构，其封装在 ViewCard.js 中，做法类似于之前 Decks 利用 map 高阶函数的方案。Review 这一块稍微难懂一点的是其 Store 里根据录入的卡片构造选项的逻辑，但这其实已不是 React Native 的范围，耐心的多看一会儿就可以懂。</p>
+<h2 id="问题与解决方案"><a href="#问题与解决方案" class="headerlink" title="问题与解决方案"></a>问题与解决方案</h2><h3 id="Decks-页面不展示模拟数据"><a href="#Decks-页面不展示模拟数据" class="headerlink" title="Decks 页面不展示模拟数据"></a>Decks 页面不展示模拟数据</h3><p>我在完成 Decks 页面的展示时，就不等 <code>Create Deck</code> 功能的实现，就开始测试一下页面。比如在 components/Decks/index.js 的 <code>getInitialState</code> 中直接构造几个 Deck 对象。但是并没有展示出来:[</p>
+<p>原因在于 Store 发出的消息，导致 View 的 state 里的数据立即被置空。我们可以临时在加个判断，为空就不 setState({decks}) 即可。</p>
+<h3 id="Review-结果展示页告警"><a href="#Review-结果展示页告警" class="headerlink" title="Review 结果展示页告警"></a>Review 结果展示页告警</h3><p>该页使用公共组件 NormalText 并传递 color 给它，但作者提供的 NormalText 代码里使用的是 <code>View.propTypes.style</code>，应改为 <code>Text.propTypes.style</code>！</p>
 <blockquote>
-<p>请求文件总大小</p>
-<p>根据机型高低，分配多个线程下载</p>
-<p>记录下载进度，大小，类型等到数据库</p>
-<p>同时更新UI和通知栏，提示用户</p>
-<p>下载结束后更新数据库下载数据，追加组合文件</p>
-<p>判断文件大小，检验文件大小</p>
+<p>原文地址:<a href="http://balloonsys.com/blog/2016/10/18/rn-put-it-all-together/" target="_blank" rel="external">http://balloonsys.com/blog/2016/10/18/rn-put-it-all-together/</a></p>
 </blockquote>
-<p>  下载功能是每个应用必须的功能，因此下载还是比较重要的一个模块，好的下载架构 会考虑到设备的CPU大小，网络状态，以及外部sdcard的大小，动态进行性能，流量分配，方便用户更好的体验和使用你的APP.</p>
-<p>  具体可以阅读  - <a href="http://blog.csdn.net/sk719887916/article/details/51958010" target="_blank" rel="external">基于Retrofit2.0 封装的超好用的RetrofitClient工具类</a> 中的写法</p>
-<p><strong>项目github</strong>:<a href="https://github.com/Tamicer/FastDownloader" target="_blank" rel="external">https://github.com/Tamicer/FastDownloader</a></p>
 
 
                 <hr>
@@ -460,14 +294,12 @@ Observable&lt;DownloadInfos&gt; start() {
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="2016/06/17/retrofit_004/"
-                    data-title="Retrofit 2.0 超能实践（四），实现大文件多线程断点下载"
-                    data-url="http://tamicer.com/2016/06/17/retrofit_004/"
+                    data-thread-key="2016/10/18/2016-10-18-rn-put-it-all-together/"
+                    data-title="React Native 项目实战"
+                    data-url="http://tamicer.com/2016/10/18/2016-10-18-rn-put-it-all-together/"
                     data-images=""
                     data-content="
-作者：码小白 （Tamic）www.tamicer.com
-
-通过前几篇系统的介绍和综合运用... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+文/tamic地址：http://blog.csdn.net/sk719887916/art... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -489,12 +321,12 @@ Observable&lt;DownloadInfos&gt; start() {
                 <ul class="pager">
                     
                         <li class="previous">
-                            <a href="/2016/07/03/retrofit5/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（五），动态Okhttp对Request统一添加header和Parameter">&larr; Previous Post</a>
+                            <a href="/2016/11/05/Android基于JsBridge封装的高效带加载进度的WebView/" data-toggle="tooltip" data-placement="top" title="Android基于JsBridge封装的高效带加载进度的WebView">&larr; Previous Post</a>
                         </li>
                     
                     
                         <li class="next">
-                            <a href="/2016/06/14/retrofti3/" data-toggle="tooltip" data-placement="top" title="Retrofit 2.0 超能实践（三），轻松实现多文件/图片/Json字符串/表单提交上传">Next Post &rarr;</a>
+                            <a href="/2016/08/10/novate10/" data-toggle="tooltip" data-placement="top" title="Novate网络库： Retrofit2.0和RxJava1.x的又一次完美封装">Next Post &rarr;</a>
                         </li>
                     
                 </ul>
@@ -503,9 +335,9 @@ Observable&lt;DownloadInfos&gt; start() {
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="2016/06/17/retrofit_004/"
-                        data-title="Retrofit 2.0 超能实践（四），实现大文件多线程断点下载"
-                        data-url="http://tamicer.com/2016/06/17/retrofit_004/" >
+                        data-thread-key="2016/10/18/2016-10-18-rn-put-it-all-together/"
+                        data-title="React Native 项目实战"
+                        data-url="http://tamicer.com/2016/10/18/2016-10-18-rn-put-it-all-together/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -553,11 +385,7 @@ Observable&lt;DownloadInfos&gt; start() {
                        
                           <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Retrofit" title="Retrofit">Retrofit</a>
-                        
-                          <a class="tag" href="/tags/#RxJava" title="RxJava">RxJava</a>
-                        
-                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                          <a class="tag" href="/tags/#ReactNative" title="ReactNative">ReactNative</a>
                         
                     </div>
                 </section>
@@ -615,8 +443,8 @@ Observable&lt;DownloadInfos&gt; start() {
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "hexo-theme-huxblog";
-    var disqus_identifier = "http://tamicer.com/2016/06/17/retrofit_004/";
-    var disqus_url = "http://tamicer.com/2016/06/17/retrofit_004/";
+    var disqus_identifier = "http://tamicer.com/2016/10/18/2016-10-18-rn-put-it-all-together/";
+    var disqus_url = "http://tamicer.com/2016/10/18/2016-10-18-rn-put-it-all-together/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
