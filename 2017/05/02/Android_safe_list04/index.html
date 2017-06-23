@@ -13,11 +13,11 @@
 
     <title>
         
-          博客终于开通啦！ - Tamic Developer&quot;s Blog | &quot;博客&quot;
+          App安全（四） Android安全漏洞概论 - Tamic Developer&quot;s Blog | &quot;博客&quot;
         
     </title>
 
-    <link rel="canonical" href="http://tamicer.com/2015/03/14/This-is-Me/">
+    <link rel="canonical" href="http://tamicer.com/2017/05/02/Android_safe_list04/">
 
     <!-- Bootstrap Core CSS -->
     <link rel="stylesheet" href="/css/bootstrap.min.css">
@@ -155,7 +155,7 @@
 <!-- Post Header -->
 <style type="text/css">
     header.intro-header{
-        background-image: url('my.jpg')
+        background-image: url('novate.jpg')
     }
 </style>
 <header class="intro-header" >
@@ -165,16 +165,18 @@
                 <div class="post-heading">
                     <div class="tags">
                         
-                          <a class="tag" href="/tags/#个人介绍" title="个人介绍">个人介绍</a>
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Tamic" title="Tamic">Tamic</a>
+                          <a class="tag" href="/tags/#Https" title="Https">Https</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
                         
                     </div>
-                    <h1>博客终于开通啦！</h1>
-                    <h2 class="subheading">个人的一些介绍</h2>
+                    <h1>App安全（四） Android安全漏洞概论</h1>
+                    <h2 class="subheading">安全与加密系列</h2>
                     <span class="meta">
                         Posted by Tamic on
-                        2015-03-14
+                        2017-05-02
                     </span>
                 </div>
             </div>
@@ -193,9 +195,22 @@
                 col-md-10 col-md-offset-1
                 post-container">
 
-                <h2 id="我在这里安家啦"><a href="#我在这里安家啦" class="headerlink" title="我在这里安家啦"></a>我在这里安家啦</h2><p>个人博客开通啦！以后这里你将会看到技术文章，一些行业经验，其他一些Tamic的鸡汤。</p>
-<p>第一时间获资讯请关注微信公众号！</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+                <p>安全问题</p>
+<h1 id="一-系统层面安全"><a href="#一-系统层面安全" class="headerlink" title="一 系统层面安全"></a>一 系统层面安全</h1><p>1 权限使用<br>2 Root风险<br>3 APP反编译与逆向</p>
+<h1 id="二-应用层安全"><a href="#二-应用层安全" class="headerlink" title="二 应用层安全"></a>二 应用层安全</h1><p>1 组件劫持<br>2 DNS劫持<br>3 Webview 安全漏洞<br>4 APP进程劫持</p>
+<h1 id="三-业务层安全"><a href="#三-业务层安全" class="headerlink" title="三 业务层安全"></a>三 业务层安全</h1><p>1 网络明文传输<br>2 本地数据泄露<br>3 业务逻辑被篡改<br>4 Native代码被攻击</p>
+<h1 id="APP实际安全问题"><a href="#APP实际安全问题" class="headerlink" title="APP实际安全问题"></a>APP实际安全问题</h1><p>在本人的开发中不断遇到的安全问题，以及漏洞盒子爆出的安全漏洞，目前包含已经解决的，也有目前还未解决的相关case, 以下列举了出现过的安全漏洞。</p>
+<p>1 升级过程全程被劫持（请看 ：<a href="http://localhost:4000/2015/10/10/app-safe1_update/" target="_blank" rel="external">App安全（一） Android防止升级过程被劫持和换包</a></p>
+<p>2 DNS劫持，H5页出现恶意广告</p>
+<p>3 刷单，刷赞，（api缺失校验）</p>
+<p>4 登录界面劫持</p>
+<p>5 交易接口劫持定向</p>
+<p>6 数据库存在sql注入风险，泄露敏感信息</p>
+<p>7  包反编译植入病毒二次打包，或重新打包一个修改业务代码的伪造的好房拓APP。</p>
+<p>8 应用运行信息可被全程HOOK</p>
+<p>9 安卓客户端存在密码撞库风险</p>
+<p>10 本地ddos拒绝服务攻击</p>
+<p>11 客户端设计缺陷可导致中间人攻击</p>
 
 
                 <hr>
@@ -207,11 +222,13 @@
                 </style>
                 <div class="ds-share"
                     style="text-align: right"
-                    data-thread-key="2015/03/14/This-is-Me/"
-                    data-title="博客终于开通啦！"
-                    data-url="http://tamicer.com/2015/03/14/This-is-Me/"
-                    data-images="http://tamicer.com/2015/03/14/This-is-Me/my.jpg"
-                    data-content="我在这里安家啦个人博客开通啦！以后这里你将会看到技术文章，一些行业经验，其他一些Tamic的鸡... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    data-thread-key="2017/05/02/Android_safe_list04/"
+                    data-title="App安全（四） Android安全漏洞概论"
+                    data-url="http://tamicer.com/2017/05/02/Android_safe_list04/"
+                    data-images="http://tamicer.com/2017/05/02/Android_safe_list04/novate.jpg"
+                    data-content="安全问题
+一 系统层面安全1 权限使用2 Root风险3 APP反编译与逆向
+二 应用层安全1... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
                     <div class="ds-share-inline">
                       <ul  class="ds-share-icons-16">
                         <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
@@ -233,9 +250,13 @@
                 <ul class="pager">
                     
                         <li class="previous">
-                            <a href="/2015/05/05/BATAndroid/" data-toggle="tooltip" data-placement="top" title="2014年 BAT Android工程师面试流程详细解析-还原最真实最完整的一线公司面试题">&larr; Previous Post</a>
+                            <a href="/2017/05/17/2017googleIO/" data-toggle="tooltip" data-placement="top" title="2017 Google I/O 最新科技看点">&larr; Previous Post</a>
                         </li>
                     
+                    
+                        <li class="next">
+                            <a href="/2017/04/20/save-sample/" data-toggle="tooltip" data-placement="top" title="APP安全（三）Android 安全要点和规范核心详析">Next Post &rarr;</a>
+                        </li>
                     
                 </ul>
 
@@ -243,9 +264,9 @@
                 <!-- 多说评论框 start -->
                 <div class="comment">
                     <div class="ds-thread"
-                        data-thread-key="2015/03/14/This-is-Me/"
-                        data-title="博客终于开通啦！"
-                        data-url="http://tamicer.com/2015/03/14/This-is-Me/" >
+                        data-thread-key="2017/05/02/Android_safe_list04/"
+                        data-title="App安全（四） Android安全漏洞概论"
+                        data-url="http://tamicer.com/2017/05/02/Android_safe_list04/" >
                     </div>
                 </div>
                 <!-- 多说评论框 end -->
@@ -291,9 +312,11 @@
                     <h5><a href="/tags/">FEATURED TAGS</a></h5>
                     <div class="tags">
                        
-                          <a class="tag" href="/tags/#个人介绍" title="个人介绍">个人介绍</a>
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
                         
-                          <a class="tag" href="/tags/#Tamic" title="Tamic">Tamic</a>
+                          <a class="tag" href="/tags/#Https" title="Https">Https</a>
+                        
+                          <a class="tag" href="/tags/#安全" title="安全">安全</a>
                         
                     </div>
                 </section>
@@ -351,8 +374,8 @@
 <script type="text/javascript">
     /* * * CONFIGURATION VARIABLES * * */
     var disqus_shortname = "hexo-theme-huxblog";
-    var disqus_identifier = "http://tamicer.com/2015/03/14/This-is-Me/";
-    var disqus_url = "http://tamicer.com/2015/03/14/This-is-Me/";
+    var disqus_identifier = "http://tamicer.com/2017/05/02/Android_safe_list04/";
+    var disqus_url = "http://tamicer.com/2017/05/02/Android_safe_list04/";
 
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
