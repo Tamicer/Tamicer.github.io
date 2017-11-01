@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tamic Developer Blog">
+    <meta name="keyword"  content="">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          OkHttp 3.x 源码解析之Interceptor 拦截器 - Tamic Developer&quot;s Blog | &quot;博客&quot;
+        
+    </title>
+
+    <link rel="canonical" href="http://tamicer.com/2017/11/15/Okhttp2_2017/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tamic</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#网络" title="网络">网络</a>
+                        
+                    </div>
+                    <h1>OkHttp 3.x 源码解析之Interceptor 拦截器</h1>
+                    <h2 class="subheading">Okhttp系列文章</h2>
+                    <span class="meta">
+                        Posted by Tamic on
+                        2017-11-15
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <blockquote>
+<p>Tamic /<br><a href="http://blog.csdn.net/sk719887916/article/details/74308343" target="_blank" rel="external">http://blog.csdn.net/sk719887916/article/details/74308343</a></p>
+</blockquote>
+<p>#OkHttp拦截器原理解析</p>
+<h2 id="拦截器"><a href="#拦截器" class="headerlink" title="拦截器"></a>拦截器</h2><p>Java里的拦截器是动态拦截Action调用的对象。它提供了一种机制可以使开发者可以定义在一个action执行的前后执行的代码，也可以在一个action执行前阻止其执行，同时也提供了一种可以提取action中可重用部分的方式。<br>在AOP（Aspect-Oriented Programming）中拦截器用于在某个方法或字段被访问之前，进行拦截然后在之前或之后加入某些操作。</p>
+<h2 id="过滤器"><a href="#过滤器" class="headerlink" title="过滤器"></a>过滤器</h2><p>过滤器可以简单理解为“取你所想取”，忽视掉那些你不想要的东西；拦截器可以简单理解为“拒你所想拒”，关心你想要拒绝掉哪些东西，比如一个BBS论坛上拦截掉敏感词汇。</p>
+<ul>
+<li>1.拦截器是基于java反射机制的，而过滤器是基于函数回调的。</li>
+<li>2.过滤器依赖于servlet容器，而拦截器不依赖于servlet容器。</li>
+<li>3.拦截器只对action起作用，而过滤器几乎可以对所有请求起作用。</li>
+<li>4.拦截器可以访问action上下文、值栈里的对象，而过滤器不能。</li>
+<li>5.在action的生命周期里，拦截器可以多起调用，而过滤器只能在容器初始化时调用一次。</li>
+</ul>
+<p>Android里面过滤器大家用的已经无法再陌生了，Filter就是一个很好的列子，在清单文件注册Filter就可以过滤启动摸某个组件的Action.</p>
+<p>Okhttp拦截器因此应运而生，处理一次网络调用的Action拦截，做修改操作。</p>
+<p><img src="http://img.blog.csdn.net/20151125170226504?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQv/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt=""></p>
+<h2 id="OKHTTP-INTERCEPTOR"><a href="#OKHTTP-INTERCEPTOR" class="headerlink" title="OKHTTP INTERCEPTOR"></a>OKHTTP INTERCEPTOR</h2><p><strong>使用</strong></p>
+<p>okhttp拦截器用法很简单，构建OkHttpClient时候通过.addInterceptor（）就可以将拦截器加入到一次会话中。</p>
+<figure class="highlight haxe"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">OkHttpClient client = <span class="keyword">new</span> <span class="type">OkHttpClient</span>.Builder()</div><div class="line">     .addInterceptor(<span class="keyword">new</span> <span class="type">LoggingInterceptor</span>())</div><div class="line">     .build();</div></pre></td></tr></table></figure>
+<p><strong>拦截器</strong></p>
+<p>拦截器是Okhttp一种强大的机制，可以监视，重写和重试每一次请求。下面示列了一个简单的拦截器，用于记录传出的请求和传入的响应。</p>
+<pre><code>class LoggingInterceptor implements Interceptor {
+  @Override public Response intercept(Interceptor.Chain chain) throws IOException {
+   Request request = chain.request();
+
+   long t1 = System.nanoTime();
+   logger.info(String.format(&quot;Sending request %s on %s%n%s&quot;,
+   request.url(), chain.connection(), request.headers()));
+
+   Response response = chain.proceed(request);
+
+   long t2 = System.nanoTime();
+    logger.info(String.format(&quot;Received response for %s in %.1fms%n%s&quot;,
+   response.request().url(), (t2 - t1) / 1e6d, response.headers()));
+
+return response;
+  }
+}
+</code></pre><p>呼叫chain.proceed(request)是每个拦截器实现的关键部分。这个简单的方法是所有HTTP工作发生的地方，产生满足请求的响应。</p>
+<p>拦截器可以链接。假设您同时拥有一个压缩拦截器和一个校验和拦截器：您需要确定数据是否已压缩，然后进行校验和，或校验和然后压缩。OkHttp使用列表来跟踪拦截器，拦截器按顺序调用。</p>
+<h3 id="应用拦截器"><a href="#应用拦截器" class="headerlink" title="应用拦截器"></a>应用拦截器</h3><p>拦截器被注册为应用程序或网络拦截器。我们将使用<code>LoggingInterceptor</code>上面定义来显示差异。</p>
+<p>注册一个应用程序通过调用拦截器<code>addInterceptor()</code>上<code>OkHttpClient.Builder</code>：</p>
+<pre><code>OkHttpClient client = new OkHttpClient.Builder()
+      .addInterceptor(new LoggingInterceptor())
+       .build();
+
+Request request = new Request.Builder()
+     .url(&quot;http://www.publicobject.com/helloworld.txt&quot;)
+     .header(&quot;User-Agent&quot;, &quot;OkHttp Example&quot;)
+      .build();
+
+Response response = client.newCall(request).execute();
+response.body().close();
+</code></pre><p>URL<code>http://www.publicobject.com/helloworld.txt</code>重定向到<code>https://publicobject.com/helloworld.txt</code>，OkHttp自动跟随此重定向。我们的应用拦截器被调用一次，返回的响应<code>chain.proceed()</code>具有重定向的响应：</p>
+<blockquote>
+<p>INFO: Sending request <a href="http://www.publicobject.com/helloworld.txt" target="_blank" rel="external">http://www.publicobject.com/helloworld.txt</a> on null<br>User-Agent: OkHttp Example</p>
+<p>INFO: Received response for <a href="https://publicobject.com/helloworld.txt" target="_blank" rel="external">https://publicobject.com/helloworld.txt</a> in 1179.7ms<br>Server: nginx/1.4.6 (Ubuntu)<br>Content-Type: text/plain<br>Content-Length: 1759<br>Connection: keep-alive</p>
+</blockquote>
+<p>我们可以看到，我们被重定向是因为<code>response.request().url()</code>不同<code>request.url()</code>。两个日志语句记录两个不同的URL。</p>
+<h3 id="网络拦截器"><a href="#网络拦截器" class="headerlink" title="网络拦截器"></a>网络拦截器</h3><p>注册网络拦截器是非常相似的。调用<code>addNetworkInterceptor()</code>而不是<code>addInterceptor()</code>;</p>
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">OkHttpClient client = <span class="keyword">new</span> OkHttpClient.Builder()</div><div class="line">         .addNetworkInterceptor(<span class="keyword">new</span> LoggingInterceptor())</div><div class="line">         .build();</div><div class="line">  </div><div class="line">  <span class="built_in">Request</span> <span class="built_in">request</span> = <span class="keyword">new</span> <span class="built_in">Request</span>.Builder()</div><div class="line">       .url(<span class="string">"http://www.publicobject.com/helloworld.txt"</span>)</div><div class="line">       .header(<span class="string">"User-Agent"</span>, <span class="string">"OkHttp Example"</span>)</div><div class="line">       .build();</div><div class="line"></div><div class="line">  <span class="built_in">Response</span> <span class="built_in">response</span> = client.newCall(<span class="built_in">request</span>).<span class="keyword">execute</span>();</div><div class="line">           <span class="built_in">response</span>.body().close();</div></pre></td></tr></table></figure>
+<p>当我们运行这个代码时，拦截器运行两次。一次为初始请求<code>http://www.publicobject.com/helloworld.txt</code>，另一个为重定向<code>https://publicobject.com/helloworld.txt</code>。</p>
+<pre><code>INFO: Sending request http://www.publicobject.com/helloworld.txt on Connection{www.publicobject.com:80, proxy=DIRECT hostAddress=54.187.32.157 cipherSuite=none protocol=http/1.1}
+User-Agent: OkHttp Example
+Host: www.publicobject.com
+Connection: Keep-Alive
+Accept-Encoding: gzip
+</code></pre><blockquote>
+<p>INFO: Received response for <a href="http://www.publicobject.com/helloworld.txt" target="_blank" rel="external">http://www.publicobject.com/helloworld.txt</a> in 115.6ms<br>Server: nginx/1.4.6 (Ubuntu)<br>Content-Type: text/html<br>Content-Length: 193<br>Connection: keep-alive<br>Location: <a href="https://publicobject.com/helloworld.txt" target="_blank" rel="external">https://publicobject.com/helloworld.txt</a></p>
+<p>INFO: Sending request <a href="https://publicobject.com/helloworld.txt" target="_blank" rel="external">https://publicobject.com/helloworld.txt</a> on Connection{publicobject.com:443, proxy=DIRECT hostAddress=54.187.32.157 cipherSuite=TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA protocol=http/1.1}<br>User-Agent: OkHttp Example<br>Host: publicobject.com<br>Connection: Keep-Alive<br>Accept-Encoding: gzip</p>
+<p>INFO: Received response for <a href="https://publicobject.com/helloworld.txt" target="_blank" rel="external">https://publicobject.com/helloworld.txt</a> in 80.9ms<br>Server: nginx/1.4.6 (Ubuntu)<br>Content-Type: text/plain<br>Content-Length: 1759<br>Connection: keep-alive</p>
+</blockquote>
+<p>网络请求还包含更多的数据，例如<code>Accept-Encoding: gzip</code>由OkHttp添加的标题来广播支持响应压缩。网络拦截器Chain具有非空值Connection，可用于询问用于连接到Web服务器的IP地址和TLS配置。</p>
+<p>##在应用拦截器和网络拦截器之间如何让进行选择？</p>
+<p>每个拦截链有相对优点。</p>
+<p><strong>应用拦截器</strong></p>
+<ul>
+<li>不需要担心中间响应，如重定向和重试。</li>
+<li>总是调用一次，即使从缓存提供HTTP响应。</li>
+<li>遵守应用程序的原始意图。不注意OkHttp注入的头像If-None-Match。</li>
+<li>允许短路和不通话Chain.proceed()。</li>
+<li>允许重试并进行多次呼叫Chain.proceed()。</li>
+</ul>
+<p><strong>网络拦截器</strong></p>
+<ul>
+<li></li>
+<li>能够对重定向和重试等中间响应进行操作。</li>
+<li>不调用缓存的响应来短路网络。</li>
+<li>观察数据，就像通过网络传输一样。</li>
+<li>访问Connection该请求。</li>
+</ul>
+<h3 id="重写请求"><a href="#重写请求" class="headerlink" title="重写请求"></a>重写请求</h3><p>拦截器可以添加，删除或替换请求头。还可以转换具有一个请求的正文。例如，如果连接到已知支持它的Web服务器，则可以使用应用程序拦截器添加请求体压缩。</p>
+<pre><code>final class GzipRequestInterceptor implements Interceptor {
+   @Override public Response intercept(Interceptor.Chain chain) throws IOException {
+   Request originalRequest = chain.request();
+   if (originalRequest.body() == null || originalRequest.header       (&quot;Content-Encoding&quot;) != null) {
+     return chain.proceed(originalRequest);
+  }
+
+  Request compressedRequest = originalRequest.newBuilder()
+      .header(&quot;Content-Encoding&quot;, &quot;gzip&quot;)
+      .method(originalRequest.method(), gzip(originalRequest.body()))
+      .build();
+   return chain.proceed(compressedRequest);
+ }
+
+ private RequestBody gzip(final RequestBody body) {
+    return new RequestBody() {
+    @Override public MediaType contentType() {
+       return body.contentType();
+    }
+
+     @Override public long contentLength() {
+        return -1; 
+        // We don&apos;t know the compressed length in advance!
+     }
+
+     @Override public void writeTo(BufferedSink sink) throws IOException {
+       BufferedSink gzipSink = Okio.buffer(new GzipSink(sink));
+       body.writeTo(gzipSink);
+       gzipSink.close();
+      }
+    };
+  }
+}
+</code></pre><h3 id="重写响应"><a href="#重写响应" class="headerlink" title="重写响应"></a>重写响应</h3><p>对称地拦截器可以重写响应头并转换响应体。这通常比重写请求头更危险，因为他可以篡改违反了网络服务器的数据的本意！</p>
+<p>如果在棘手的情况，并准备应对后果，重写响应标头是解决问题的有效方式。例如，可以修复服务器配置错误的Cache-Control响应头以启用更好的响应缓存：</p>
+<pre><code>private static final Interceptor REWRITE_CACHE_CONTROL_INTERCEPTOR = new Interceptor() {
+   @Override public Response intercept(Interceptor.Chain chain) throws IOException {
+  Response originalResponse = chain.proceed(chain.request());
+   return originalResponse.newBuilder()
+  .header(&quot;Cache-Control&quot;, &quot;max-age=60&quot;)
+  .build();
+  }
+};
+</code></pre><p>通常，这种方法在补充Web服务器上的相应修复程序时效果最好！</p>
+<h1 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h1><p>1 <strong>Interceptor代码本质：</strong></p>
+<p>拦截器源码：包含基础的<code>Request</code>和<code>Response</code> 获取接口，并有<strong>Connection</strong>接口 </p>
+<pre><code>public interface Interceptor {
+  Response intercept(Chain chain) throws IOException;
+
+  interface Chain {
+  Request request();
+
+   Response proceed(Request request) throws IOException;
+
+   /**
+    * Returns the connection the request will be executed on. This is  only available in the chains
+    * of network interceptors; for application interceptors this is  always null.
+   */
+  @Nullable Connection connection();
+ }
+}
+</code></pre><p>2 .<strong>Connection</strong>是神马东西？</p>
+<p><code>Connection</code>是一次面向连接过程，这里包含基础的协议<code>Protocol</code> ， <code>Socket</code> ， <code>Route</code>， <strong>Handshake</strong>，</p>
+<pre><code>`public interface Connection {
+
+  Route route();
+
+
+  Socket socket();
+
+  @Nullable Handshake handshake();
+
+  Protocol protocol();
+}
+</code></pre><p><em>Handshake</em>是ohkttp自己的握手机制，里面包括了SSL验证过程，这里不做源码分析，这里提供了基础Https的认证的基础根方法，本文不做探讨。</p>
+<h2 id="Interceptor怎么被调用："><a href="#Interceptor怎么被调用：" class="headerlink" title="Interceptor怎么被调用："></a>Interceptor怎么被调用：</h2><p>  <strong>发起请求</strong></p>
+<pre><code>OkHttpClient mOkHttpClient = new OkHttpClient();
+ Request request = new Request.Builder()
+            .url(&quot;https://github.com/hongyangAndroid&quot;)
+            .build();
+//new call
+Call call = mOkHttpClient.newCall(request); 
+</code></pre><p>  <strong>进行newCaLL</strong></p>
+<pre><code>RealCall(OkHttpClient client, Request originalRequest, boolean forWebSocket) {
+    final EventListener.Factory eventListenerFactory = client.eventListenerFactory();
+
+    this.client = client;
+    this.originalRequest = originalRequest;
+    this.forWebSocket = forWebSocket;
+    //这里就是处理拦截器的地方！
+    this.retryAndFollowUpInterceptor = new RetryAndFollowUpInterceptor(client, forWebSocket);
+
+   // TODO(jwilson): this is unsafe publication and not threadsafe.
+   this.eventListener = eventListenerFactory.create(this);
+ }
+</code></pre><p>  <strong>处理请求拦截</strong></p>
+<pre><code>@Override public Response intercept(Chain chain) throws IOException {
+Request request = chain.request();
+
+streamAllocation = new StreamAllocation(
+    client.connectionPool(), createAddress(request.url()), callStackTrace);
+
+int followUpCount = 0;
+Response priorResponse = null;
+while (true) {
+  if (canceled) {
+    streamAllocation.release();
+    throw new IOException(&quot;Canceled&quot;);
+  }
+
+  Response response = null;
+  boolean releaseConnection = true;
+  try {
+
+    //也就是这里进行上层注入的拦截拦截
+    response = ((RealInterceptorChain) chain).proceed(request, streamAllocation, null, null);
+    releaseConnection = false;
+  } catch (RouteException e) {
+    ......
+    continue;
+  } catch (IOException e) {
+    // An attempt to communicate with a server failed. The request may have been sent.
+    boolean requestSendStarted = !(e instanceof ConnectionShutdownException);
+    if (!recover(e, requestSendStarted, request)) throw e;
+    releaseConnection = false;
+    continue;
+  } finally {
+    // We&apos;re throwing an unchecked exception. Release any resources.
+    if (releaseConnection) {
+      streamAllocation.streamFailed(null);
+      streamAllocation.release();
+    }
+  }
+
+  .......
+}
+</code></pre><p> Response proceed（）方法很简单，内部使用集合进行遍历，一个反射进行真实数据处理! 其通过内部的<code>Response response = interceptor.intercept(next);</code><br> 其实就回调到了你实现的<code>intercept(Chain chain)</code>的接口，一次闭环结束！</p>
+<p><strong>处理返回拦截</strong></p>
+<p> 使用者都知道我们每次进行一次请求调用<strong>call.execute()</strong> ，真正的response也在这里开始，拦截器也从这方法为导火索。</p>
+<pre><code>Override 
+public Response execute() throws IOException {
+  synchronized (this) {
+  if (executed) throw new IllegalStateException(&quot;Already Executed&quot;);
+  executed = true;
+  }
+captureCallStackTrace();
+try {
+  client.dispatcher().executed(this);
+  //处理拦截了
+  Response result = getResponseWithInterceptorChain();
+  if (result == null) throw new IOException(&quot;Canceled&quot;);
+  return result;
+} finally {
+  client.dispatcher().finished(this);
+}
+</code></pre><p>  }</p>
+<p>如果到这里你还未能猜出内部机制，这里也不用在介绍，通过<strong>处理请求拦截</strong>的介绍，你一也应该明白内部进行拦截器集合循环遍历，进行的具体处理。</p>
+<p>到此明白了Interceptor的工作原理我们就可以愉快的使用他来完成一些功能了。</p>
+<p>这里我我做了一个图 更能理解整个过程，只理<strong>解拦截机制</strong>，Okhttp源码流程带后续继续分析。</p>
+<p><img src="http://img.blog.csdn.net/20170704114824875?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2s3MTk4ODc5MTY=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="这里写图片描述"></p>
+<h1 id="更多功能"><a href="#更多功能" class="headerlink" title="更多功能"></a>更多功能</h1><h2 id="增加同步cookie"><a href="#增加同步cookie" class="headerlink" title="增加同步cookie"></a>增加同步cookie</h2><p> <a href="http://blog.csdn.net/sk719887916/article/details/51700659" target="_blank" rel="external">Retrofit2.0 ，OkHttp3完美同步持久Cookie实现免登录(二)</a></p>
+<p>实现OKhttp的Interceptor器，用来将本地的cookie追加到http请求头中；采用rxJava的操作</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AddCookiesInterceptor</span> <span class="keyword">implements</span> <span class="title">Interceptor</span> </span>&#123;</div><div class="line">    <span class="keyword">private</span> Context context;</div><div class="line">    <span class="keyword">private</span> String lang;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">AddCookiesInterceptor</span><span class="params">(Context context, String lang)</span> </span>&#123;</div><div class="line">        <span class="keyword">super</span>();</div><div class="line">        <span class="keyword">this</span>.context = context;</div><div class="line">        <span class="keyword">this</span>.lang = lang;</div><div class="line"></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">public</span> <span class="function">Response <span class="title">intercept</span><span class="params">(Chain chain)</span> <span class="keyword">throws</span> IOException </span>&#123;</div><div class="line">        <span class="keyword">if</span> (chain == <span class="keyword">null</span>)</div><div class="line">            Log.d(<span class="string">"http"</span>, <span class="string">"Addchain == null"</span>);</div><div class="line">        <span class="keyword">final</span> Request.Builder builder = chain.request().newBuilder();</div><div class="line">        SharedPreferences sharedPreferences = context.getSharedPreferences(<span class="string">"cookie"</span>, Context.MODE_PRIVATE);</div><div class="line">        Observable.just(sharedPreferences.getString(<span class="string">"cookie"</span>, <span class="string">""</span>))</div><div class="line">                .subscribe(<span class="keyword">new</span> Action1&lt;String&gt;() &#123;</div><div class="line">                    <span class="meta">@Override</span></div><div class="line">                    <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">call</span><span class="params">(String cookie)</span> </span>&#123;</div><div class="line">                        <span class="keyword">if</span> (cookie.contains(<span class="string">"lang=ch"</span>))&#123;</div><div class="line">                            cookie = cookie.replace(<span class="string">"lang=ch"</span>,<span class="string">"lang="</span>+lang);</div><div class="line">                        &#125;</div><div class="line">                        <span class="keyword">if</span> (cookie.contains(<span class="string">"lang=en"</span>))&#123;</div><div class="line">                            cookie = cookie.replace(<span class="string">"lang=en"</span>,<span class="string">"lang="</span>+lang);</div><div class="line">                        &#125;</div><div class="line">                        <span class="comment">//添加cookie</span></div><div class="line">       <span class="comment">//                        Log.d("http", "AddCookiesInterceptor"+cookie);</span></div><div class="line">                        builder.addHeader(<span class="string">"cookie"</span>, cookie);</div><div class="line">                    &#125;</div><div class="line">                &#125;);</div><div class="line">        <span class="keyword">return</span> chain.<span class="keyword">proceed</span>(builder.build());</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>实现Interceptor器，将Http返回的cookie存储到本地</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ReceivedCookiesInterceptor</span> <span class="keyword">implements</span> <span class="title">Interceptor</span> </span>&#123;</div><div class="line">    <span class="keyword">private</span> Context context;</div><div class="line">    SharedPreferences sharedPreferences;</div><div class="line"></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="title">ReceivedCookiesInterceptor</span><span class="params">(Context context)</span> </span>&#123;</div><div class="line">        <span class="keyword">super</span>();</div><div class="line">        <span class="keyword">this</span>.context = context;</div><div class="line">        sharedPreferences = context.getSharedPreferences(<span class="string">"cookie"</span>, Context.MODE_PRIVATE);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    <span class="meta">@Override</span></div><div class="line">    <span class="keyword">public</span> <span class="function">Response <span class="title">intercept</span><span class="params">(Chain chain)</span> <span class="keyword">throws</span> IOException </span>&#123;</div><div class="line">        <span class="keyword">if</span> (chain == <span class="keyword">null</span>)</div><div class="line">            Log.d(<span class="string">"http"</span>, <span class="string">"Receivedchain == null"</span>);</div><div class="line">        Response originalResponse = chain.<span class="keyword">proceed</span>(chain.request());</div><div class="line">        Log.d(<span class="string">"http"</span>, <span class="string">"originalResponse"</span> + originalResponse.toString());</div><div class="line">        <span class="keyword">if</span> (!originalResponse.headers(<span class="string">"set-cookie"</span>).isEmpty()) &#123;</div><div class="line">            <span class="keyword">final</span> StringBuffer cookieBuffer = <span class="keyword">new</span> StringBuffer();</div><div class="line">            Observable.from(originalResponse.headers(<span class="string">"set-cookie"</span>))</div><div class="line">                    .map(<span class="keyword">new</span> Func1&lt;String, String&gt;() &#123;</div><div class="line">                        <span class="meta">@Override</span></div><div class="line">                        <span class="keyword">public</span> <span class="function">String <span class="title">call</span><span class="params">(String s)</span> </span>&#123;</div><div class="line">                            String[] cookieArray = s.split(<span class="string">";"</span>);</div><div class="line">                            <span class="keyword">return</span> cookieArray[<span class="number">0</span>];</div><div class="line">                        &#125;</div><div class="line">                    &#125;)</div><div class="line">                    .subscribe(<span class="keyword">new</span> Action1&lt;String&gt;() &#123;</div><div class="line">                        <span class="meta">@Override</span></div><div class="line">                        <span class="keyword">public</span> <span class="function"><span class="keyword">void</span> <span class="title">call</span><span class="params">(String cookie)</span> </span>&#123;</div><div class="line">                            cookieBuffer.append(cookie).append(<span class="string">";"</span>);</div><div class="line">                        &#125;</div><div class="line">                    &#125;);</div><div class="line">            SharedPreferences.Editor editor = sharedPreferences.edit();</div><div class="line">            editor.putString(<span class="string">"cookie"</span>, cookieBuffer.toString());</div><div class="line">            Log.d(<span class="string">"http"</span>, <span class="string">"ReceivedCookiesInterceptor"</span> + cookieBuffer.toString());</div><div class="line">            editor.commit();</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        <span class="keyword">return</span> originalResponse;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="修改请求头"><a href="#修改请求头" class="headerlink" title="修改请求头"></a>修改请求头</h2><p><a href="http://blog.csdn.net/sk719887916/article/details/52189602" target="_blank" rel="external"><br> Retrofit，Okhttp对每个Request统一动态添加header和参数（五）</a></p>
+<pre><code>okHttpClient.interceptors().add(new Interceptor() {  
+   @Override
+
+public Response intercept(Interceptor.Chain chain) throws IOException {
+       Request original = chain.request();
+
+    // Request customization: add request headers
+    Request.Builder requestBuilder = original.newBuilder()
+   .addHeader(&quot;header-key&quot;, &quot;value1&quot;)
+   .addHeader(&quot;header-key&quot;, &quot;value2&quot;);
+
+    Request request = requestBuilder.build();
+     return chain.proceed(request);
+  }
+});
+</code></pre><h2 id="实现缓存"><a href="#实现缓存" class="headerlink" title="实现缓存"></a>实现缓存</h2><p><a href="http://blog.csdn.net/sk719887916/article/details/52132106" target="_blank" rel="external">Rxjava +Retrofit 你需要掌握的几个技巧，Retrofit缓存，</a></p>
+<h1 id="兼容的库"><a href="#兼容的库" class="headerlink" title="兼容的库"></a>兼容的库</h1><p>OkHttp的拦截器需要OkHttp 2.2或以上版本。但是是，拦截器不支持OkUrlFactory，或者依赖Okhttp的其他库，包括Retrofit≤1.8和 Picasso≤2.4。</p>
+<p>参考资料</p>
+<blockquote>
+<p>Okhttp官方GitHub Wiki以及APi文档</p>
+<p>Tamic /<br><a href="http://blog.csdn.net/sk719887916/article/details/74308343" target="_blank" rel="external">http://blog.csdn.net/sk719887916/article/details/74308343</a></p>
+</blockquote>
+<p>随意打赏：<img src="http://img.blog.csdn.net/20170711075115731?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvc2s3MTk4ODc5MTY=/w/90/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="觉得可以随意打赏"></p>
+<p>第一时间获取技术文章请关注微信公众号！</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2022038-a7b567ef3a0b0d1f.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="开发者技术前线"></p>
+
+
+                <hr>
+
+                
+
+                
+                <!-- 多说 Share start -->
+                </style>
+                <div class="ds-share"
+                    style="text-align: right"
+                    data-thread-key="2017/11/15/Okhttp2_2017/"
+                    data-title="OkHttp 3.x 源码解析之Interceptor 拦截器"
+                    data-url="http://tamicer.com/2017/11/15/Okhttp2_2017/"
+                    data-images=""
+                    data-content="
+Tamic /http://blog.csdn.net/sk719887916/articl... | Tamic Developer&quot;s Blog | &quot;博客&quot; " >
+                    <div class="ds-share-inline">
+                      <ul  class="ds-share-icons-16">
+                        <li data-toggle="ds-share-icons-more"><a class="ds-more" href="#">分享到：</a></li>
+                        <li><a class="ds-wechat flat" href="javascript:void(0);" data-service="wechat">微信</a></li>
+                        <li><a class="ds-weibo flat" href="javascript:void(0);" data-service="weibo">微博</a></li>
+                        <li><a class="ds-douban flat" href="javascript:void(0);" data-service="douban">豆瓣</a></li>
+                      </ul>
+                      <div class="ds-share-icons-more">
+                      </div>
+                    </div>
+                <hr>
+
+
+                </div>
+
+                <!-- 多说 Share end-->
+                
+
+                <ul class="pager">
+                    
+                    
+                        <li class="next">
+                            <a href="/2017/05/17/2017googleIO/" data-toggle="tooltip" data-placement="top" title="2017 Google I/O 最新科技看点">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+                <!-- 多说评论框 start -->
+                <div class="comment">
+                    <div class="ds-thread"
+                        data-thread-key="2017/11/15/Okhttp2_2017/"
+                        data-title="OkHttp 3.x 源码解析之Interceptor 拦截器"
+                        data-url="http://tamicer.com/2017/11/15/Okhttp2_2017/" >
+                    </div>
+                </div>
+                <!-- 多说评论框 end -->
+                
+
+                
+                <!-- disqus 评论框 start -->
+                <div class="comment">
+                    <div id="disqus_thread" class="disqus-thread"></div>
+                </div>
+                <!-- disqus 评论框 end -->
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                          <a class="tag" href="/tags/#Okhttp" title="Okhttp">Okhttp</a>
+                        
+                          <a class="tag" href="/tags/#网络" title="网络">网络</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+                <hr>
+                <h5>FRIENDS</h5>
+                <ul class="list-inline">
+
+                    
+                        <li><a href="http://www.jianshu.com/u/3bbb1ddf4fd5" target="_blank">Tamic&#39;s Blog</a></li>
+                    
+                        <li><a href="https://github.com/Tamicer" target="_blank">Tamic github</a></li>
+                    
+                        <li><a href="#" target="_blank">Foo</a></li>
+                    
+                        <li><a href="#" target="_blank">Bar</a></li>
+                    
+                        <li><a href="#" target="_blank">Example Friends</a></li>
+                    
+                        <li><a href="#" target="_blank">It helps SEO</a></li>
+                    
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    // dynamic User by Hux
+    var _user = 'tamicer';
+
+    // duoshuo comment query.
+    var duoshuoQuery = {short_name: _user };
+    (function() {
+        var ds = document.createElement('script');
+        ds.type = 'text/javascript';ds.async = true;
+        ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+        ds.charset = 'UTF-8';
+        (document.getElementsByTagName('head')[0]
+         || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+</script>
+<!-- 多说公共JS代码 end -->
+
+
+
+<!-- disqus 公共JS代码 start (一个网页只需插入一次) -->
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = "hexo-theme-huxblog";
+    var disqus_identifier = "http://tamicer.com/2017/11/15/Okhttp2_2017/";
+    var disqus_url = "http://tamicer.com/2017/11/15/Okhttp2_2017/";
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<!-- disqus 公共JS代码 end -->
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                    <li>
+                        <a target="_blank" href="https://twitter.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://blog.csdn.net//sk719887916">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-csdn fa-stack-1x fa-inverse">C</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.zhihu.com/people/xing-qiu-ren-50">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa  fa-stack-1x fa-inverse">知</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="http://weibo.com/TamicDeveloper">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank" href="https://www.facebook.com/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-facebook fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/Tamicer">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://www.linkedin.com/in/Tamic">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-linkedin fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="http://www.jianshu.com/u/3bbb1ddf4fd5">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-jianshu fa-stack-1x fa-inverse">简</i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tamic 2017 
+                    <br>
+                    Theme by <a href="http://Tamicer.com">Hux</a> 
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by <a href="http://Tamicer.com">Tamic</a> | 
+                    <iframe
+                        style="margin-left: 2px; margin-bottom:-5px;"
+                        frameborder="0" scrolling="0" width="91px" height="20px"
+                        src="https://ghbtns.com/github-btn.html?user=Tamicer&repo=Novate&type=star&count=true" >
+                    </iframe>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("http://tamicer.com/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+<script>
+    // dynamic User by Hux
+    var _gaId = 'UA-49627206-1';
+    var _gaDomain = 'tamicer.com';
+
+    // Originial
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', _gaId, _gaDomain);
+    ga('send', 'pageview');
+</script>
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+<script type="text/javascript">
+    function generateCatalog (selector) {
+        var P = $('div.post-container'),a,n,t,l,i,c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#"+$(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="'+i+'" rel="nofollow">'+t+'</a>');
+            l = $('<li class="'+n+'_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;    
+    }
+
+    generateCatalog(".catalog-body");
+
+    // toggle side catalog
+    $(".catalog-toggle").click((function(e){
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    /*
+     * Doc: https://github.com/davist11/jQuery-One-Page-Nav
+     * Fork by Hux to support padding
+     */
+    async("/js/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="http://tamicer.com/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
